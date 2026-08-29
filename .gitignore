@@ -1,0 +1,16 @@
+
+# Agente
+.claude/
+
+# Entorno
+.env
+.env.local
+.env*.local
+
+# Dependencias y build
+node_modules/
+dist/
+.astro/
+
+# macOS
+.DS_Store
