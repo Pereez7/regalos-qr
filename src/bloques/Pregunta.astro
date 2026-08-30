@@ -1,0 +1,38 @@
+---
+interface Props {
+  texto: string;
+  respuesta?: string;
+}
+
+const { texto, respuesta } = Astro.props;
+---
+
+<section data-bloque="pregunta">
+  <p>{texto}</p>
+  {
+    respuesta && (
+      <>
+        <button type="button" data-boton-pregunta aria-expanded="false">
+          Ver respuesta
+        </button>
+        <p data-respuesta hidden>
+          {respuesta}
+        </p>
+      </>
+    )
+  }
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>("[data-boton-pregunta]").forEach((boton) => {
+    boton.addEventListener("click", () => {
+      const seccion = boton.closest('[data-bloque="pregunta"]');
+      const respuesta = seccion?.querySelector<HTMLElement>("[data-respuesta]");
+      if (!respuesta) return;
+
+      const expandido = boton.getAttribute("aria-expanded") === "true";
+      boton.setAttribute("aria-expanded", String(!expandido));
+      respuesta.hidden = expandido;
+    });
+  });
+</script>

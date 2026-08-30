@@ -1,0 +1,15 @@
+---
+interface Props {
+  texto?: string;
+}
+
+const { texto } = Astro.props;
+---
+
+{
+  texto && (
+    <section data-bloque="cierre">
+      <p>{texto}</p>
+    </section>
+  )
+}

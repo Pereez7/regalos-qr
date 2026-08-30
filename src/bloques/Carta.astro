@@ -1,0 +1,18 @@
+---
+interface Props {
+  texto: string;
+}
+
+const { texto } = Astro.props;
+// Una carta vacía se omite en el render, igual que un tipo desconocido
+// (data-model.md, Reglas de evolución).
+const tieneContenido = typeof texto === "string" && texto.trim().length > 0;
+---
+
+{
+  tieneContenido && (
+    <section data-bloque="carta">
+      <p>{texto}</p>
+    </section>
+  )
+}

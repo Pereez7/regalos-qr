@@ -1,0 +1,62 @@
+---
+import RegaloLayout from "../../layouts/RegaloLayout.astro";
+import NoDisponible from "../no-disponible.astro";
+import { obtenerRegaloParaRevision } from "../../lib/regalos.ts";
+
+export const prerender = false;
+
+const { id } = Astro.params;
+// FR-012: sin filtro de estado — el comprador ve exactamente lo que hay.
+const regalo = id ? await obtenerRegaloParaRevision(id) : null;
+---
+
+{
+  regalo ? (
+    // slug={null}: la pantalla de apertura se ve y se comporta igual que en /r/[slug],
+    // pero acá NO dispara POST /api/abrir — esa marca es del destinatario real
+    // (research.md #19, ver comentario en RegaloLayout.astro).
+    <RegaloLayout tema={regalo.tema} contenido={regalo.contenido} slug={null}>
+      <div data-panel-revision>
+        {regalo.estado === "en_revision" ? (
+          <form method="POST" action={`/api/regalos/${regalo.id}/aprobar`} data-form-aprobar>
+            <button type="submit">Aprobar</button>
+          </form>
+        ) : (
+          <p data-estado-publicado>
+            Aprobado el {regalo.aprobadoEn}
+            {regalo.primeraAperturaEn && (
+              <span data-primera-apertura>
+                {" "}
+                — ya fue abierto, el {regalo.primeraAperturaEn}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+    </RegaloLayout>
+  ) : (
+    <NoDisponible />
+  )
+}
+
+<style>
+  [data-panel-revision] {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    padding: 1rem;
+    text-align: center;
+    background: var(--color-superficie);
+    color: var(--color-texto-sobre-superficie);
+  }
+
+  [data-form-aprobar] button {
+    padding: 0.6rem 1.5rem;
+    color: var(--color-texto-sobre-acento);
+    background: var(--color-acento);
+    border-radius: 999px;
+    font-weight: 600;
+  }
+</style>

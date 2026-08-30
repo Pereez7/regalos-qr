@@ -1,0 +1,36 @@
+---
+interface Foto {
+  url: string;
+  alt: string;
+  ancho?: number;
+  alto?: number;
+}
+
+interface Props {
+  titulo?: string;
+  texto: string;
+  fecha?: string;
+  foto?: Foto;
+}
+
+const { titulo, texto, fecha, foto } = Astro.props;
+// Un momento sin texto significativo se omite en el render, igual que un tipo
+// desconocido (data-model.md, Reglas de evolución).
+const tieneContenido = typeof texto === "string" && texto.trim().length > 0;
+const aspectRatio = foto?.ancho && foto?.alto ? `${foto.ancho} / ${foto.alto}` : undefined;
+---
+
+{
+  tieneContenido && (
+    <section data-bloque="momento">
+      {titulo && <h2>{titulo}</h2>}
+      {foto && (
+        <div class="foto-marco" style={aspectRatio ? { aspectRatio } : undefined}>
+          <img src={foto.url} alt={foto.alt} loading="lazy" />
+        </div>
+      )}
+      <p>{texto}</p>
+      {fecha && <time datetime={fecha}>{fecha}</time>}
+    </section>
+  )
+}

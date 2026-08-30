@@ -1,0 +1,11 @@
+/* Tema "papel": claro y analógico (research.md #13). Pares verificados AA — ver
+   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
+:root {
+  --color-fondo: #fbf8f1;
+  --color-texto: #2b2620;
+  --color-superficie: #efe9dc;
+  --color-texto-sobre-superficie: #2b2620;
+  --color-acento: #8a5a2b;
+  --color-texto-sobre-acento: #fbf8f1;
+  --color-foco: #8a5a2b;
+}

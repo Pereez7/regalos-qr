@@ -1,0 +1,81 @@
+---
+import "../styles/base.css";
+import nocturnoCss from "../temas/tokens-nocturno.css?raw";
+import papelCss from "../temas/tokens-papel.css?raw";
+import luminosoCss from "../temas/tokens-luminoso.css?raw";
+import { registro } from "../bloques/registro.ts";
+import type { Contenido } from "../lib/contenido/tipos-bloque.ts";
+
+interface Props {
+  tema: string;
+  contenido: Contenido;
+  // null en /revisar/[id]: la pantalla de apertura se ve y se comporta igual, pero no
+  // dispara POST /api/abrir — esa marca es del destinatario real, no de la vista previa
+  // del comprador (Principio VI: primera_apertura_en es irreversible, research.md #19).
+  slug: string | null;
+}
+
+const { tema, contenido, slug } = Astro.props;
+
+const temasDisponibles: Record<string, string> = {
+  nocturno: nocturnoCss,
+  papel: papelCss,
+  luminoso: luminosoCss,
+};
+const cssTema = temasDisponibles[tema] ?? temasDisponibles.nocturno;
+
+// El layout solo *lee* nombreDestinatario del primer bloque portada, si existe
+// (research.md #22) — una receta sin portada muestra un texto genérico.
+const primerPortada = contenido.receta.find(
+  (b): b is typeof b & { nombreDestinatario?: string } => b.tipo === "portada",
+);
+const nombreDestinatario =
+  typeof primerPortada?.nombreDestinatario === "string" ? primerPortada.nombreDestinatario : null;
+
+const recetaOrdenada = [...contenido.receta].sort((a, b) => a.posicion - b.posicion);
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Un regalo para vos</title>
+    <style set:html={cssTema} />
+  </head>
+  <body>
+    <button type="button" id="pantalla-apertura" data-pantalla-apertura data-slug={slug ?? ""}>
+      <p>{nombreDestinatario ? `Tenés un regalo, ${nombreDestinatario}` : "Tenés un regalo"}</p>
+      <span class="boton-abrir">Tocá para abrir</span>
+    </button>
+    <main id="contenido" data-contenido hidden>
+      {
+        recetaOrdenada.map((bloque) => {
+          const Componente = registro[bloque.tipo];
+          return Componente ? <Componente {...bloque} /> : null;
+        })
+      }
+    </main>
+    <slot />
+    <script>
+      const pantalla = document.getElementById("pantalla-apertura");
+      const contenido = document.getElementById("contenido");
+
+      function abrir() {
+        if (!pantalla || !contenido) return;
+        const slug = pantalla.dataset.slug;
+
+        contenido.hidden = false;
+        pantalla.remove();
+
+        if (slug) {
+          // Fire-and-forget: revelar el contenido nunca espera esta respuesta
+          // (research.md #19, contracts/api-abrir.md).
+          fetch(`/api/abrir/${slug}`, { method: "POST", keepalive: true }).catch(() => {});
+        }
+      }
+
+      pantalla?.addEventListener("click", abrir, { once: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_astro/(.*)$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/abrir/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/regalos/([^/]+?)/aprobar/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/regalos/([^/]+?)/eliminar/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/no-disponible/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/r/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/revisar/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/404/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/.*$",
+			"dest": "_render",
+			"status": 404
+		}
+	]
+}

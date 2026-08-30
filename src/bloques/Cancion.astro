@@ -1,0 +1,51 @@
+---
+import { resolverEmbed } from "../lib/contenido/embeds.ts";
+
+interface Props {
+  url: string;
+  titulo?: string;
+  artista?: string;
+}
+
+const { url, titulo, artista } = Astro.props;
+// Dominio fuera de la lista blanca => sin contenido significativo, se omite
+// (research.md #21, contracts/regalo-contenido.schema.md regla 7).
+const embed = resolverEmbed(url);
+---
+
+{
+  embed && (
+    <section data-bloque="cancion" data-embed-url={embed}>
+      <button type="button" data-boton-cancion>
+        {titulo ? `▶ ${titulo}` : "▶ Escuchar"}
+        {artista && <span>{artista}</span>}
+      </button>
+      <div data-contenedor-embed />
+    </section>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-bloque="cancion"]').forEach((seccion) => {
+    const boton = seccion.querySelector<HTMLButtonElement>("[data-boton-cancion]");
+    const contenedor = seccion.querySelector<HTMLElement>("[data-contenedor-embed]");
+    const embedUrl = seccion.dataset.embedUrl;
+    if (!boton || !contenedor || !embedUrl) return;
+
+    boton.addEventListener(
+      "click",
+      () => {
+        // Carga diferida: cero requests a Spotify/YouTube hasta este tap
+        // (research.md #21). Sin parámetro de autoplay (FR-010).
+        const iframe = document.createElement("iframe");
+        iframe.src = embedUrl;
+        iframe.loading = "lazy";
+        iframe.allow = "encrypted-media";
+        iframe.title = boton.textContent?.trim() || "Reproductor";
+        contenedor.appendChild(iframe);
+        boton.hidden = true;
+      },
+      { once: true },
+    );
+  });
+</script>

@@ -1,0 +1,29 @@
+---
+interface Foto {
+  url: string;
+  alt: string;
+  ancho?: number;
+  alto?: number;
+}
+
+interface Props {
+  fotos: Foto[];
+}
+
+const { fotos } = Astro.props;
+---
+
+{
+  fotos && fotos.length > 0 && (
+    <section data-bloque="galeria">
+      {fotos.map((foto) => {
+        const aspectRatio = foto.ancho && foto.alto ? `${foto.ancho} / ${foto.alto}` : undefined;
+        return (
+          <div class="foto-marco" style={aspectRatio ? { aspectRatio } : undefined}>
+            <img src={foto.url} alt={foto.alt} loading="lazy" />
+          </div>
+        );
+      })}
+    </section>
+  )
+}

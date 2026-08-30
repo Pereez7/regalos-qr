@@ -1,0 +1,145 @@
+/* Reset mínimo + garantías transversales (FR-020, Reglas de Calidad). */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* FR-020 / SC-002: cero scroll horizontal entre 320 y 1440px, en cualquier bloque. */
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  background: var(--color-fondo, #fff);
+  color: var(--color-texto, #111);
+}
+
+img,
+picture,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Foco visible global — nunca se suprime el outline sin reemplazo (accesibilidad). */
+:focus-visible {
+  outline: 2px solid var(--color-foco, currentColor);
+  outline-offset: 2px;
+}
+
+/* Pantalla de apertura transversal (FR-008, research.md #22): cubre toda la
+   ventana, deliberadamente liviana (texto + fondo, sin fotos ni iframes) para
+   cumplir SC-001 incluso en 3G simulada. */
+#pantalla-apertura {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  z-index: 10;
+}
+
+#pantalla-apertura p {
+  font-size: 1.5rem;
+  max-width: 28rem;
+}
+
+.boton-abrir {
+  display: inline-block;
+  padding: 0.75rem 1.75rem;
+  color: var(--color-texto-sobre-acento);
+  background: var(--color-acento);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+#contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+/* Encuadre compartido por Momento.astro y Galeria.astro (research.md #16, #20):
+   `object-fit: contain` nunca recorta, aunque la foto sea extrema. */
+.foto-marco {
+  width: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-superficie);
+  border-radius: 0.5rem;
+}
+
+.foto-marco img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* FR-020/SC-002: ninguna palabra o link largo sin espacios debe poder empujar el
+   ancho de la página, en ningún bloque. */
+h1,
+h2,
+h3,
+p,
+a,
+span,
+time,
+button {
+  overflow-wrap: anywhere;
+}
+
+[data-bloque="carta"] p,
+[data-bloque="momento"] p {
+  white-space: pre-wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

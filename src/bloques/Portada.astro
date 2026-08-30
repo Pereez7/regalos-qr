@@ -1,0 +1,15 @@
+---
+// Solo contenido de portada; la pantalla de apertura vive en RegaloLayout, no acá
+// (research.md #22).
+interface Props {
+  nombreDestinatario: string;
+  subtitulo?: string;
+}
+
+const { nombreDestinatario, subtitulo } = Astro.props;
+---
+
+<section data-bloque="portada">
+  <h1>{nombreDestinatario}</h1>
+  {subtitulo && <p>{subtitulo}</p>}
+</section>

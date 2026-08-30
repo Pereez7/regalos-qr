@@ -1,0 +1,11 @@
+/* Tema "luminoso": alegre y con color (research.md #13). Pares verificados AA — ver
+   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
+:root {
+  --color-fondo: #fff9f0;
+  --color-texto: #241a0a;
+  --color-superficie: #ffefd6;
+  --color-texto-sobre-superficie: #241a0a;
+  --color-acento: #b33e0a;
+  --color-texto-sobre-acento: #ffffff;
+  --color-foco: #b33e0a;
+}

@@ -1,0 +1,40 @@
+---
+interface Props {
+  fechaInicio: string;
+}
+
+const { fechaInicio } = Astro.props;
+---
+
+<section data-bloque="contador" data-fecha-inicio={fechaInicio}>
+  <p data-contador-valor data-segundos="0">—</p>
+</section>
+
+<script>
+  function formatear(segundosTotales: number): string {
+    const dias = Math.floor(segundosTotales / 86400);
+    const horas = Math.floor((segundosTotales % 86400) / 3600);
+    const minutos = Math.floor((segundosTotales % 3600) / 60);
+    const segundos = segundosTotales % 60;
+    return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-bloque="contador"]').forEach((el) => {
+    const fechaInicio = new Date(el.dataset.fechaInicio ?? "").getTime();
+    const salida = el.querySelector<HTMLElement>("[data-contador-valor]");
+    if (!salida || Number.isNaN(fechaInicio)) return;
+
+    function tick() {
+      const delta = Date.now() - fechaInicio;
+      // Clamp a 0: nunca se muestra un valor negativo, ni en el cruce de futuro a
+      // pasado (research.md #18). |delta| cuenta regresiva mientras es futuro, y
+      // cuenta hacia adelante en cuanto cruza a 0.
+      const segundosTotales = Math.max(0, Math.floor(Math.abs(delta) / 1000));
+      salida!.dataset.segundos = String(segundosTotales);
+      salida!.textContent = formatear(segundosTotales);
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  });
+</script>

@@ -1,0 +1,11 @@
+/* Tema "nocturno": íntimo y oscuro (research.md #13). Pares verificados AA — ver
+   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
+:root {
+  --color-fondo: #14121b;
+  --color-texto: #f3eefb;
+  --color-superficie: #221e2e;
+  --color-texto-sobre-superficie: #f3eefb;
+  --color-acento: #c9a6ff;
+  --color-texto-sobre-acento: #1b1424;
+  --color-foco: #c9a6ff;
+}

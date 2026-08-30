@@ -1,0 +1,22 @@
+---
+import RegaloLayout from "../../layouts/RegaloLayout.astro";
+import NoDisponible from "../no-disponible.astro";
+import { obtenerRegaloPublicado } from "../../lib/regalos.ts";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+// Ruta pública inmutable (Principio VI): solo lee y renderiza. NUNCA llama a
+// registrarApertura ni a /api/abrir desde el servidor (FR-002, FR-014, FR-017,
+// research.md #19) — el registro ocurre solo por el tap del cliente contra
+// POST /api/abrir/[slug].
+const regalo = slug ? await obtenerRegaloPublicado(slug) : null;
+---
+
+{
+  regalo ? (
+    <RegaloLayout tema={regalo.tema} contenido={regalo.contenido} slug={regalo.slug} />
+  ) : (
+    <NoDisponible />
+  )
+}
