@@ -197,8 +197,8 @@ posteriores.
   bloques, en menos de 30 minutos.
 - **SC-005**: Con las imágenes bloqueadas o sin cargar, el 100% del texto de la página sigue
   siendo legible.
-- **SC-006**: La página cumple contraste mínimo AA en, al menos, los dos temas visuales
-  principales disponibles al lanzamiento.
+- **SC-006**: La página cumple contraste mínimo AA en los tres temas visuales disponibles al
+  lanzamiento (nocturno, papel y luminoso).
 - **SC-007**: Un conjunto de 20 regalos de prueba, cada uno con una historia distinta, se
   publican y se abren de punta a punta sin fallos.
 
@@ -208,7 +208,9 @@ posteriores.
   tomada de un alfabeto que excluye caracteres visualmente ambiguos.
 - Una vez que un regalo pasa a estado "publicado", su contenido y receta de bloques dejan de
   poder editarse, en línea con que lo entregado es inmutable.
-- El sistema ofrece al menos dos temas visuales predefinidos disponibles al lanzamiento, ambos
+- El sistema ofrece tres temas visuales predefinidos disponibles al lanzamiento — nocturno
+  (íntimo y oscuro, para aniversarios y declaraciones), papel (claro y analógico, para
+  propuestas y bodas), y luminoso (alegre y con color, para cumpleaños y amistad) — los tres
   cumpliendo contraste AA.
 - La fecha de expiración de cada regalo es fijada por un proceso externo a esta feature (por
   ejemplo, al momento de la compra); esta feature solo la hace cumplir.
