@@ -22,12 +22,17 @@ test("un GET a /r/[slug] con User-Agent de crawler no registra apertura", async 
 
 test("POST /api/abrir/[slug] concurrentes producen una única marca de primera apertura", async ({
   request,
+  baseURL,
 }) => {
   const { id, slug } = await crearRegalo(RECETA_MINIMA);
 
+  // Astro rechaza con 403 los POST sin `Origin` same-site (security.checkOrigin,
+  // protección real contra CSRF) — a diferencia del fetch() same-origin del navegador,
+  // request.post() no lo manda solo.
+  const headers = { origin: baseURL! };
   const [r1, r2] = await Promise.all([
-    request.post(`/api/abrir/${slug}`),
-    request.post(`/api/abrir/${slug}`),
+    request.post(`/api/abrir/${slug}`, { headers }),
+    request.post(`/api/abrir/${slug}`, { headers }),
   ]);
   expect(r1.status()).toBe(204);
   expect(r2.status()).toBe(204);
