@@ -403,3 +403,43 @@ Task: "src/bloques/Cierre.astro"
 
 Cada historia se apoya en archivos concretos de la anterior (ver Dependencies), pero cada
 `Checkpoint` es un estado íntegro y demostrable por sí solo.
+
+---
+
+## Phase 7: Convergence
+
+**Purpose**: brechas encontradas al comparar el código actual contra spec.md, plan.md y la
+constitución, tras completarse las Fases 1–6. No reemplaza ni reordena ninguna tarea previa.
+
+- [x] T049 Agregar `tests/e2e/degradacion-conexion.spec.ts`: ante fallas parciales de red
+      (recursos que no cargan — imágenes y otros assets abortados con `page.route`), la
+      página nunca queda en blanco y todo el texto de los distintos bloques sigue visible —
+      la Compuerta 2 pide verificar degradación (foto/canción/conexión), no funcionamiento
+      offline; un service worker fue evaluado y descartado explícitamente por el riesgo de
+      servir contenido desactualizado tras una reaprobación (Principio III) — ver
+      research.md #24 (missing) — per Constitution Principio I / Compuerta 2
+- [x] T050 Verificar que `DELETE /api/regalos/[id]/eliminar` efectivamente borra la fila de
+      `regalos`, las fotos del bucket bajo `regalos/{id}/` y las filas de `aperturas`
+      asociadas, y dejar esa verificación cubierta (test automatizado o, como mínimo, un
+      paso explícito en quickstart.md) — hoy no hay ningún test ni paso de validación manual
+      para este endpoint en todo el repo — per FR-018, Constitution Compuerta 9 (missing)
+- [x] T051 Agregar verificación automatizada de que el JavaScript servido en `/r/[slug]` se
+      mantiene bajo el presupuesto duro de 100 KB (objetivo real <20 KB) — no existe hoy
+      ningún test que mida el peso del JS de la página — per Constitution Compuerta 5,
+      plan.md → Performance Goals (missing)
+- [x] T052 Agregar un test Playwright que confirme que texto del comprador con etiquetas
+      HTML (por ejemplo `<script>` o `<b>`) se muestra como texto literal y nunca se
+      interpreta, cubriendo al menos `nombreDestinatario`, `carta.texto`, `momento.texto` y
+      `pregunta.texto`/`respuesta` — FR-007 y el Edge Case correspondiente de spec.md no
+      tienen hoy ningún test que los respalde como regresión — per FR-007, spec.md Edge Case
+      "Texto con etiquetas HTML dentro" (missing)
+- [x] T053 Agregar cobertura de degradación para un embed de `cancion` roto o inalcanzable
+      (dominio válido pero recurso caído), confirmando que el resto de la página sigue
+      legible — Compuerta 2 exige verificar "foto rota, canción rota y conexión caída" y
+      solo la foto rota tiene test hoy (`render-sin-imagenes.spec.ts`) — per Constitution
+      Compuerta 2 (partial)
+- [x] T054 Agregar verificación automatizada de que `prefers-reduced-motion` se respeta y de
+      que el foco visible (`:focus-visible`) está presente en los bloques interactivos
+      (contador, canción, pregunta, formulario de aprobación) — hoy solo el contraste AA
+      tiene test automatizado (`contraste-aa.spec.ts`) de las cuatro verificaciones que pide
+      la Compuerta 4 — per Constitution Compuerta 4 (partial)

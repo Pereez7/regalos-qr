@@ -355,3 +355,29 @@ Todas las incógnitas del Technical Context quedan resueltas abajo; no quedan
 - **Alternatives considered**: medir un único LCP end-to-end del documento completo sin
   distinguir el gate del contenido — descartado, un LCP agregado no diagnostica cuál de las
   dos partes (gate o contenido real) es la que eventualmente se degrada.
+
+## 24. Compuerta 2 es degradación, no funcionamiento offline (excepción razonada)
+
+- **Decision**: la Compuerta 2 de la constitución ("Degradación verificada con foto rota,
+  canción rota y conexión caída: la página se lee") se implementa y se verifica como
+  degradación ante **fallas parciales de red durante una sesión activa** —
+  `tests/e2e/render-sin-imagenes.spec.ts` (foto rota), `tests/e2e/cancion-rota.spec.ts`
+  (canción rota) y `tests/e2e/degradacion-conexion.spec.ts` (recursos que no cargan en
+  general). Deliberadamente **no** se implementa ningún mecanismo de service worker, Cache
+  API ni `Cache-Control` orientado a que la página cargue completa sin conexión alguna
+  (offline real) en una visita posterior.
+- **Rationale**: un service worker que cachee la respuesta de `/r/[slug]` puede servir una
+  versión vieja del regalo después de que el comprador pida una corrección y vuelva a
+  aprobar — el destinatario vería contenido no aprobado (versión anterior) o, peor, contenido
+  que el comprador corrigió específicamente por estar mal. Eso viola el Principio III ("nada
+  se publica sin aprobación del comprador") por una vía que la constitución no previó: una
+  copia cacheada en el dispositivo del destinatario que nunca se invalida. El riesgo de
+  introducir ese mecanismo es mayor que el problema que resuelve, porque el caso de uso real
+  — reabrir sin conexión un regalo que ese mismo dispositivo ya abrió antes — es marginal
+  frente al riesgo de entregar contenido desactualizado de forma silenciosa e indetectable.
+- **Alternatives considered**: service worker con invalidación de caché atada a un hash de
+  `contenido` — descartado por complejidad no pedida por ningún FR/SC de spec.md y porque
+  seguiría dependiendo de que el destinatario vuelva a tener conexión al menos una vez para
+  invalidar la copia vieja, sin garantía de que eso ocurra antes de que abra el regalo
+  offline. Cache-Control agresivo del navegador sin service worker — descartado por el mismo
+  riesgo de servir una respuesta vieja, con menos control aún sobre cuándo se invalida.

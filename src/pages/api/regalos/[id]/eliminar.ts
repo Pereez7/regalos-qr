@@ -33,12 +33,19 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     await supabase.storage.from(BUCKET).remove(rutas);
   }
 
-  // El on delete cascade de aperturas.regalo_id se encarga de las aperturas asociadas.
-  await supabase.from("regalos").delete().eq("id", id);
+  // `slugs.regalo_id` referencia a `regalos(id)` sin `ON DELETE` (RESTRICT por defecto):
+  // hay que soltar la referencia ANTES de borrar la fila de regalos, o el DELETE de abajo
+  // viola la FK. La fila de `slugs` en sí NO se borra — el valor queda bloqueado para
+  // siempre (Principio VI, research.md #4).
+  const { error: slugError } = await supabase
+    .from("slugs")
+    .update({ regalo_id: null })
+    .eq("slug", regalo.slug);
+  if (slugError) return new Response(null, { status: 500 });
 
-  // La fila de `slugs` NO se borra — el valor queda bloqueado para siempre
-  // (Principio VI, research.md #4).
-  await supabase.from("slugs").update({ regalo_id: null }).eq("slug", regalo.slug);
+  // El on delete cascade de aperturas.regalo_id se encarga de las aperturas asociadas.
+  const { error: deleteError } = await supabase.from("regalos").delete().eq("id", id);
+  if (deleteError) return new Response(null, { status: 500 });
 
   return new Response(null, { status: 204 });
 };
