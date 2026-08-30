@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { getServiceClient } from "./supabase.ts";
 import { parsearContenido } from "./contenido/esquema.ts";
 import type { Contenido } from "./contenido/tipos-bloque.ts";
@@ -27,17 +28,28 @@ interface FilaRegalo {
 const COLUMNAS =
   "id, slug, tema, contenido, estado, aprobado_en, vencimiento, primera_apertura_en";
 
-function mapear(fila: FilaRegalo): Regalo {
-  return {
-    id: fila.id,
-    slug: fila.slug,
-    tema: fila.tema,
-    contenido: parsearContenido(fila.contenido),
-    estado: fila.estado,
-    aprobadoEn: fila.aprobado_en,
-    vencimiento: fila.vencimiento,
-    primeraAperturaEn: fila.primera_apertura_en,
-  };
+// Si `contenido` no pasa el esquema actual (fila vieja, seed desactualizado), no
+// tiramos el error sin más: en dev queda logueado el detalle de zod para diagnosticar
+// rápido; en cualquier entorno el regalo se trata como no disponible.
+function mapear(fila: FilaRegalo): Regalo | null {
+  try {
+    return {
+      id: fila.id,
+      slug: fila.slug,
+      tema: fila.tema,
+      contenido: parsearContenido(fila.contenido),
+      estado: fila.estado,
+      aprobadoEn: fila.aprobado_en,
+      vencimiento: fila.vencimiento,
+      primeraAperturaEn: fila.primera_apertura_en,
+    };
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      const detalle = error instanceof z.ZodError ? z.prettifyError(error) : error;
+      console.error(`[regalos] contenido inválido para regalo ${fila.id}:`, detalle);
+    }
+    return null;
+  }
 }
 
 // FR-002/FR-017: solo sirve un regalo publicado y no vencido.

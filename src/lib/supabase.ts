@@ -7,8 +7,9 @@ let client: SupabaseClient | null = null;
 export function getServiceClient(): SupabaseClient {
   if (client) return client;
 
-  const url = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+  const url = env?.SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const serviceRoleKey = env?.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new Error("Faltan SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en el entorno");
