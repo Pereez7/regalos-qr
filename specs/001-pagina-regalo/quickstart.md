@@ -31,14 +31,21 @@ npm run dev
 1. Abrir `http://localhost:4321/r/<slug>` (el regalo del seed sigue en `en_revision`: debe
    dar `/no-disponible`, confirmando FR-002 antes de aprobar).
 2. Aprobar el regalo (ver Escenario 2) y volver a abrir `/r/<slug>`.
-3. **Esperado**: pantalla de apertura (FR-008) → tras la acción explícita, se recorren en
-   orden los 8 bloques del seed.
-4. Bloquear imágenes en DevTools → recargar → **esperado**: todo el texto sigue legible
-   (SC-005).
-5. Editar el seed para incluir un `tipo: "bloque-inventado"` en la receta → recargar →
+3. **Esperado**: pantalla de apertura (FR-008), transversal al layout — aparece aunque el
+   seed no tenga bloque `portada` (research.md #22).
+4. Antes de tocar la pantalla de apertura, verificar en la pestaña Network que **no** se
+   disparó ningún `POST /api/abrir/<slug>` — solo debe dispararse al tocar (research.md #19).
+5. Tocar la pantalla de apertura → **esperado**: se revela el contenido, se recorren en orden
+   los bloques del seed (incluyendo `momento` con foto), y recién ahí se ve el `POST
+   /api/abrir/<slug>` en Network.
+6. En el bloque `cancion`, verificar que no hay ningún `<iframe>` en el DOM hasta tocarlo, y
+   que al tocarlo carga el embed de Spotify/YouTube sin autoplay (research.md #21).
+7. Bloquear imágenes en DevTools → recargar → tocar la pantalla de apertura → **esperado**:
+   todo el texto sigue siendo legible (SC-005).
+8. Editar el seed para incluir un `tipo: "bloque-inventado"` en la receta → recargar →
    **esperado**: ese elemento no aparece, el resto de la página se ve normal, sin errores en
    pantalla (FR-006).
-6. Probar `http://localhost:4321/r/codigo-que-no-existe` → **esperado**: página de
+9. Probar `http://localhost:4321/r/codigo-que-no-existe` → **esperado**: página de
    "no disponible", nunca un stack trace (FR-002).
 
 ## Escenario 2 — US2: revisión y aprobación
@@ -54,12 +61,18 @@ npm run dev
 
 ## Escenario 3 — US3: primera apertura
 
-1. Con el regalo ya publicado y sin aperturas previas, abrir `/r/<slug>`.
-2. Consultar en la base (o en el endpoint/página de estado del comprador) que
-   `primera_apertura_en` quedó seteada.
-3. Recargar `/r/<slug>` varias veces (script de prueba: 30 requests) →
-   **esperado**: `primera_apertura_en` no cambia; se siguen sumando filas en `aperturas`.
-4. Disparar dos requests concurrentes a `/r/<slug>` contra un regalo publicado sin apertura
+1. Con el regalo ya publicado y sin aperturas previas, hacer `curl` a `GET /r/<slug>` con un
+   `User-Agent` de crawler (p. ej. `curl -A "WhatsApp/2.23.20.0" http://localhost:4321/r/<slug>`)
+   → **esperado**: la página responde igual, pero `primera_apertura_en` sigue en `null` — el
+   `GET` nunca registra apertura, sea cual sea el `User-Agent` (research.md #19).
+2. Abrir `/r/<slug>` en un navegador y tocar la pantalla de apertura (así se dispara el `POST
+   /api/abrir/<slug>`).
+3. Consultar en la base (o en el endpoint/página de estado del comprador) que
+   `primera_apertura_en` quedó seteada recién ahora.
+4. Recargar `/r/<slug>` y tocar la pantalla de apertura varias veces (script de prueba: 30
+   ciclos de recarga + tap) → **esperado**: `primera_apertura_en` no cambia; se siguen
+   sumando filas en `aperturas`.
+5. Disparar dos `POST /api/abrir/<slug>` concurrentes contra un regalo publicado sin apertura
    previa (`curl` en paralelo o `Promise.all` de dos `fetch`) → **esperado**: una sola fila de
    `aperturas` con `es_primera = true`.
 
@@ -74,13 +87,13 @@ Cubre, contra el build de preview:
 
 | Test | Criterio |
 |---|---|
-| `lcp-portada.spec.ts` | SC-001: portada visible <2,5 s en 3G simulada + gama baja |
+| `lcp.spec.ts` | SC-001: pantalla de apertura <2,5 s; SC-008: primer bloque real <2,5 s tras el tap (research.md #23), ambas en 3G simulada + gama baja |
 | `sin-scroll-horizontal.spec.ts` | SC-002/FR-020: 320–1440 px, cero scroll horizontal |
 | `contraste-aa.spec.ts` | SC-006: AA en nocturno, papel y luminoso |
 | `render-sin-imagenes.spec.ts` | SC-005: texto legible con imágenes bloqueadas |
 | `bloque-desconocido.spec.ts` | FR-006 |
 | `revision-y-aprobacion.spec.ts` | US2 completo |
-| `primera-apertura.spec.ts` | US3 + Edge Cases de concurrencia y recarga x30 |
+| `primera-apertura.spec.ts` | US3 + Edge Cases de concurrencia y recarga x30 + `GET` con `User-Agent` de crawler NO registra apertura (research.md #19) |
 | `carta-larga.spec.ts` | Edge Case: carta ~4.000 caracteres, completa, sin romper el diseño |
 | `contenido-extremo.spec.ts` | Edge Cases: emoji/acentos tal cual, carta vacía omitida, foto cuadrada/vertical sin deformar ni perder sentido |
 | `fecha-futura.spec.ts` | Edge Case: contador con `fechaInicio` futura, nunca negativo, clamp en 0 (research.md #18) |

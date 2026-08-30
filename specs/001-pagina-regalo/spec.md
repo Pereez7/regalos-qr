@@ -118,6 +118,10 @@ posteriores.
   página.
 - **Texto con etiquetas HTML dentro**: las etiquetas se muestran como texto literal en pantalla;
   nunca se interpretan ni afectan el diseño de la página.
+- **Vista previa generada por un crawler** (WhatsApp, Instagram, iMessage, Facebook u otro bot
+  que accede a la URL para armar una miniatura del link antes de que la persona lo abra):
+  ese acceso NO cuenta como apertura. El dato de "primera apertura" es irreversible una vez
+  guardado, así que registrar de más aquí sería un error permanente e imposible de corregir.
 
 ## Requirements *(mandatory)*
 
@@ -153,7 +157,10 @@ posteriores.
   contenido y los mismos bloques que se mostrarían en el enlace público una vez publicado.
 - **FR-013**: El sistema NO DEBE permitir que un regalo pase al estado "publicado" sin un
   registro de aprobación explícita del comprador, con fecha.
-- **FR-014**: El sistema DEBE registrar cada apertura de la página publicada de un regalo.
+- **FR-014**: El sistema DEBE registrar una apertura cuando el destinatario realiza la acción
+  explícita de apertura (FR-008), y NO DEBE registrar una apertura por el solo hecho de que la
+  URL reciba una petición HTTP (por ejemplo, la vista previa que generan WhatsApp, Instagram,
+  iMessage o Facebook al compartir el enlace).
 - **FR-015**: El sistema DEBE registrar la fecha/hora de la primera apertura de cada regalo
   exactamente una vez, sin sobrescribirla en aperturas posteriores, incluso ante aperturas
   simultáneas.
@@ -201,6 +208,9 @@ posteriores.
   lanzamiento (nocturno, papel y luminoso).
 - **SC-007**: Un conjunto de 20 regalos de prueba, cada uno con una historia distinta, se
   publican y se abren de punta a punta sin fallos.
+- **SC-008**: Tras tocar la pantalla de apertura, el primer bloque de contenido real es
+  visible en pantalla en menos de 2,5 segundos, bajo las mismas condiciones de conexión 3G
+  simulada y celular de gama baja que SC-001.
 
 ## Assumptions
 

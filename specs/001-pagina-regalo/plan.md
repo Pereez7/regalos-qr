@@ -61,11 +61,11 @@ IA (fuera de alcance, ver spec.md).
 
 | # | Principio / regla | Estado | Cómo se cumple |
 |---|---|---|---|
-| I | El regalo abre primero | PASS | SSR puro, sin login; primer paint es la portada (pantalla de apertura, FR-008), que ya cuenta como "primer contenido" para SC-001 — no es un interstitial ajeno al producto, es el bloque `portada`. Fallbacks de imagen/canción/conexión definidos en Edge Cases. Ver research.md #9. |
-| II | Bloques, no plantillas | PASS | `src/bloques/` con un `.astro` por tipo + `registro.ts` (mapa tipo→componente). Agregar bloque = 1 archivo + 1 línea de registro. Ningún campo con nombre de ocasión en el motor; temas y bloques son genéricos. |
+| I | El regalo abre primero | PASS | SSR puro, sin login; primer paint es la pantalla de apertura transversal del layout (FR-008, research.md #22), deliberadamente liviana (texto + fondo, sin fotos ni iframes), que cuenta como "primer contenido" para SC-001. Fallbacks de imagen/canción/conexión definidos en Edge Cases. Ver research.md #9. |
+| II | Bloques, no plantillas | PASS | `src/bloques/` con un `.astro` por tipo + `registro.ts` (mapa tipo→componente). Agregar bloque = 1 archivo + 1 línea de registro. Ningún campo con nombre de ocasión en el motor; temas y bloques son genéricos. La pantalla de apertura es comportamiento del layout, no de un bloque (research.md #22), consistente con FR-005 (recetas sin `portada` siguen siendo válidas). |
 | III | Nada se publica sin aprobación | PASS | `/revisar/[id]` renderiza el mismo layout que `/r/[slug]` a partir del mismo `contenido` JSON. `POST /api/regalos/[id]/aprobar` es la única vía para pasar a `publicado`, y exige `aprobado_en` no nulo antes de servir en `/r/[slug]`. |
 | IV | La IA redacta, no inventa | N/A | Redacción asistida está fuera de alcance de esta feature (spec.md, Out of Scope). Sin superficie de IA que verificar acá. |
-| V | Datos mínimos, borrado real | PASS | Fotos en rutas con UUID no listable; `vencimiento` nullable = permanente; `DELETE /api/regalos/[id]/eliminar` borra fila de regalo, fotos del bucket y aperturas asociadas (objetivo <72 h, ejecución inmediata); sin scripts de analítica de terceros en `/r/[slug]` ni en `/revisar/[id]`. |
+| V | Datos mínimos, borrado real | PASS, con nota | Fotos en rutas con UUID no listable; `vencimiento` nullable = permanente; `DELETE /api/regalos/[id]/eliminar` borra fila de regalo, fotos del bucket y aperturas asociadas (objetivo <72 h, ejecución inmediata); sin scripts de analítica propia en `/r/[slug]` ni en `/revisar/[id]`. El bloque `cancion` embebe Spotify/YouTube (research.md #21) — no es analítica nuestra, es el contenido que el comprador eligió, pero se documenta como tensión y se mitiga con carga diferida hasta el tap, `-nocookie` en YouTube, y dominio en lista blanca cerrada. |
 | VI | Lo entregado es inmutable | PASS | `/r/[slug]` no cambia de forma. Tabla `slugs` independiente de `regalos`, nunca se borra una fila de `slugs` (Regalo VI, ítem 10 de Compuertas). `contenido.v` desde el primer registro (Compuerta 12). Bloques nuevos son archivos nuevos; ninguno se elimina (Compuerta 13). `compatibilidad-versiones.spec.ts` (ver research.md #17) es el único gate que hace esto *verificable*, no solo declarado: fija un `contenido.v=1` como fixture permanente que debe seguir renderizando igual para siempre, incluso cuando exista un esquema `v=2`. |
 | — | JS budget (<100 KB duro, <20 KB objetivo) | PASS (a validar en Phase 1) | Cero hidratación de framework: los tres bloques interactivos (contador, canción, pregunta) usan `<script>` inline vanilla dentro de su propio `.astro`, sin runtime de React ni de islas. Ver research.md #9 para el desglose estimado. |
 
@@ -103,6 +103,43 @@ Compuertas de Aceptación quedan trazables a un artefacto concreto de este plan.
 
 Sin violaciones nuevas; no aplica Complexity Tracking.
 
+**Re-chequeo tras correcciones pre-implementación** (2026-08-30, cinco correcciones sobre
+tasks.md):
+
+- **I. El regalo abre primero** — reforzado, no debilitado: mover la pantalla de apertura al
+  layout (research.md #22) la hace *más* liviana y consistente (nunca depende de que exista
+  un bloque `portada`), y el embed de canción con carga diferida (research.md #21) asegura
+  que ningún recurso de terceros pesado se cargue antes del tap, protegiendo el LCP en ambas
+  mediciones (research.md #23).
+- **II. Bloques, no plantillas** — reforzado: sacar la pantalla de apertura de `Portada.astro`
+  corrige una inconsistencia real con FR-005 (una receta sin `portada` debía igual mostrar la
+  pantalla de apertura, y con el diseño anterior no lo hacía). `momento` con foto opcional es
+  un campo nuevo, no un tipo nuevo — sigue las reglas de evolución append-only.
+- **III. Nada se publica sin aprobación** — sin cambio.
+- **IV. La IA redacta, no inventa** — N/A, sin cambio.
+- **V. Datos mínimos, borrado real** — es el principio más tensionado por esta vuelta: el
+  embed de Spotify/YouTube en `cancion` introduce una dependencia de terceros que antes no
+  existía (antes era audio propio en Storage). Se evaluó como PASS-con-nota porque (a) el
+  Principio V prohíbe *analítica* que nosotros instrumentemos, no el contenido de terceros
+  que el comprador eligió mostrar, y (b) el riesgo que sí aplicaría — carga de recursos de
+  terceros en cada visita — se mitiga con carga diferida hasta el tap. La alternativa
+  (alojar audio propio) fue descartada por ser un riesgo legal directo y mayor: la corrección
+  cambia qué principio se tensiona (V, mitigable) a cambio de eliminar un riesgo fuera de la
+  constitución (derechos de autor).
+- **VI. Lo entregado es inmutable** — es el que más se beneficia de esta vuelta: sin la
+  corrección 1, cualquier regalo compartido por WhatsApp/Instagram/iMessage/Facebook iba a
+  registrar su "primera apertura" con un bot como si fuera el destinatario, y por ser un dato
+  inmutable (Principio VI aplicado a datos, no solo a rutas) ese error no tenía corrección
+  posible. `compatibilidad-versiones.spec.ts` (research.md #17) ahora también protege
+  `momento.foto`: al ser un campo opcional agregado a un tipo existente, el fixture `v: 1` ya
+  congelado no lo incluye, y el renderer debe seguir aceptándolo sin ese campo.
+- **JS budget** — sin cambio de riesgo: el embed de canción no agrega peso a *nuestro* bundle
+  (es un `<iframe>` insertado por una línea de script vanilla, no una librería de embed); el
+  costo de red del reproductor en sí lo paga el destinatario solo si toca play, y no cuenta
+  contra el presupuesto de la página del regalo (que se mide en la carga inicial).
+
+Sin violaciones nuevas que requieran Complexity Tracking.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -116,7 +153,8 @@ specs/001-pagina-regalo/
 ├── contracts/           # Phase 1 output (/speckit-plan command)
 │   ├── regalo-contenido.schema.md
 │   ├── api-aprobar.md
-│   └── api-eliminar.md
+│   ├── api-eliminar.md
+│   └── api-abrir.md
 └── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
 ```
 
@@ -125,35 +163,38 @@ specs/001-pagina-regalo/
 ```text
 src/
 ├── bloques/                        # Principio II: un componente por tipo de bloque
-│   ├── Portada.astro
-│   ├── Contador.astro              # <script> vanilla: cuenta desde/hasta fecha, tick en vivo
-│   ├── Momento.astro
+│   ├── Portada.astro               # Solo contenido de portada; la pantalla de apertura vive en RegaloLayout (research.md #22)
+│   ├── Contador.astro              # <script> vanilla: cuenta desde/hasta fecha, tick en vivo, clamp en 0
+│   ├── Momento.astro                # Texto + foto opcional (mismo framing que Galeria, research.md #20)
 │   ├── Galeria.astro
-│   ├── Cancion.astro               # <script> vanilla: play/pause explícito, sin autoplay
+│   ├── Cancion.astro               # <script> vanilla: embed diferido de Spotify/YouTube, sin audio propio (research.md #21)
 │   ├── Carta.astro
 │   ├── Pregunta.astro              # <script> vanilla: revelar respuesta on-tap
 │   ├── Cierre.astro
 │   └── registro.ts                 # Mapa tipo (string) → componente Astro
 ├── layouts/
-│   └── RegaloLayout.astro          # Layout compartido por /r/[slug] y /revisar/[id]; noindex
+│   └── RegaloLayout.astro          # Layout compartido por /r/[slug] y /revisar/[id]; noindex; pantalla de apertura transversal (research.md #22) que dispara POST /abrir en el tap
 ├── pages/
 │   ├── r/
-│   │   └── [slug].astro            # Ruta pública inmutable (Principio VI)
+│   │   └── [slug].astro            # Ruta pública inmutable (Principio VI); NUNCA registra apertura (research.md #19)
 │   ├── revisar/
 │   │   └── [id].astro              # Enlace de revisión (Principio III), mismo render
 │   ├── no-disponible.astro         # FR-002: código inválido, no publicado o vencido
 │   └── api/
+│       ├── abrir/
+│       │   └── [slug].ts           # POST — único disparador de una apertura (research.md #19); en ruta propia porque Astro no admite [slug] y [id] como hermanos dinámicos bajo regalos/
 │       └── regalos/
 │           └── [id]/
 │               ├── aprobar.ts      # POST — registra aprobado_en, pasa a "publicado"
 │               └── eliminar.ts     # DELETE — borra regalo + fotos + aperturas (Principio V)
 ├── lib/
 │   ├── supabase.ts                 # Cliente server-side (service role, nunca en el bundle del cliente)
-│   ├── regalos.ts                  # Fetch + mapeo DB → vista; registro de apertura atómico
+│   ├── regalos.ts                  # Fetch + mapeo DB → vista; registrarApertura() atómico (invocado solo desde abrir.ts)
 │   ├── slugs.ts                    # Alfabeto sin ambigüedad visual, generación y verificación en `slugs`
 │   └── contenido/
 │       ├── esquema.ts              # zod: contenido.v + receta[] append-only (Principio VI)
-│       └── tipos-bloque.ts         # Tipos TS por bloque (portada, contador, ...)
+│       ├── tipos-bloque.ts         # Tipos TS por bloque (portada, contador, ...)
+│       └── embeds.ts               # Lista blanca de dominios + resolución a URL de embed (research.md #21)
 ├── temas/
 │   ├── tokens-nocturno.css         # Íntimo y oscuro (aniversarios, declaraciones), AA verificado
 │   ├── tokens-papel.css            # Claro y analógico (propuestas, bodas), AA verificado
@@ -167,13 +208,13 @@ supabase/
 
 tests/
 └── e2e/
-    ├── lcp-portada.spec.ts             # SC-001: portada visible <2,5 s, 3G + gama baja simulada
+    ├── lcp.spec.ts                     # SC-001 (pantalla de apertura) + SC-008 (primer bloque real post-tap), 3G + gama baja simulada
     ├── sin-scroll-horizontal.spec.ts   # SC-002 / FR-020: 320–1440 px
     ├── contraste-aa.spec.ts            # SC-006: nocturno, papel y luminoso
     ├── render-sin-imagenes.spec.ts     # SC-005: texto legible con imágenes bloqueadas
     ├── bloque-desconocido.spec.ts      # FR-006: tipo no reconocido se omite en silencio
     ├── revision-y-aprobacion.spec.ts   # US2: /revisar/[id] == /r/[slug]; aprobación explícita
-    ├── primera-apertura.spec.ts        # US3 + Edge Case: aperturas simultáneas, recarga x30
+    ├── primera-apertura.spec.ts        # US3 + Edge Case: aperturas simultáneas, recarga x30, GET con User-Agent de crawler NO registra apertura (research.md #19)
     ├── carta-larga.spec.ts             # Edge Case: carta ~4.000 caracteres, se lee completa sin romper diseño
     ├── contenido-extremo.spec.ts       # Edge Cases: nombre con emoji/acentos, carta vacía omitida, foto cuadrada/vertical sin deformar
     ├── fecha-futura.spec.ts            # Edge Case: contador con fechaInicio futura, clamp en 0, nunca negativo

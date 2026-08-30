@@ -63,7 +63,9 @@ Todas las incógnitas del Technical Context quedan resueltas abajo; no quedan
   primera_apertura_en IS NULL RETURNING primera_apertura_en`. Cada apertura (primera o no) se
   inserta además como fila en `aperturas` para conteo/auditoría. La condición `WHERE ... IS
   NULL` en una única sentencia UPDATE es atómica a nivel de fila en Postgres: ante dos
-  requests simultáneos, solo uno obtiene una fila afectada.
+  requests simultáneos, solo uno obtiene una fila afectada. **Esta UPDATE se invoca desde
+  `POST /api/regalos/[slug]/abrir`, nunca desde el `GET` que sirve la página** — ver research.md
+  #19 para el porqué.
 - **Rationale**: resuelve el Edge Case de dos aperturas simultáneas y el de 30 recargas sin
   necesitar locks explícitos ni una tabla de coordinación aparte.
 - **Alternatives considered**: `SELECT ... FOR UPDATE` + lógica en aplicación (más código,
@@ -252,3 +254,104 @@ Todas las incógnitas del Technical Context quedan resueltas abajo; no quedan
 - **Alternatives considered**: recargar la página al cruzar el umbral — descartado, rompe la
   experiencia de lectura continua sin necesidad; simplemente clampear en el cálculo es una
   línea de código.
+
+## 19. El registro de apertura NUNCA ocurre en el `GET` que sirve la página
+
+- **Decision**: `src/pages/r/[slug].astro` (el `GET` público) solo lee y renderiza; no llama a
+  `registrarApertura`. El único disparador de una apertura es `POST
+  /api/regalos/[slug]/abrir`, invocado por un `<script>` en la pantalla de apertura del
+  layout, exclusivamente cuando el destinatario toca esa pantalla (research.md #22). La
+  llamada es *fire-and-forget*: el contenido se revela en el cliente sin esperar la respuesta
+  del POST.
+- **Rationale**: WhatsApp, Instagram, iMessage, Facebook y otros clientes de mensajería hacen
+  un `GET` automático (a veces varios) a cualquier link compartido para generar su tarjeta de
+  vista previa, *antes* de que la persona lo abra. Si el registro de apertura dependiera del
+  `GET`, esos crawlers marcarían la primera apertura — y como `primera_apertura_en` es
+  inmutable por diseño (Principio VI), ese dato quedaría arruinado para siempre en cuanto
+  alguien comparte el link. Mover el registro a una acción explícita de cliente (tap → POST)
+  es la única forma de que "primera apertura" signifique lo que FR-015 y US3 necesitan que
+  signifique: que la persona la vio, no que un bot la pre-cargó.
+- **Alternatives considered**: filtrar por `User-Agent` conocido de crawlers en el `GET` —
+  descartado, es una lista incompleta y que se desactualiza (cualquier bot nuevo o no
+  identificado seguiría contando); exigir JavaScript para todo el render — descartado, rompe
+  Principio I (la página debe ser legible incluso con degradación); la solución elegida no
+  exige JS para *ver* el contenido, solo para que la apertura quede registrada, que es un
+  efecto secundario no bloqueante.
+- **Verificación**: `primera-apertura.spec.ts` incluye un caso explícito — un `GET` a
+  `/r/[slug]` con `User-Agent` de crawler (p. ej. `WhatsApp/2.23.20.0`) NO debe registrar
+  apertura, sea cual sea el User-Agent, porque el `GET` ya no registra nada bajo ninguna
+  circunstancia.
+
+## 20. Bloque `momento` incluye una foto opcional
+
+- **Decision**: `momento` gana `foto?: Foto` (mismo tipo `Foto = { url, alt, ancho?, alto? }`
+  que `galeria`), con el mismo tratamiento de encuadre (`object-fit: contain`, research.md
+  #16) cuando está presente.
+- **Rationale**: un "momento" — una foto con su texto — es, según quien pidió este ajuste, el
+  bloque más usado del producto; sin foto, el tipo estaba incompleto frente a su propio
+  propósito.
+- **Alternatives considered**: modelar la foto de un momento como un bloque `galeria`
+  separado inmediatamente antes/después — descartado, obliga a la receta a coordinar dos
+  bloques para expresar una sola idea y pierde la agrupación visual (foto + texto juntos).
+
+## 21. Canción como embed de terceros, no audio propio
+
+- **Decision**: el bloque `cancion` deja de servir un archivo de audio propio. `url` pasa a
+  ser un link de Spotify o YouTube; `src/lib/contenido/embeds.ts` valida ese link contra una
+  lista blanca de dominios (`open.spotify.com`, `spotify.com`, `youtube.com`, `youtu.be`,
+  `www.youtube.com`) y lo traduce a una URL de embed (YouTube vía `www.youtube-nocookie.com`
+  para minimizar cookies de terceros; Spotify vía su URL de embed estándar). El `<iframe>` no
+  se inserta en el DOM hasta que el destinatario toca el bloque (carga diferida); ningún
+  parámetro de autoplay se agrega nunca (FR-010).
+- **Rationale**: alojar archivos de audio con derechos de autor de terceros en almacenamiento
+  propio es un riesgo legal directo. Delegar la reproducción al proveedor original (con el
+  link que el propio comprador aportó) traslada esa responsabilidad a donde corresponde.
+- **Tensión con el Principio V** ("PROHIBIDA la analítica de terceros en la página del
+  regalo"): un embed de Spotify/YouTube no es un script de analítica nuestro, es el propio
+  contenido que el comprador eligió mostrar — la distinción que hace el Principio V es contra
+  instrumentación de medición que *nosotros* agregaríamos (GA, Meta Pixel), no contra un
+  reproductor de terceros que es el contenido en sí. Aun así, se mitiga activamente: (a) el
+  iframe no carga ningún recurso de terceros hasta el tap explícito — cero tráfico a
+  Spotify/YouTube en la carga inicial de la página, que es lo que protege el presupuesto de
+  JS y el tiempo a portada (SC-001); (b) YouTube se embebe en modo `-nocookie`; (c) el
+  dominio está en lista blanca cerrada, no es una URL arbitraria. Ver también la fila V de la
+  Constitution Check en plan.md.
+- **Alternatives considered**: subir el audio a Supabase Storage (riesgo legal, descartado);
+  exigir que el comprador suba un archivo con licencia — fuera de alcance de esta feature (no
+  hay formulario de carga); reproducir el embed automáticamente en cuanto el bloque entra en
+  viewport — descartado, viola FR-010 (nada de reproducción sin acción explícita) y además
+  cargaría JS/red de terceros antes de tiempo.
+
+## 22. La pantalla de apertura vive en el layout, no en un bloque
+
+- **Decision**: la pantalla de apertura (FR-008) se implementa en `RegaloLayout.astro`, no
+  dentro de `Portada.astro`. El layout busca el primer bloque `tipo: "portada"` en la receta
+  (si existe) para tomar `nombreDestinatario` como texto de la pantalla de apertura; si la
+  receta no tiene bloque `portada`, muestra un texto genérico neutro ("Tenés un regalo"). Tras
+  el tap: se revela el resto de la receta en orden (incluido el bloque `portada`, si existe,
+  con su contenido completo) y se dispara el `POST /api/regalos/[slug]/abrir` (research.md
+  #19).
+- **Rationale**: FR-008 y FR-004/FR-005 (cualquier cantidad de bloques de un tipo, incluyendo
+  cero) ya implican que la pantalla de apertura es un comportamiento del sistema, no de un
+  tipo de bloque — una receta sin `portada` igual debe abrir con una acción explícita. Atarla
+  a `Portada.astro` la hacía condicional a que ese bloque existiera, lo cual viola FR-005
+  indirectamente (una receta sin `portada` sería válida pero se abriría sin pantalla de
+  apertura, rompiendo FR-008).
+- **Alternatives considered**: mantenerla en `Portada.astro` y exigir que toda receta incluya
+  un bloque `portada` — descartado, contradice FR-005 ("cualquier cantidad... incluyendo
+  cero") y agrega una regla de validación que el spec nunca pidió.
+
+## 23. Medición de LCP en dos tiempos
+
+- **Decision**: `tests/e2e/lcp.spec.ts` (renombrado desde `lcp-portada.spec.ts`) mide dos
+  momentos bajo la misma emulación de 3G + gama baja (research.md #12): (1) la pantalla de
+  apertura visible en <2,5 s (SC-001), y (2) tras simular el tap, el primer bloque real de la
+  receta visible en <2,5 s adicionales (SC-008).
+- **Rationale**: la pantalla de apertura es deliberadamente liviana (research.md #22: texto +
+  fondo, sin fotos ni iframes) y por diseño va a cumplir cualquier presupuesto de LCP sin
+  decir nada sobre el resto de la página. El momento que de verdad puede fallar — una galería
+  con fotos pesadas, o un primer bloque de contenido real — recién se mide después del tap, y
+  sin una segunda medición ese riesgo queda invisible para el test.
+- **Alternatives considered**: medir un único LCP end-to-end del documento completo sin
+  distinguir el gate del contenido — descartado, un LCP agregado no diagnostica cuál de las
+  dos partes (gate o contenido real) es la que eventualmente se degrada.

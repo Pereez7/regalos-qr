@@ -12,11 +12,12 @@ o escribe este documento. Fuente de verdad de implementación: `src/lib/contenid
   "receta": [
     { "tipo": "portada", "posicion": 0, "nombreDestinatario": "Ana", "subtitulo": "para vos" },
     { "tipo": "contador", "posicion": 1, "fechaInicio": "2024-02-14T00:00:00Z" },
-    { "tipo": "momento", "posicion": 2, "titulo": "Primer viaje", "texto": "...", "fecha": "2024-06-01" },
+    { "tipo": "momento", "posicion": 2, "titulo": "Primer viaje", "texto": "...", "fecha": "2024-06-01",
+      "foto": { "url": "https://.../regalos/<id>/<uuid>.jpg", "alt": "Los dos en el aeropuerto" } },
     { "tipo": "galeria", "posicion": 3, "fotos": [
       { "url": "https://.../regalos/<id>/<uuid>.jpg", "alt": "Los dos en la playa" }
     ] },
-    { "tipo": "cancion", "posicion": 4, "url": "https://.../cancion.mp3", "titulo": "...", "artista": "..." },
+    { "tipo": "cancion", "posicion": 4, "url": "https://open.spotify.com/track/XXXX", "titulo": "...", "artista": "..." },
     { "tipo": "carta", "posicion": 5, "texto": "..." },
     { "tipo": "pregunta", "posicion": 6, "texto": "¿Te casás conmigo?", "respuesta": "Sí" },
     { "tipo": "cierre", "posicion": 7, "texto": "Fin" }
@@ -39,6 +40,12 @@ o escribe este documento. Fuente de verdad de implementación: `src/lib/contenid
 5. Todo string de este documento se renderiza como texto plano escapado; ninguna etiqueta HTML
    dentro de un valor se interpreta (FR-007).
 6. `posicion` determina el orden de render; no hay orden implícito por posición en el array.
+7. `cancion.url` DEBE resolver a uno de los dominios de la lista blanca (`open.spotify.com`,
+   `spotify.com`, `youtube.com`, `youtu.be`, `www.youtube.com` — ver research.md #21 y
+   `src/lib/contenido/embeds.ts`). El sistema NO aloja archivos de audio propios: el bloque
+   siempre renderiza un embed del proveedor original, cargado solo tras un tap explícito, sin
+   parámetro de autoplay. Un `url` fuera de la lista blanca se trata como bloque sin contenido
+   significativo y se omite (misma regla que una carta vacía).
 
 ## Tipos de bloque v1 (FR-004)
 
@@ -46,9 +53,9 @@ o escribe este documento. Fuente de verdad de implementación: `src/lib/contenid
 |---|---|---|
 | `portada` | `nombreDestinatario` | `subtitulo` |
 | `contador` | `fechaInicio` (ISO datetime; puede ser futura) | — |
-| `momento` | `texto` | `titulo`, `fecha` |
+| `momento` | `texto` | `titulo`, `fecha`, `foto` (mismo tipo `Foto` que `galeria`) |
 | `galeria` | `fotos: Foto[]` (mínimo 0 elementos) | — |
-| `cancion` | `url` | `titulo`, `artista` |
+| `cancion` | `url` (link de Spotify o YouTube, ver regla 7) | `titulo`, `artista` |
 | `carta` | `texto` | — |
 | `pregunta` | `texto` | `respuesta` |
 | `cierre` | — | `texto` |

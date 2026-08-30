@@ -65,9 +65,9 @@ Tipos al lanzamiento (FR-004) y sus datos propios:
 |---|---|
 | `portada` | `nombreDestinatario` (string, requerido), `subtitulo?` (string) |
 | `contador` | `fechaInicio` (datetime, requerido) — puede ser futura (Edge Case: cuenta regresiva en vez de transcurrido); en vivo, el valor mostrado se clampea a 0 en el cruce, nunca negativo (research.md #18) |
-| `momento` | `titulo?` (string), `texto` (string, requerido), `fecha?` (date) |
+| `momento` | `titulo?` (string), `texto` (string, requerido), `fecha?` (date), `foto?: Foto` — mismo tipo y encuadre que `galeria` (research.md #20) |
 | `galeria` | `fotos: Foto[]` — `Foto = { url: string, alt: string (requerido), ancho?: number, alto?: number }`; encuadre con `object-fit: contain`, nunca recorta (research.md #16) |
-| `cancion` | `url` (string, requerido), `titulo?` (string), `artista?` (string) |
+| `cancion` | `url` (string, requerido) — link de Spotify o YouTube, validado contra lista blanca de dominios y traducido a `<iframe>` de embed, cargado recién al tocar el bloque (research.md #21); `titulo?` (string), `artista?` (string) |
 | `carta` | `texto` (string, requerido; hasta ~4000 caracteres, Edge Case) |
 | `pregunta` | `texto` (string, requerido), `respuesta?` (string) |
 | `cierre` | `texto?` (string) |
@@ -81,7 +81,13 @@ Tipos al lanzamiento (FR-004) y sus datos propios:
   siempre.
 - Un bloque `carta` o `momento` sin contenido significativo (Edge Case: carta vacía) se omite
   en el render igual que un tipo desconocido — no es un error de validación, es una condición
-  de render.
+  de render. Un bloque `cancion` cuya `url` no pertenece a la lista blanca de dominios
+  (research.md #21) se trata igual: se omite en silencio, no rompe el render de la página.
+- La pantalla de apertura (FR-008) NO es un campo de ningún bloque — vive en
+  `RegaloLayout.astro` como comportamiento transversal, presente incluso en una receta sin
+  bloque `portada` (research.md #22). El bloque `portada`, cuando existe, sigue siendo un
+  elemento normal de `receta[]` que se renderiza en su `posicion`; el layout solo *lee* su
+  `nombreDestinatario` para el texto de la pantalla de apertura, no lo reemplaza.
 - Todo texto de bloque se escapa como texto plano al renderizar (FR-007); ninguna etiqueta
   HTML dentro de `texto`, `titulo`, etc. se interpreta.
 
@@ -96,9 +102,13 @@ Tabla `aperturas`.
 | `ocurrido_en` | `timestamptz`, default `now()` | |
 | `es_primera` | `boolean` | `true` únicamente en la fila cuya inserción coincidió con el `UPDATE ... WHERE primera_apertura_en IS NULL` exitoso (research.md #5) |
 
-**Reglas**: cada GET a `/r/[slug]` sobre un regalo servible inserta una fila (FR-014); ninguna
+**Reglas**: una fila se inserta únicamente cuando el destinatario toca la pantalla de apertura
+y el cliente dispara `POST /api/regalos/[slug]/abrir` (FR-014, research.md #19) — **nunca**
+como efecto del `GET` que sirve `/r/[slug]`, para que la vista previa que generan WhatsApp,
+Instagram, iMessage o Facebook al compartir el link no cuente como apertura. Ninguna
 inserción posterior modifica `regalos.primera_apertura_en` (FR-015); 30 recargas producen 30
-filas y ningún cambio en la primera apertura (Edge Case).
+filas y ningún cambio en la primera apertura (Edge Case), siempre que cada recarga incluya el
+tap correspondiente.
 
 ## Relaciones
 
