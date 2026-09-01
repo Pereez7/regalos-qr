@@ -25,6 +25,42 @@ const embed = resolverEmbed(url);
   )
 }
 
+<style>
+  section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--e-2);
+    padding: var(--e-4) var(--e-2);
+  }
+  button {
+    padding: var(--e-2) var(--e-3);
+    font-size: var(--t-cuerpo);
+    color: var(--acento);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+    transition: transform var(--rapido) var(--resorte);
+  }
+  /* Respuesta al tacto: el botón de play se comprime. */
+  button:active {
+    transform: scale(.95);
+  }
+  button span {
+    display: block;
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+  [data-contenedor-embed] iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: var(--radio);
+    margin-top: var(--e-2);
+  }
+</style>
+
 <script>
   document.querySelectorAll<HTMLElement>('[data-bloque="cancion"]').forEach((seccion) => {
     const boton = seccion.querySelector<HTMLButtonElement>("[data-boton-cancion]");

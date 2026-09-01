@@ -1,103 +1,182 @@
-/* Reset mínimo + garantías transversales (FR-020, Reglas de Calidad). */
+/* ═══════════════════════════════════════════════════════════════════
+   BASE · sistema de diseño
+   Tipografía, escala, espaciado, movimiento, reset.
+   Los colores viven en los tres archivos de tema.
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+   Regla: nunca escribir un color, tamaño o espaciado suelto en un
+   componente. Todo sale de un token de acá.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Fuentes · public/fuentes/ ───────────────────────────────────── */
+
+@font-face {
+  font-family: "Zodiak";
+  src: url("/fuentes/Gambarino-Regular.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;          /* el texto se lee antes de que cargue */
+}
+@font-face {
+  font-family: "Switzer";
+  src: url("/fuentes/Switzer-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Switzer";
+  src: url("/fuentes/Switzer-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Caveat";
+  src: url("/fuentes/caveat-v23-latin-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
 }
 
-html,
+/* ─── Tokens globales ─────────────────────────────────────────────── */
+
+:root {
+  /* familias */
+  --f-display: "Zodiak", "Didot", "Bodoni 72", Georgia, serif;
+  --f-cuerpo:  "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --f-mano:    "Caveat", "Bradley Hand", cursive;
+
+  /* escala tipográfica — seis pasos, nunca inventar uno nuevo */
+  --t-display:   clamp(3rem,    14vw,  5.5rem);
+  --t-titulo:    clamp(1.9rem,  7.5vw, 2.75rem);
+  --t-subtitulo: clamp(1.15rem, 4.5vw, 1.45rem);
+  --t-cuerpo:    1.0625rem;
+  --t-pequeno:   0.875rem;
+  --t-etiqueta:  0.72rem;
+  --t-carta:     clamp(1.35rem, 5.2vw, 1.65rem);
+
+  /* interlineados */
+  --i-apretado: 0.95;
+  --i-titulo:   1.15;
+  --i-cuerpo:   1.65;
+
+  /* espaciado — seis pasos, base 8 */
+  --e-1: 0.5rem;
+  --e-2: 1rem;
+  --e-3: 1.75rem;
+  --e-4: 3rem;
+  --e-5: 5rem;
+  --e-6: 8rem;
+
+  /* movimiento */
+  --curva:   cubic-bezier(.2, .8, .3, 1);     /* entradas y salidas   */
+  --resorte: cubic-bezier(.34, 1.56, .64, 1); /* respuesta al tacto   */
+  --rapido:  200ms;
+  --normal:  600ms;
+  --lento:   1000ms;
+
+  /* medidas */
+  --ancho-texto:  34ch;    /* longitud de línea legible en celular */
+  --ancho-pagina: 640px;
+  --riel:         46px;    /* columna del hilo rojo */
+
+  /* fallback si no hay tema aplicado */
+  --radio: 0px;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
 body {
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  /* FR-020 / SC-002: cero scroll horizontal entre 320 y 1440px, en cualquier bloque. */
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--f-cuerpo);
+  font-size: var(--t-cuerpo);
+  line-height: var(--i-cuerpo);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;                    /* FR-020 */
   max-width: 100vw;
-  overflow-x: hidden;
+  transition: background var(--lento) ease, color var(--lento) ease;
 }
 
-body {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  line-height: 1.5;
-  background: var(--color-fondo, #fff);
-  color: var(--color-texto, #111);
-}
+img { display: block; max-width: 100%; }
 
-img,
-picture,
-video {
-  max-width: 100%;
-  display: block;
-}
-
-h1,
-h2,
-h3,
-p {
-  margin: 0;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-/* Foco visible global — nunca se suprime el outline sin reemplazo (accesibilidad). */
 :focus-visible {
-  outline: 2px solid var(--color-foco, currentColor);
-  outline-offset: 2px;
+  outline: 2px solid var(--acento);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 
-/* Pantalla de apertura transversal (FR-008, research.md #22): cubre toda la
-   ventana, deliberadamente liviana (texto + fondo, sin fotos ni iframes) para
-   cumplir SC-001 incluso en 3G simulada. */
-#pantalla-apertura {
+/* ─── Grano de papel ──────────────────────────────────────────────────
+   SVG generado, cero bytes de descarga. Para usar una textura real:
+   reemplazar el background-image por url("/texturas/papel.webp") y
+   agregar background-repeat: repeat.                                  */
+
+body::before {
+  content: "";
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  text-align: center;
-  background: var(--color-fondo);
-  color: var(--color-texto);
-  z-index: 10;
+  pointer-events: none;
+  z-index: 1;
+  opacity: var(--grano);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-#pantalla-apertura p {
-  font-size: 1.5rem;
-  max-width: 28rem;
+/* ─── Accesibilidad ───────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
-.boton-abrir {
-  display: inline-block;
-  padding: 0.75rem 1.75rem;
-  color: var(--color-texto-sobre-acento);
-  background: var(--color-acento);
-  border-radius: 999px;
-  font-weight: 600;
+/* texto solo para lector de pantalla — técnica fija, no un valor de diseño */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
+
+/* ─── Contenedor de bloques ──────────────────────────────────────────
+   Riel: columna del hilo rojo que hilvana los bloques (--riel).       */
 
 #contenido {
+  position: relative;
+  max-width: var(--ancho-pagina);
+  margin-inline: auto;
+  padding: var(--e-5) var(--e-3) var(--e-6) var(--riel);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding: 1.5rem;
-  max-width: 40rem;
-  margin: 0 auto;
+  gap: var(--e-5);
 }
 
-/* Encuadre compartido por Momento.astro y Galeria.astro (research.md #16, #20):
-   `object-fit: contain` nunca recorta, aunque la foto sea extrema. */
+#contenido::before {
+  content: "";
+  position: absolute;
+  top: var(--e-2);
+  bottom: var(--e-2);
+  left: calc(var(--riel) / 2);
+  width: 1px;
+  background: color-mix(in srgb, var(--acento) 30%, transparent);
+}
+
+[data-bloque] {
+  position: relative;
+  width: 100%;
+  max-width: calc(var(--ancho-pagina) - var(--riel));
+}
+
+/* Encuadre compartido por Momento.astro y Galeria.astro: object-fit: contain
+   nunca recorta, aunque la foto sea extrema. Apenas se tocan, se enderezan y
+   crecen (Respuesta al tacto). */
 .foto-marco {
   width: 100%;
   max-height: 70vh;
@@ -105,8 +184,16 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-superficie);
-  border-radius: 0.5rem;
+  background: var(--superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-card);
+  transform: rotate(-1.3deg);
+  transition: transform var(--normal) var(--resorte);
+}
+.foto-marco:nth-of-type(even) { transform: rotate(1.6deg); }
+.foto-marco:hover,
+.foto-marco:active {
+  transform: rotate(0deg) scale(1.035);
 }
 
 .foto-marco img {
@@ -117,29 +204,11 @@ button {
 
 /* FR-020/SC-002: ninguna palabra o link largo sin espacios debe poder empujar el
    ancho de la página, en ningún bloque. */
-h1,
-h2,
-h3,
-p,
-a,
-span,
-time,
-button {
+h1, h2, h3, p, a, span, time, button {
   overflow-wrap: anywhere;
 }
 
 [data-bloque="carta"] p,
 [data-bloque="momento"] p {
   white-space: pre-wrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
 }

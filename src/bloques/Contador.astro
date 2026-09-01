@@ -10,6 +10,20 @@ const { fechaInicio } = Astro.props;
   <p data-contador-valor data-segundos="0">—</p>
 </section>
 
+<style>
+  section {
+    text-align: center;
+    padding: var(--e-4) var(--e-2);
+  }
+  p {
+    font-family: var(--f-display);
+    font-size: var(--t-titulo);
+    line-height: var(--i-apretado);
+    color: var(--realce);
+    margin: 0;
+  }
+</style>
+
 <script>
   function formatear(segundosTotales: number): string {
     const dias = Math.floor(segundosTotales / 86400);

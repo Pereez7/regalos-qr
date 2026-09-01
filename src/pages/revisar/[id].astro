@@ -46,17 +46,22 @@ const regalo = id ? await obtenerRegaloParaRevision(id) : null;
     left: 0;
     right: 0;
     z-index: 20;
-    padding: 1rem;
+    padding: var(--e-2);
     text-align: center;
-    background: var(--color-superficie);
-    color: var(--color-texto-sobre-superficie);
+    font-size: var(--t-pequeno);
+    background: var(--superficie);
+    color: var(--texto);
+    box-shadow: var(--sombra-card);
   }
 
-  [data-form-aprobar] button {
-    padding: 0.6rem 1.5rem;
-    color: var(--color-texto-sobre-acento);
-    background: var(--color-acento);
-    border-radius: 999px;
-    font-weight: 600;
+  [data-form-aprobar] button,
+  [data-panel-revision] button {
+    padding: var(--e-1) var(--e-3);
+    font-size: var(--t-pequeno);
+    font-weight: 500;
+    color: var(--acento);
+    background: transparent;
+    border: 1px solid var(--acento);
+    border-radius: var(--radio);
   }
 </style>

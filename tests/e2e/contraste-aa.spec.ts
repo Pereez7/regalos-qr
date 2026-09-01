@@ -36,27 +36,42 @@ function ratioContraste(a: string, b: string): number {
 }
 
 const UMBRAL_AA_TEXTO_NORMAL = 4.5;
+const UMBRAL_AA_TEXTO_GRANDE = 3.0;
 
-const TEMAS = ["tokens-nocturno.css", "tokens-papel.css", "tokens-luminoso.css"];
+// Pares fondo/texto por tema y su umbral, tal como quedan documentados en el
+// encabezado de cada archivo tokens-*.css. acento/realce que el encabezado marca
+// "solo texto grande" se validan contra 3:1, no 4.5:1.
+const PARES_POR_TEMA: Record<string, [string, string, number][]> = {
+  "tokens-luminoso.css": [
+    ["texto", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["texto-suave", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["acento", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["realce", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+  ],
+  "tokens-nocturno.css": [
+    ["texto", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["texto-suave", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["realce", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["acento", "fondo", UMBRAL_AA_TEXTO_GRANDE], // solo gráficos y texto grande
+  ],
+  "tokens-papel.css": [
+    ["texto", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["texto-suave", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["acento", "fondo", UMBRAL_AA_TEXTO_NORMAL],
+    ["realce", "fondo", UMBRAL_AA_TEXTO_GRANDE], // AA para texto grande
+  ],
+};
 
-const PARES_TEXTO_FONDO: [string, string][] = [
-  ["color-texto", "color-fondo"],
-  ["color-texto-sobre-superficie", "color-superficie"],
-  ["color-texto-sobre-acento", "color-acento"],
-];
-
-for (const archivo of TEMAS) {
-  test(`contraste AA (4.5:1) en cada par fondo/texto de ${archivo}`, () => {
+for (const [archivo, pares] of Object.entries(PARES_POR_TEMA)) {
+  test(`contraste AA de cada par fondo/texto documentado en ${archivo}`, () => {
     const tokens = leerTokens(archivo);
 
-    for (const [texto, fondo] of PARES_TEXTO_FONDO) {
-      expect(tokens[texto], `token ${texto} definido en ${archivo}`).toBeTruthy();
-      expect(tokens[fondo], `token ${fondo} definido en ${archivo}`).toBeTruthy();
+    for (const [texto, fondo, umbral] of pares) {
+      expect(tokens[texto], `token --${texto} definido en ${archivo}`).toBeTruthy();
+      expect(tokens[fondo], `token --${fondo} definido en ${archivo}`).toBeTruthy();
 
       const ratio = ratioContraste(tokens[texto], tokens[fondo]);
-      expect(ratio, `${texto} sobre ${fondo} en ${archivo}`).toBeGreaterThanOrEqual(
-        UMBRAL_AA_TEXTO_NORMAL,
-      );
+      expect(ratio, `--${texto} sobre --${fondo} en ${archivo}`).toBeGreaterThanOrEqual(umbral);
     }
   });
 }

@@ -13,7 +13,7 @@ test("prefers-reduced-motion se respeta y el foco visible está presente", async
   await page.goto(`/r/${slug}`);
 
   const duracionTransicionSegundos = await page.evaluate(() => {
-    const el = document.getElementById("pantalla-apertura");
+    const el = document.getElementById("sobre");
     if (!el) return null;
     // El navegador normaliza el valor computado a segundos (p. ej. "1e-6s" para
     // "0.001ms"); comparamos el número, no el string.

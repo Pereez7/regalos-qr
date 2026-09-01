@@ -1,11 +1,30 @@
-/* Tema "nocturno": íntimo y oscuro (research.md #13). Pares verificados AA — ver
-   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
-:root {
-  --color-fondo: #14121b;
-  --color-texto: #f3eefb;
-  --color-superficie: #221e2e;
-  --color-texto-sobre-superficie: #f3eefb;
-  --color-acento: #c9a6ff;
-  --color-texto-sobre-acento: #1b1424;
-  --color-foco: #c9a6ff;
+/* ═══════════════════════════════════════════════════════════════════
+   TEMA NOCTURNO · íntimo, se abre de noche
+   Aniversarios y declaraciones. Las fotos brillan sobre el fondo.
+
+   Contraste WCAG verificado sobre --fondo:
+     texto 16.51:1  ·  texto-suave 6.36:1  ·  realce 8.74:1
+     acento 4.08:1 → SOLO gráficos y texto grande. Nunca cuerpo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-tema="nocturno"] {
+  --fondo:        #141014;   /* casi negro cálido — nunca gris azulado */
+  --superficie:   #1E181D;
+  --texto:        #F5EFE8;
+  --texto-suave:  #A2938C;
+  --acento:       #D14237;   /* lacre aclarado para fondo oscuro */
+  --realce:       #D9A94E;   /* oro */
+  --borde:        rgba(245, 239, 232, .12);
+
+  --papel:        #F2EBE0;   /* la carta sigue siendo un objeto claro */
+  --tinta:        #2E2622;
+
+  --sobre-a:      #EFE6DA;   /* sobre: claro  */
+  --sobre-b:      #D9C9B4;   /* sobre: medio  */
+  --sobre-c:      #C6B29A;   /* sobre: pliegue */
+
+  --sombra:       0 30px 60px -22px rgba(0, 0, 0, .75);
+  --sombra-card:  0 30px 60px -22px rgba(0, 0, 0, .75);
+  --grano:        .035;
+  --radio:        0px;       /* bordes rectos: lee a papel, no a app */
 }

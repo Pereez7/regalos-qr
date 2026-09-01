@@ -1,11 +1,32 @@
-/* Tema "papel": claro y analógico (research.md #13). Pares verificados AA — ver
-   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
-:root {
-  --color-fondo: #fbf8f1;
-  --color-texto: #2b2620;
-  --color-superficie: #efe9dc;
-  --color-texto-sobre-superficie: #2b2620;
-  --color-acento: #8a5a2b;
-  --color-texto-sobre-acento: #fbf8f1;
-  --color-foco: #8a5a2b;
+/* ═══════════════════════════════════════════════════════════════════
+   TEMA PAPEL · analógico y solemne
+   Propuestas, bodas, cartas. Arena tirando a amarillo, mate,
+   sin un solo blanco en pantalla. El de más textura.
+
+   Contraste WCAG verificado sobre --fondo:
+     texto 11.75:1  ·  texto-suave 4.79:1  ·  acento 5.55:1
+     realce 4.29:1 → AA para texto grande. Para etiquetas pequeñas
+     usar --texto-suave.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-tema="papel"] {
+  --fondo:        #EDE4D4;   /* arena cálido */
+  --superficie:   #E6DCC9;   /* mate, un tono más abajo */
+  --texto:        #2E2622;   /* marrón oscuro — nunca negro puro */
+  --texto-suave:  #6F6053;   /* oscurecido para pasar AA de cuerpo */
+  --acento:       #A8291F;   /* lacre oscurecido */
+  --realce:       #8A6234;   /* bronce: sobre crema el oro no contrasta */
+  --borde:        rgba(46, 38, 34, .16);
+
+  --papel:        #F6F0E4;
+  --tinta:        #2E2622;
+
+  --sobre-a:      #F6F0E4;
+  --sobre-b:      #E0D3BC;
+  --sobre-c:      #CBBA9E;
+
+  --sombra:       0 22px 44px -20px rgba(74, 59, 44, .34);
+  --sombra-card:  0 14px 30px -16px rgba(74, 59, 44, .26);
+  --grano:        .075;      /* textura presente: es su carácter */
+  --radio:        0px;
 }

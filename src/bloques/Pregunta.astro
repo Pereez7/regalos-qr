@@ -23,7 +23,44 @@ const { texto, respuesta } = Astro.props;
   }
 </section>
 
+<style>
+  section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--e-3);
+    padding: var(--e-4) var(--e-2);
+    text-align: center;
+  }
+  p {
+    font-family: var(--f-display);
+    font-size: var(--t-titulo);
+    line-height: var(--i-titulo);
+    color: var(--texto);
+    margin: 0;
+  }
+  button {
+    padding: var(--e-2) var(--e-4);
+    font-size: var(--t-cuerpo);
+    font-weight: 500;
+    color: var(--acento);
+    border: 1px solid var(--acento);
+    border-radius: var(--radio);
+    transition: transform var(--rapido) var(--resorte);
+  }
+  button:active {
+    transform: scale(.96);
+  }
+  [data-respuesta] {
+    font-family: var(--f-mano);
+    font-size: var(--t-titulo);
+    color: var(--acento);
+  }
+</style>
+
 <script>
+  import { lluviaDeCorazones } from "../lib/corazones.js";
+
   document.querySelectorAll<HTMLButtonElement>("[data-boton-pregunta]").forEach((boton) => {
     boton.addEventListener("click", () => {
       const seccion = boton.closest('[data-bloque="pregunta"]');
@@ -33,6 +70,11 @@ const { texto, respuesta } = Astro.props;
       const expandido = boton.getAttribute("aria-expanded") === "true";
       boton.setAttribute("aria-expanded", String(!expandido));
       respuesta.hidden = expandido;
+
+      // Respuesta al tacto: el "Sí" de la pregunta dispara la lluvia de corazones.
+      if (!expandido && respuesta.textContent?.trim() === "Sí") {
+        lluviaDeCorazones(22, 5000);
+      }
     });
   });
 </script>

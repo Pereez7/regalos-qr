@@ -13,3 +13,23 @@ const { nombreDestinatario, subtitulo } = Astro.props;
   <h1>{nombreDestinatario}</h1>
   {subtitulo && <p>{subtitulo}</p>}
 </section>
+
+<style>
+  section {
+    padding: var(--e-6) var(--e-2) var(--e-4);
+    text-align: center;
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-size: var(--t-display);
+    line-height: var(--i-apretado);
+    color: var(--texto);
+    margin: 0;
+  }
+  p {
+    font-family: var(--f-mano);
+    font-size: var(--t-subtitulo);
+    color: var(--texto-suave);
+    margin: var(--e-2) 0 0;
+  }
+</style>

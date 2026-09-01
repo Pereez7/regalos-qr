@@ -1,11 +1,31 @@
-/* Tema "luminoso": alegre y con color (research.md #13). Pares verificados AA — ver
-   contraste-aa.spec.ts, que recalcula estos ratios en CI. */
-:root {
-  --color-fondo: #fff9f0;
-  --color-texto: #241a0a;
-  --color-superficie: #ffefd6;
-  --color-texto-sobre-superficie: #241a0a;
-  --color-acento: #b33e0a;
-  --color-texto-sobre-acento: #ffffff;
-  --color-foco: #b33e0a;
+/* ═══════════════════════════════════════════════════════════════════
+   TEMA LUMINOSO · alegre y con aire  ·  TEMA POR DEFECTO
+   Cumpleaños, amistad, celebraciones. Blush tirando a rosa, con
+   superficies blancas flotando. Acá llorar no es el objetivo.
+
+   Contraste WCAG verificado sobre --fondo:
+     texto 14.40:1  ·  texto-suave 5.05:1
+     acento 4.83:1  ·  realce 5.10:1     (los cuatro pasan AA cuerpo)
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-tema="luminoso"] {
+  --fondo:        #FCEDE8;   /* blush */
+  --superficie:   #FFFFFF;   /* blanco puro: tarjetas que flotan */
+  --texto:        #241D26;   /* casi negro con matiz ciruela */
+  --texto-suave:  #6E6270;
+  --acento:       #C1352E;   /* lacre base, sin ajustar */
+  --realce:       #96551A;   /* ámbar oscuro — el claro fallaba 2.5:1 */
+  --borde:        rgba(36, 29, 38, .10);
+
+  --papel:        #FFFFFF;
+  --tinta:        #241D26;
+
+  --sobre-a:      #FFFFFF;
+  --sobre-b:      #FBDCD3;
+  --sobre-c:      #F3C4B7;
+
+  --sombra:       0 24px 50px -20px rgba(163, 106, 96, .30);
+  --sombra-card:  0 16px 38px -14px rgba(163, 106, 96, .24);
+  --grano:        .015;      /* casi sin textura: es el más limpio */
+  --radio:        14px;      /* único tema con esquinas suaves */
 }

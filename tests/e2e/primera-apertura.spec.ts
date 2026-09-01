@@ -61,7 +61,10 @@ test("30 ciclos de recarga + tap no modifican la primera apertura ya registrada"
 
   await page.goto(`/r/${slug}`);
   await page.locator("[data-pantalla-apertura]").click();
-  await page.waitForTimeout(300);
+  // La secuencia del sobre (sello, tarjeta, corazones, reveal) dura 1450ms
+  // antes de disparar el POST /api/abrir (src/lib/corazones.js); margen extra
+  // para la carrera fire-and-forget bajo ejecución paralela.
+  await page.waitForTimeout(2500);
 
   const supabase = clienteDeTest();
   const { data: primero } = await supabase

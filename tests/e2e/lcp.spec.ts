@@ -20,10 +20,24 @@ test("pantalla de apertura <2,5s y primer bloque real <2,5s tras el tap", async 
     ],
   });
 
+  // images.unsplash.com es una red real fuera de nuestro control: bajo el
+  // throttle Slow-3G simulado su latencia real se vuelve impredecible (visto
+  // hasta ~37s) y no mide nada del propio sitio. Se mockea con un PNG 1x1.
+  const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await page.route("**images.unsplash.com/**", (route) =>
+    route.fulfill({ contentType: "image/png", body: PIXEL_PNG }),
+  );
+
   await throttleToSlow3GLowEnd(page);
 
   const inicioNavegacion = Date.now();
-  await page.goto(`/r/${slug}`);
+  // "load" espera además a que terminen las 3 fuentes (font-display: swap no
+  // las bloquea para pintar, pero sí para el evento load) — no es lo que este
+  // test quiere medir. domcontentloaded se acerca a "pantalla pintada".
+  await page.goto(`/r/${slug}`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-pantalla-apertura]").waitFor({ state: "visible" });
   const tiempoPantalla = Date.now() - inicioNavegacion;
   expect(tiempoPantalla, "pantalla de apertura visible").toBeLessThan(2500);

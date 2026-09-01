@@ -1,0 +1,152 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SOBRE · pantalla de apertura
+   Va en RegaloLayout.astro, NO en un bloque: funciona con cualquier
+   receta, tenga o no bloque portada.
+
+   IMPORTANTE: todo está scopeado bajo #sobre. Las clases genéricas
+   (.cuerpo, .tarjeta, .solapa) colisionan con los bloques si se dejan
+   sin scope — ya pasó una vez y rompió el bloque carta.
+   ═══════════════════════════════════════════════════════════════════ */
+
+#sobre {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-4);
+  padding: var(--e-3);
+  background: var(--fondo);
+  transition: opacity 700ms ease, visibility 700ms;
+}
+#sobre.fin { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* título manuscrito, se desvanece al abrir para dejar el sobre solo */
+#sobre .titulo {
+  font-family: var(--f-mano);
+  font-size: clamp(2.6rem, 11vw, 3.6rem);
+  color: var(--acento);
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+  transition: opacity var(--normal) ease, transform var(--normal) var(--curva);
+}
+#sobre .fecha {
+  font-size: var(--t-etiqueta);
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  margin: var(--e-2) 0 0;
+  text-align: center;
+}
+#sobre.abriendo .titulo,
+#sobre.abriendo .fecha { opacity: 0; transform: translateY(-14px); }
+
+#sobre .escena { perspective: 1200px; width: min(320px, 78vw); }
+#sobre .pieza  { position: relative; width: 100%; aspect-ratio: 1.5 / 1; transform-style: preserve-3d; }
+
+/* tarjeta que sale de adentro */
+#sobre .tarjeta {
+  position: absolute;
+  left: 7%; top: 6%;
+  width: 86%; height: 88%;
+  background: var(--papel);
+  border-radius: var(--radio);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .5);
+  z-index: 1;
+  transform: translateY(0) scale(.97);
+  display: grid;
+  place-items: center;
+  transition: transform 900ms var(--curva) 380ms;
+}
+#sobre .tarjeta span {
+  font-family: var(--f-mano);
+  font-size: 1.5rem;
+  color: var(--acento);
+  opacity: .85;
+}
+#sobre.abriendo .tarjeta { transform: translateY(-58%) scale(1); }
+
+/* cuerpo del sobre */
+#sobre .sobre-cuerpo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(165deg, var(--sobre-a), var(--sobre-b));
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+#sobre .sobre-cuerpo::after {              /* pliegues en V */
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .55;
+  background:
+    linear-gradient(to bottom right, transparent 49.4%, var(--sobre-c) 49.6%, transparent 50.2%),
+    linear-gradient(to bottom left,  transparent 49.4%, var(--sobre-c) 49.6%, transparent 50.2%);
+}
+
+/* solapa */
+#sobre .solapa {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 62%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(180deg, var(--sobre-a), var(--sobre-b));
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  z-index: 4;
+  backface-visibility: hidden;
+  transition: transform 900ms var(--curva), z-index 0s 450ms;
+}
+#sobre.abriendo .solapa { transform: rotateX(178deg); z-index: 0; }
+
+/* sello de lacre */
+#sobre .sello {
+  position: absolute;
+  top: 52%; left: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  border: 0; padding: 0;
+  cursor: pointer;
+  background: radial-gradient(circle at 34% 30%,
+    color-mix(in srgb, var(--acento) 72%, white),
+    var(--acento) 46%,
+    color-mix(in srgb, var(--acento) 62%, black));
+  box-shadow: 0 8px 22px -6px color-mix(in srgb, var(--acento) 55%, transparent),
+              inset 0 -3px 9px rgba(0, 0, 0, .32);
+  display: grid;
+  place-items: center;
+  transition: transform 320ms var(--resorte), opacity 320ms ease;
+}
+#sobre .sello svg { width: 30px; height: 30px; fill: #FFF1EC; }
+/* Respuesta al tacto: el sello se hunde al presionarlo — ninguna animación
+   arranca sola, todas responden a una acción del usuario. */
+#sobre .sello:active { transform: translate(-50%, -50%) scale(.9); }
+
+#sobre.abriendo .sello {
+  transform: translate(-50%, -50%) scale(.25);
+  opacity: 0;
+}
+
+#sobre .pista {
+  font-size: var(--t-etiqueta);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  margin: 0;
+  transition: opacity var(--rapido) ease;
+}
+#sobre.abriendo .pista { opacity: 0; }
+
+/* lienzo de corazones */
+#corazones {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 95;
+}

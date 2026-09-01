@@ -34,3 +34,31 @@ const aspectRatio = foto?.ancho && foto?.alto ? `${foto.ancho} / ${foto.alto}` :
     </section>
   )
 }
+
+<style>
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e-2);
+    padding: var(--e-3) var(--e-2);
+  }
+  h2 {
+    font-family: var(--f-display);
+    font-size: var(--t-subtitulo);
+    line-height: var(--i-titulo);
+    color: var(--texto);
+    margin: 0;
+  }
+  p {
+    font-size: var(--t-cuerpo);
+    line-height: var(--i-cuerpo);
+    color: var(--texto);
+    margin: 0;
+  }
+  time {
+    font-size: var(--t-etiqueta);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+</style>

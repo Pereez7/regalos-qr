@@ -16,3 +16,20 @@ const tieneContenido = typeof texto === "string" && texto.trim().length > 0;
     </section>
   )
 }
+
+<style>
+  section {
+    padding: var(--e-4) var(--e-3);
+    background: var(--papel);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+  p {
+    max-width: var(--ancho-texto);
+    margin-inline: auto;
+    font-family: var(--f-mano);
+    font-size: var(--t-carta);
+    line-height: var(--i-cuerpo);
+    color: var(--tinta);
+  }
+</style>
