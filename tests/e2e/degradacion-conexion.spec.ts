@@ -42,6 +42,7 @@ test("ante fallas parciales de red, la página nunca queda en blanco y el texto 
 
   await page.goto(`/r/${slug}`);
   await page.locator("[data-pantalla-apertura]").click();
+  await page.locator('[data-bloque="cierre"]').waitFor({ state: "visible" });
 
   const textoVisible = await page.locator("body").innerText();
   expect(textoVisible.length, "la página no queda en blanco").toBeGreaterThan(0);
@@ -50,4 +51,31 @@ test("ante fallas parciales de red, la página nunca queda en blanco y el texto 
   expect(textoVisible).toContain("Todo lo que quiero decirte");
   expect(textoVisible).toContain("Fin");
   expect(errores).toHaveLength(0);
+});
+
+// Principio I / Compuerta 2: si el JS no carga, el destinatario igual tiene que poder
+// leer el regalo completo — el sobre es una mejora progresiva, no un requisito.
+test("con JavaScript deshabilitado, el regalo completo es legible sin ninguna interacción", async ({
+  browser,
+}) => {
+  const { slug } = await crearRegalo({
+    v: 1,
+    receta: [
+      { tipo: "portada", posicion: 0, nombreDestinatario: "Ana" },
+      { tipo: "carta", posicion: 1, texto: "Todo lo que quiero decirte." },
+      { tipo: "cierre", posicion: 2, texto: "Fin" },
+    ],
+  });
+
+  const contexto = await browser.newContext({ javaScriptEnabled: false });
+  const page = await contexto.newPage();
+
+  await page.goto(`/r/${slug}`);
+
+  const textoVisible = await page.locator("body").innerText();
+  expect(textoVisible).toContain("Ana");
+  expect(textoVisible).toContain("Todo lo que quiero decirte");
+  expect(textoVisible).toContain("Fin");
+
+  await contexto.close();
 });

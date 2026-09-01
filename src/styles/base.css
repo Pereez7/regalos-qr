@@ -146,7 +146,12 @@ body::before {
 }
 
 /* ─── Contenedor de bloques ──────────────────────────────────────────
-   Riel: columna del hilo rojo que hilvana los bloques (--riel).       */
+   Riel: columna del hilo rojo que hilvana los bloques (--riel).
+
+   Mejora progresiva (Principio I / Compuerta 2): el contenido se sirve
+   visible en el HTML. Solo con JS (clase .js en <html>, agregada antes del
+   primer render) se oculta detrás del sobre hasta que .revelado lo destapa —
+   así, si el JS no carga, el destinatario igual ve todo el regalo. */
 
 #contenido {
   position: relative;
@@ -156,6 +161,13 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: var(--e-5);
+}
+
+html.js #contenido {
+  display: none;
+}
+html.js #contenido.revelado {
+  display: flex;
 }
 
 #contenido::before {

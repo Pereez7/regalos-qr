@@ -30,7 +30,7 @@ const primerPortada = contenido.receta.find(
 );
 const nombreDestinatario =
   typeof primerPortada?.nombreDestinatario === "string" ? primerPortada.nombreDestinatario : null;
-const saludo = nombreDestinatario ? `Tenés un regalo, ${nombreDestinatario}` : "Tenés un regalo";
+const saludo = nombreDestinatario ? `Tienes un regalo, ${nombreDestinatario}` : "Tienes un regalo";
 
 const recetaOrdenada = [...contenido.receta].sort((a, b) => a.posicion - b.posicion);
 ---
@@ -40,31 +40,38 @@ const recetaOrdenada = [...contenido.receta].sort((a, b) => a.posicion - b.posic
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Un regalo para vos</title>
+    <!-- Mejora progresiva (Principio I / Compuerta 2): sin esta clase, el
+         contenido se sirve visible y el sobre no existe visualmente. Debe
+         ser síncrono y correr antes del primer render para no destellar. -->
+    <script is:inline>document.documentElement.classList.add("js");</script>
+    <title>Un regalo para ti</title>
     <style set:html={cssTemas} />
   </head>
   <body>
     <div id="sobre">
       <p class="titulo">{saludo}</p>
-      <p class="fecha">Un regalo para vos</p>
+      <p class="fecha">Un regalo para ti</p>
       <div class="escena">
-        <div class="pieza">
+        <div class="pieza" data-pantalla-apertura>
           <div class="tarjeta"><span>♥</span></div>
           <div class="sobre-cuerpo"></div>
           <div class="solapa"></div>
-          <button type="button" id="abrir-sobre" class="sello" data-pantalla-apertura data-slug={slug ?? ""}>
+          <button type="button" id="abrir-sobre" class="sello" data-slug={slug ?? ""}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 21c-.3 0-.6-.1-.8-.3C6.4 16.8 2 12.9 2 8.6 2 5.5 4.4 3 7.5 3c1.8 0 3.4.9 4.5 2.3C13.1 3.9 14.7 3 16.5 3 19.6 3 22 5.5 22 8.6c0 4.3-4.4 8.2-9.2 12.1-.2.2-.5.3-.8.3Z"></path>
             </svg>
-            <p class="sr-only">{saludo}</p>
+            <span class="sr-only">{saludo}</span>
           </button>
+          <!-- El botón solo puede llevar phrasing content: el saludo legible por
+               lector de pantalla vive acá al lado, no dentro del <button>. -->
+          <p class="sr-only">{saludo}</p>
         </div>
       </div>
-      <p class="pista">Tocá para abrir</p>
+      <p class="pista">Toca para abrir</p>
     </div>
     <canvas id="corazones"></canvas>
 
-    <main id="contenido" data-contenido hidden>
+    <main id="contenido" data-contenido>
       {
         recetaOrdenada.map((bloque) => {
           const Componente = registro[bloque.tipo];
@@ -81,8 +88,7 @@ const recetaOrdenada = [...contenido.receta].sort((a, b) => a.posicion - b.posic
       const slug = boton?.dataset.slug ?? "";
 
       activarSobre(() => {
-        if (!contenido) return;
-        contenido.hidden = false;
+        contenido?.classList.add("revelado");
 
         if (slug) {
           // Fire-and-forget: revelar el contenido nunca espera esta respuesta

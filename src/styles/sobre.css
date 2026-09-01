@@ -150,3 +150,10 @@
   pointer-events: none;
   z-index: 95;
 }
+
+/* Mejora progresiva: sin JS nunca corre activarSobre() — el sello no abriría
+   nada — así que ni el sobre ni el lienzo de corazones se muestran. */
+html:not(.js) #sobre,
+html:not(.js) #corazones {
+  display: none;
+}
