@@ -6,9 +6,17 @@ const BUCKET = "fotos";
 // FR-018 / Constitution Compuerta 9: "borrado verificado en base y storage". Asegura que el
 // bucket exista (el upload de fotos en sí queda fuera de alcance de esta feature,
 // research.md #6) para poder verificar que el borrado también alcanza al Storage.
+//
+// El bucket se crea PRIVADO (`public: false`) por el Principio V ("Datos mínimos, borrado
+// real": las fotos DEBEN alojarse en rutas no adivinables y no indexadas). Un bucket público
+// permite leer cualquier objeto con solo conocer su ruta y deja el contenido íntimo del
+// regalo expuesto e indexable; el acceso de lectura se resuelve con URLs firmadas, no
+// abriendo el bucket. Este test no necesita acceso público: sube, lista y verifica el
+// borrado siempre a través de la service role (`clienteDeTest()`), que ignora la privacidad
+// del bucket.
 async function asegurarBucket() {
   const supabase = clienteDeTest();
-  const { error } = await supabase.storage.createBucket(BUCKET, { public: true });
+  const { error } = await supabase.storage.createBucket(BUCKET, { public: false });
   // 409 = ya existe: no es un error para este propósito.
   if (error && !/already exists|duplicate/i.test(error.message)) throw error;
 }

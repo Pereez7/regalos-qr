@@ -1,0 +1,52 @@
+---
+import { COOKIE_ACCESO, DURACION_COOKIE, coincideSecreto, secretoInterno } from "../lib/acceso.ts";
+
+export const prerender = false;
+
+// Puerta del modo interno (src/lib/acceso.ts). `/acceso?clave=...` con la clave correcta
+// setea la cookie que el middleware exige; con clave ausente o incorrecta contesta 404,
+// igual que cualquier ruta inexistente, para no delatar que hay algo detrás.
+//
+// Sin estilos externos a propósito: con la compuerta encendida y sin cookie, el CSS de
+// /_astro/ todavía no está permitido, así que esta página se tiene que leer sola.
+const clave = Astro.url.searchParams.get("clave");
+const secreto = secretoInterno();
+const concedido = coincideSecreto(clave, secreto);
+
+if (concedido && secreto) {
+  // `secure` atado al protocolo real: en Vercel (https) la cookie viaja solo cifrada;
+  // en un http://localhost con MODO_INTERNO=1 el navegador la guardaría igual, para
+  // poder probar la compuerta sin levantar TLS.
+  Astro.cookies.set(COOKIE_ACCESO, secreto, {
+    httpOnly: true,
+    secure: Astro.url.protocol === "https:",
+    sameSite: "lax",
+    path: "/",
+    maxAge: DURACION_COOKIE,
+  });
+} else {
+  Astro.response.status = 404;
+}
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{concedido ? "Acceso concedido" : "No disponible"}</title>
+  </head>
+  <body style="margin:0; background:#ffffff; color:#1a1a1a; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:1.0625rem; line-height:1.65;">
+    <main
+      style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; padding:2rem; text-align:center;"
+    >
+      {
+        concedido ? (
+          <p style="font-size:1.25rem;">Acceso concedido.</p>
+        ) : (
+          <p style="font-size:1.25rem;">Esta página no está disponible.</p>
+        )
+      }
+    </main>
+  </body>
+</html>

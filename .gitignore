@@ -11,6 +11,13 @@
 node_modules/
 dist/
 .astro/
+.vercel/
+
+# Resultados de Playwright
+test-results/
+playwright-report/
 
 # macOS
 .DS_Store
+# Local Pi runtime state
+.atl/
