@@ -1,17 +1,19 @@
 <!--
 SYNC IMPACT REPORT
-Version change: 1.1.0 → 1.2.0
-Bump rationale: MINOR — se agrega un séptimo principio (Ningún pedido se pierde). No se
-quita ni se redefine ningún principio existente; los seis anteriores quedan intactos.
+Version change: 1.2.0 → 1.3.0
+Bump rationale: MINOR — se amplía materialmente el Principio V con una excepción acotada
+para el dato de contacto publicitario. No se quita ni se redefine ningún principio; los
+siete quedan intactos y el V se vuelve más estricto, no más laxo, en lo que ahora admite.
 
-Principles defined:
-  - VII. Ningún pedido se pierde (nuevo)
+Principles defined: ninguno nuevo.
 
 Added sections: ninguna sección nueva de nivel 2; se amplió "Compuertas de Aceptación"
-  con los ítems 14-16 (14-15 derivados del Principio VII, 16 derivado del Principio VI).
+  con el ítem 17.
 
 Modified sections:
-  - Compuertas de Aceptación → se agregaron los ítems 14-16
+  - V. Datos mínimos, borrado real → excepción explícita y acotada para contacto
+    publicitario (opcional, con propósito declarado, con vía de baja), más su razón
+  - Compuertas de Aceptación → se agregó el ítem 17
 
 Removed sections: ninguna.
 Deferred TODOs: ninguno. No quedan tokens sin resolver.
@@ -72,9 +74,18 @@ no el contenido.
 - La expiración DEBE ser configurable; `null` significa permanente.
 - El borrado a pedido DEBE completarse en menos de 72 h, de base de datos y de storage.
 - PROHIBIDA la analítica de terceros en la página del regalo.
+- Excepción acotada: se puede guardar un dato de contacto con fin publicitario SOLO si el
+  comprador lo dio de forma explícita y opcional, con el propósito declarado en el momento de
+  pedirlo. PROHIBIDO exigirlo para comprar. PROHIBIDO deducirlo de otro dato. PROHIBIDO usarlo
+  para un propósito distinto del declarado.
+- Todo dato de contacto con fin publicitario DEBE tener una vía de baja, y la baja DEBE
+  borrarlo, no marcarlo.
 
 **Razón**: el contenido es privado e íntimo por definición. Guardar de más es asumir un riesgo
-que el comprador no aceptó, y un borrado que deja copias no es un borrado.
+que el comprador no aceptó, y un borrado que deja copias no es un borrado. La excepción publicitaria existe
+porque el negocio necesita poder volver a hablarle a un cliente, y está acotada de esa forma
+porque un dato arrancado como condición de compra no es un dato que el comprador aceptó dar:
+es el mismo riesgo que el principio prohíbe, con otro nombre.
 
 ### VI. Lo entregado es inmutable
 
@@ -156,6 +167,9 @@ Ninguna función se considera terminada sin verificar, en este orden:
 16. `SITIO_URL` apunta a un dominio propio antes de emitir cualquier QR destinado a una venta
     real. Mientras apunte a un deploy interno de simulación, PROHIBIDO emitir QR vendibles
     (Principio VI, ítem 11).
+17. Ningún dato de contacto con fin publicitario se guardó sin consentimiento explícito y
+    opcional del comprador, con el propósito declarado al pedirlo y una vía de baja que lo
+    borra (Principio V).
 
 ## Governance
 
@@ -170,4 +184,4 @@ Esta constitución tiene precedencia sobre cualquier otra práctica del proyecto
 - **Revisión de cumplimiento**: antes de aprobar cualquier plan, verificar que no viole ningún
   principio. Si lo viola, documentar la excepción y por qué no hay alternativa más simple.
 
-**Version**: 1.2.0 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-11-10
+**Version**: 1.3.0 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-11-10

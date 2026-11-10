@@ -62,4 +62,20 @@ Validación pasada en la primera iteración. Observaciones del proceso:
   FR-024 (no emitir QR sin dominio propio) viene de que hoy la dirección pública es un
   deploy interno de simulación.
 
+- **Revisión posterior a las decisiones del negocio (2026-11-10)**: dos supuestos cambiaron
+  tras confirmarlos con quien vende, y el spec se actualizó sin perder ningún item del
+  checklist.
+  1. *Peso de las fotos*: se agregan FR-037 a FR-039. El original de hasta 10 MB se sigue
+     aceptando, pero no se almacena: cada foto se reduce al subirla al tamaño que la página
+     realmente necesita y se le quitan los metadatos. Un requisito de ahorro de almacenamiento
+     que además sirve al Principio I (página más rápida) y al Principio V (desaparecen los
+     datos de ubicación que traen las fotos de celular). Medido por SC-013 a SC-015.
+  2. *Número de celular para publicidad*: se agregan FR-034 a FR-036. Este **no era un cambio
+     de spec sino de gobernanza**: el Principio V, tal como estaba escrito, prohíbe guardar
+     cualquier dato que no sea necesario para renderizar y entregar la página, y un teléfono
+     para publicidad no lo es. Se enmendó la constitución a v1.3.0 con una excepción acotada
+     —opcional, propósito declarado al pedirlo, consentimiento no pre-aceptado, vía de baja que
+     borra— antes de escribir el requisito. El spec no habría podido cumplir el checklist
+     contradiciendo la constitución vigente.
+
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

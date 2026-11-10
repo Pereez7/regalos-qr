@@ -172,6 +172,12 @@ con el enlace correcto dentro.
 - **Comprador que adivina o manipula el enlace de otro pedido**: no accede.
 - **Conexión que se corta mientras se sube una foto**: el resto del borrador queda intacto y la
   foto se puede volver a subir.
+- **Foto de 10 MB desde un celular moderno**: se acepta, se reduce al subirla, y lo que queda
+  almacenado pesa una fracción de eso sin que se note en pantalla.
+- **Foto que ya viene chica y optimizada**: no se agranda ni se reprocesa al punto de empeorar.
+- **Comprador que no quiere dar su celular**: completa la compra igual, y no se guarda ningún
+  número.
+- **Comprador que da el celular y después se arrepiente**: la baja borra el número.
 
 ## Requirements *(mandatory)*
 
@@ -197,6 +203,14 @@ con el enlace correcto dentro.
   real, mediante un modo de simulación equivalente en comportamiento observable.
 - **FR-008**: El sistema DEBE exponer, para el negocio, una lista de los pedidos pagados que
   todavía no derivaron en un regalo entregado.
+- **FR-034**: El sistema DEBE pedir el correo del comprador como dato obligatorio, por ser la
+  vía de entrega de sus enlaces.
+- **FR-035**: El sistema PUEDE pedir un número de celular con fin publicitario, y DEBE hacerlo
+  como dato opcional, con el propósito declarado al pedirlo y un consentimiento explícito que
+  NO DEBE venir pre-aceptado. El sistema NO DEBE exigirlo para completar la compra, NO DEBE
+  guardarlo sin ese consentimiento, y NO DEBE usarlo para un propósito distinto del declarado.
+- **FR-036**: El sistema DEBE ofrecer una vía de baja del uso publicitario, y la baja DEBE
+  borrar el número, no marcarlo como dado de baja.
 
 **Carga de la historia**
 
@@ -227,6 +241,14 @@ con el enlace correcto dentro.
   de una dirección de acceso guardada de antemano.
 - **FR-021**: El sistema DEBE producir, ante un doble envío de la misma historia, un solo
   regalo con un solo enlace público.
+- **FR-037**: El sistema DEBE reducir cada foto, al momento de subirla, al tamaño máximo que la
+  página del regalo necesita para mostrarla, sin pérdida de calidad perceptible en pantalla de
+  celular.
+- **FR-038**: El sistema NO DEBE almacenar la foto original que subió el comprador: solo
+  conserva la versión ya reducida. La reducción DEBE ocurrir antes de que nazca el regalo, para
+  que lo entregado nunca dependa de un procesamiento posterior.
+- **FR-039**: El sistema DEBE eliminar los metadatos de cada foto al procesarla, incluida
+  cualquier información de ubicación.
 
 **QR y tarjeta**
 
@@ -255,7 +277,8 @@ con el enlace correcto dentro.
 **Transversales**
 
 - **FR-030**: El sistema DEBE permitir borrar un pedido a pedido del comprador, incluyendo su
-  borrador, sus fotos y el regalo asociado si ya nació.
+  borrador, sus fotos, sus datos de contacto, su consentimiento publicitario y el regalo
+  asociado si ya nació.
 - **FR-031**: El sistema NO DEBE permitir que el titular de un pedido acceda al pedido, al
   borrador ni al regalo de otro.
 - **FR-032**: El sistema DEBE mostrar correctamente todas las páginas de esta feature en anchos
@@ -266,15 +289,17 @@ con el enlace correcto dentro.
 ### Key Entities
 
 - **Pedido**: la unidad comercial. Tiene un identificador propio no adivinable que funciona como
-  credencial, un estado de pago, un contacto del comprador para los avisos, el borrador de la
-  historia, y la referencia al regalo si ya nació. Es la única entidad que conoce el dinero.
+  credencial, un estado de pago, el correo del comprador para los avisos, opcionalmente un
+  número de celular con su consentimiento publicitario explícito, el borrador de la historia, y
+  la referencia al regalo si ya nació. Es la única entidad que conoce el dinero.
 - **Pago**: el registro de un cobro asociado a un pedido. Tiene el identificador del pago en el
   proveedor, el monto, la moneda y el estado. No contiene datos de tarjeta.
 - **Borrador**: la historia en construcción de un pedido. Admite estar incompleto, cambia
   cuantas veces el comprador quiera mientras el regalo esté en revisión, y es distinto del
   contenido del regalo: el borrador es materia prima, el contenido es lo entregado.
 - **Foto**: una imagen subida por el comprador, asociada a un borrador. Tiene una ubicación no
-  adivinable y un texto alternativo.
+  adivinable y un texto alternativo. Es siempre la versión reducida: el original no se
+  almacena, y los metadatos de la imagen no se conservan.
 - **Tarjeta**: el soporte imprimible derivado de un regalo publicado. Contiene su QR y el texto
   mínimo de instrucción. Puede estar marcada como simulación.
 - **Aviso**: un mensaje emitido al comprador. Tiene un tipo (comprobante, revisión,
@@ -311,6 +336,14 @@ con el enlace correcto dentro.
   pertenece, verificado intentando acceder a su ubicación sin estar mirando ese regalo.
 - **SC-012**: 20 compras de prueba completas, cada una con una historia distinta, recorren el
   camino entero sin intervención manual y sin fallos.
+- **SC-013**: Una foto almacenada pesa en promedio menos de 300 KB y a lo sumo 600 KB, partiendo
+  de originales de hasta 10 MB, sin que la diferencia se note en la pantalla de un celular.
+- **SC-014**: Un regalo con 10 fotos ocupa menos de 6 MB de almacenamiento, contando todo lo que
+  se guarda de él.
+- **SC-015**: Ninguna foto almacenada conserva metadatos de ubicación, verificado inspeccionando
+  los archivos guardados.
+- **SC-016**: Una compra se puede completar sin dar número de celular, en el 100% de los
+  intentos.
 
 ## Assumptions
 
@@ -319,13 +352,20 @@ con el enlace correcto dentro.
 - **El entregable es un archivo imprimible, no una tarjeta física enviada.** Esta feature no
   incluye logística, envío ni dirección postal; por eso tampoco recoge domicilio del comprador
   (Principio V: datos mínimos). Imprimir y entregar la tarjeta queda del lado de quien vende.
-- **El contacto del comprador es un correo electrónico**, el único dato personal que se recoge
-  además de la historia.
+- **El correo electrónico del comprador es obligatorio**: es la vía por la que recibe sus
+  enlaces.
+- **El número de celular es opcional y solo para publicidad futura**, con consentimiento
+  explícito y no pre-aceptado, propósito declarado al pedirlo y vía de baja que lo borra. Esta
+  es la única excepción al Principio V y está escrita en la constitución v1.3.0 como tal; no es
+  un dato que el producto necesite para funcionar.
 - **Los regalos nacen sin fecha de expiración** —vigencia permanente—, coherente con que lo
   entregado es inmutable. La feature 001 ya hace cumplir una expiración si existe.
 - **El límite de fotos por regalo es 10**, suficiente para una historia y acotado para proteger
   el tiempo de carga de la página del regalo.
-- **El peso máximo admitido por foto es 10 MB** antes de procesarla.
+- **El peso máximo admitido por foto es 10 MB al subirla**, pero el original no se guarda: cada
+  foto se reduce al subirla al tamaño que la página realmente necesita. Esto achica el
+  almacenamiento, acelera la página del regalo (Principio I) y elimina los metadatos de
+  ubicación que traen las fotos de celular (Principio V).
 - **Las correcciones del comprador se hacen volviendo a su propia carga**, no por un canal
   aparte. Es lo que hace cumplible el Principio III —corregir sin límite— sin inventar un
   segundo camino de edición.
