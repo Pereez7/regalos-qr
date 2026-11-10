@@ -1,17 +1,17 @@
 <!--
 SYNC IMPACT REPORT
-Version change: 1.0.0 → 1.1.0
-Bump rationale: MINOR — se agrega un sexto principio (Lo entregado es inmutable). No se
-quita ni se redefine ningún principio existente; los cinco anteriores quedan intactos.
+Version change: 1.1.0 → 1.2.0
+Bump rationale: MINOR — se agrega un séptimo principio (Ningún pedido se pierde). No se
+quita ni se redefine ningún principio existente; los seis anteriores quedan intactos.
 
 Principles defined:
-  - VI. Lo entregado es inmutable (nuevo)
+  - VII. Ningún pedido se pierde (nuevo)
 
 Added sections: ninguna sección nueva de nivel 2; se amplió "Compuertas de Aceptación"
-  con los ítems 10-13 derivados del Principio VI.
+  con los ítems 14-16 (14-15 derivados del Principio VII, 16 derivado del Principio VI).
 
 Modified sections:
-  - Compuertas de Aceptación → se agregaron los ítems 10-13 (verificaciones del Principio VI)
+  - Compuertas de Aceptación → se agregaron los ítems 14-16
 
 Removed sections: ninguna.
 Deferred TODOs: ninguno. No quedan tokens sin resolver.
@@ -94,6 +94,27 @@ Un QR impreso no se actualiza nunca. Todo lo que quedó del otro lado de una ent
 entrega. Cualquier cambio incompatible rompe regalos ya pagados, de forma silenciosa e
 irreparable.
 
+### VII. Ningún pedido se pierde
+
+Un error de dinero es tan irreversible como un QR mal impreso: alguien pagó y no recibió.
+
+- El pago DEBE registrarse antes de cualquier otra acción derivada de él.
+- Los webhooks de pago DEBEN ser idempotentes: el mismo evento recibido dos veces produce un
+  solo efecto.
+- La protección de un webhook DEBE ser la verificación de su firma, NUNCA el chequeo de origen.
+- PROHIBIDO almacenar datos de tarjeta. Solo identificador del proveedor, monto y estado.
+- Un pedido pagado sin regalo entregado DEBE ser visible en una cola operativa. PROHIBIDO que
+  un pedido quede trabado en silencio.
+- El proveedor de pago DEBE estar detrás de un adaptador, con un proveedor simulado disponible
+  para desarrollo. PROHIBIDO acoplar el flujo de pedido a un proveedor concreto.
+
+**Razón**: el comprador paga antes de que exista el regalo, así que entre el cobro y la entrega
+hay una ventana donde el pedido solo vive en nuestros registros. Si se cae ahí, el comprador
+pagó por nada y nosotros no tenemos forma de enterarnos. El chequeo de origen merece mención
+explícita porque ya nos mordió: Astro responde 403 a un POST sin header `Origin`, y un webhook
+de pago no manda `Origin`, de modo que la configuración por defecto rechaza el aviso de cobro
+sin dejar rastro visible.
+
 ## Reglas de Calidad
 
 - Los criterios de éxito DEBEN ser medibles y sin tecnología. "Rápido" no vale;
@@ -128,6 +149,13 @@ Ninguna función se considera terminada sin verificar, en este orden:
     fue renombrado ni eliminado, solo se agregaron campos nuevos (Principio VI).
 13. Ningún tipo de bloque fue eliminado; los sucesores conviven con los tipos anteriores
     (Principio VI).
+14. Todo pago quedó registrado antes de cualquier acción derivada, y el webhook que lo informa
+    es idempotente y valida firma, no origen (Principio VII).
+15. Ningún pedido pagado quedó sin regalo entregado fuera de una cola visible; ningún dato de
+    tarjeta fue almacenado (Principio VII).
+16. `SITIO_URL` apunta a un dominio propio antes de emitir cualquier QR destinado a una venta
+    real. Mientras apunte a un deploy interno de simulación, PROHIBIDO emitir QR vendibles
+    (Principio VI, ítem 11).
 
 ## Governance
 
@@ -142,4 +170,4 @@ Esta constitución tiene precedencia sobre cualquier otra práctica del proyecto
 - **Revisión de cumplimiento**: antes de aprobar cualquier plan, verificar que no viole ningún
   principio. Si lo viola, documentar la excepción y por qué no hay alternativa más simple.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-08-30
+**Version**: 1.2.0 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-11-10
