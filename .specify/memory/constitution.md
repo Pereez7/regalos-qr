@@ -1,19 +1,17 @@
 <!--
 SYNC IMPACT REPORT
-Version change: 1.2.0 → 1.3.0
-Bump rationale: MINOR — se amplía materialmente el Principio V con una excepción acotada
-para el dato de contacto publicitario. No se quita ni se redefine ningún principio; los
-siete quedan intactos y el V se vuelve más estricto, no más laxo, en lo que ahora admite.
+Version change: 1.3.0 → 1.3.1
+Bump rationale: PATCH — se corrige la razón del Principio VII. La regla no cambia: la
+protección de un webhook sigue siendo la verificación de firma y nunca el chequeo de
+origen. Lo que se corrige es el hecho citado para justificarla, que estaba mal: el
+rechazo por falta de `Origin` depende del content-type, y un aviso en JSON pasa. Sin
+cambio semántico en ningún principio.
 
 Principles defined: ninguno nuevo.
-
-Added sections: ninguna sección nueva de nivel 2; se amplió "Compuertas de Aceptación"
-  con el ítem 17.
+Added sections: ninguna.
 
 Modified sections:
-  - V. Datos mínimos, borrado real → excepción explícita y acotada para contacto
-    publicitario (opcional, con propósito declarado, con vía de baja), más su razón
-  - Compuertas de Aceptación → se agregó el ítem 17
+  - VII. Ningún pedido se pierde → razón corregida con la medición real por content-type
 
 Removed sections: ninguna.
 Deferred TODOs: ninguno. No quedan tokens sin resolver.
@@ -122,9 +120,11 @@ Un error de dinero es tan irreversible como un QR mal impreso: alguien pagó y n
 **Razón**: el comprador paga antes de que exista el regalo, así que entre el cobro y la entrega
 hay una ventana donde el pedido solo vive en nuestros registros. Si se cae ahí, el comprador
 pagó por nada y nosotros no tenemos forma de enterarnos. El chequeo de origen merece mención
-explícita porque ya nos mordió: Astro responde 403 a un POST sin header `Origin`, y un webhook
-de pago no manda `Origin`, de modo que la configuración por defecto rechaza el aviso de cobro
-sin dejar rastro visible.
+explícita porque el riesgo es real y silencioso: Astro responde 403 a un POST sin header
+`Origin` cuando el content-type es de formulario, y ningún proveedor de pago manda `Origin`.
+Un proveedor que avise por formulario en vez de JSON queda rechazado sin dejar rastro visible.
+Medido en el entorno real: con `application/json` el aviso pasa incluso sin `Origin`; con
+`application/x-www-form-urlencoded`, `text/plain` o sin content-type, se rechaza.
 
 ## Reglas de Calidad
 
@@ -184,4 +184,4 @@ Esta constitución tiene precedencia sobre cualquier otra práctica del proyecto
 - **Revisión de cumplimiento**: antes de aprobar cualquier plan, verificar que no viole ningún
   principio. Si lo viola, documentar la excepción y por qué no hay alternativa más simple.
 
-**Version**: 1.3.0 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-11-10
+**Version**: 1.3.1 | **Ratified**: 2026-08-29 | **Last Amended**: 2026-11-10

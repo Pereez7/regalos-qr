@@ -148,9 +148,13 @@ con el enlace correcto dentro.
   aparecer en una cola de pedidos pendientes, visible para el negocio, nunca trabado en
   silencio.
 - **Dos avisos de pago simultáneos del mismo pago**: el pedido queda pagado una sola vez.
-- **Aviso de pago que llega antes de que termine de registrarse el pedido**: el pago no se
-  pierde; se asocia al pedido correcto cuando este existe.
-- **Aviso de pago de un pedido que no existe**: se rechaza sin alterar nada y queda registrado.
+- **Aviso de pago que llega antes de que el comprador vuelva del proveedor**: el pedido ya
+  existe —se registra antes de ir a pagar—, así que el pago se aplica sobre él sin esperar al
+  comprador.
+- **Aviso de pago de un pedido que no existe** (pedido borrado, o un entorno apuntando a la
+  base de otro): se rechaza sin alterar nada, queda registrado y aparece en la cola operativa
+  del negocio. No se intenta asociarlo más tarde: el pedido se registra antes de ir a pagar, así
+  que un aviso sin pedido es un error real y no una carrera de tiempos.
 - **Aviso de pago cuya autenticidad no se puede verificar**: se rechaza. La verificación no
   depende de desde dónde parece venir la petición, sino de poder comprobar que el aviso es
   auténtico.
@@ -362,10 +366,18 @@ con el enlace correcto dentro.
   entregado es inmutable. La feature 001 ya hace cumplir una expiración si existe.
 - **El límite de fotos por regalo es 10**, suficiente para una historia y acotado para proteger
   el tiempo de carga de la página del regalo.
-- **El peso máximo admitido por foto es 10 MB al subirla**, pero el original no se guarda: cada
-  foto se reduce al subirla al tamaño que la página realmente necesita. Esto achica el
+- **El peso máximo admitido por foto depende de si el navegador ejecuta JavaScript**: hasta
+  10 MB con JavaScript, porque la foto se reduce antes de salir del dispositivo; hasta 4 MB sin
+  JavaScript, que es el tope real que impone la plataforma al cuerpo de una petición. El
+  formulario lo dice en vez de fallar sin explicación. En los dos casos el original no se
+  guarda: cada foto se reduce al tamaño que la página realmente necesita. Esto achica el
   almacenamiento, acelera la página del regalo (Principio I) y elimina los metadatos de
   ubicación que traen las fotos de celular (Principio V).
+- **Una historia es enviable con tema, nombre del destinatario y al menos un bloque de
+  contenido** —un momento, una carta, una galería, una canción, una pregunta o un cierre—. El
+  mínimo es bajo a propósito: el motor admite recetas con cualquier cantidad de bloques de cada
+  tipo, y exigir más sería meter una opinión editorial en la puerta de entrada. Pero no puede
+  ser vacío, porque un regalo sin un solo bloque de contenido es una página en blanco.
 - **Las correcciones del comprador se hacen volviendo a su propia carga**, no por un canal
   aparte. Es lo que hace cumplible el Principio III —corregir sin límite— sin inventar un
   segundo camino de edición.

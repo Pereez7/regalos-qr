@@ -57,10 +57,15 @@ Validación pasada en la primera iteración. Observaciones del proceso:
   quedar nunca guardada ni impresa, con lo cual el Principio VI queda intacto.
 
 - **FR-005 y FR-024 no son requisitos genéricos**: los dos salen de algo verificado, no
-  supuesto. FR-005 (verificar autenticidad, nunca procedencia) viene de que el entorno real
-  rechaza con 403 un aviso sin cabecera de origen, y ningún proveedor de pago la manda.
-  FR-024 (no emitir QR sin dominio propio) viene de que hoy la dirección pública es un
-  deploy interno de simulación.
+  supuesto. FR-024 (no emitir QR sin dominio propio) viene de que hoy la dirección pública es
+  un deploy interno de simulación. FR-005 (verificar autenticidad, nunca procedencia) viene de
+  una medición en el entorno real, refinada durante el plan: el rechazo por falta de cabecera
+  de origen **depende del content-type**. Un aviso en `application/json` pasa incluso sin esa
+  cabecera —y es lo que mandan los proveedores de pago habituales—, mientras que uno en
+  formulario o sin content-type se rechaza con 403. El requisito queda igual de válido: la
+  protección correcta es la firma, y la del chequeo de origen no es una protección sobre la
+  que se pueda apoyar un webhook. Lo que cambia es que no hace falta debilitar esa
+  configuración para recibir avisos, como se había supuesto al escribir el spec.
 
 - **Revisión posterior a las decisiones del negocio (2026-11-10)**: dos supuestos cambiaron
   tras confirmarlos con quien vende, y el spec se actualizó sin perder ningún item del
