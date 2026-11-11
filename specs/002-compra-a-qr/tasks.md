@@ -236,26 +236,26 @@ celular y verificar que abre el regalo correcto.
 
 ### Tests for User Story 3
 
-- [ ] T051 [P] [US3] `tests/e2e/qr-compuerta.spec.ts` — con `SITIO_URL` apuntando a `vercel.app`,
+- [x] T051 [P] [US3] `tests/e2e/qr-compuerta.spec.ts` — con `SITIO_URL` apuntando a `vercel.app`,
       a `localhost` o a una IP, la emisión de un QR vendible **falla en 10 de 10 intentos**
       (FR-024, SC-009, Compuerta de Aceptación 16).
-- [ ] T052 [P] [US3] En el mismo archivo, un regalo no aprobado no puede emitir QR (FR-025).
-- [ ] T053 [P] [US3] En el mismo archivo, la emisión marcada como simulación sí procede, y la
+- [x] T052 [P] [US3] En el mismo archivo, un regalo no aprobado no puede emitir QR (FR-025).
+- [x] T053 [P] [US3] En el mismo archivo, la emisión marcada como simulación sí procede, y la
       tarjeta resultante lleva la palabra estampada **sobre la imagen**, no solo en el nombre del
       archivo: un archivo se renombra o se reenvía sin su nombre, una marca impresa no se pierde
       (research.md #11).
 
 ### Implementation for User Story 3
 
-- [ ] T054 [US3] Crear `src/lib/qr.ts` — generación con `qrcode` apuntando a `SITIO_URL + /r/ + slug`,
+- [x] T054 [US3] Crear `src/lib/qr.ts` — generación con `qrcode` apuntando a `SITIO_URL + /r/ + slug`,
       y la compuerta que se niega a emitir si el host no es un dominio propio
       (contracts/qr-y-tarjeta.md).
-- [ ] T055 [US3] En el mismo módulo, composición de la tarjeta con `sharp`: el QR, el texto mínimo
+- [x] T055 [US3] En el mismo módulo, composición de la tarjeta con `sharp`: el QR, el texto mínimo
       para que quien la recibe entienda que debe escanearlo, y la marca de simulación cuando
       corresponda (FR-023).
-- [ ] T056 [US3] Crear `scripts/generar-qr.ts` y el script npm `qr` en `package.json`
+- [x] T056 [US3] Crear `scripts/generar-qr.ts` y el script npm `qr` en `package.json`
       (`tsx --env-file=.env scripts/generar-qr.ts`), con el patrón de `seed:regalo-demo`.
-- [ ] T057 [US3] Registrar la emisión en `pedidos.qr_emitido_en` y `pedidos.qr_simulacion`: sin
+- [x] T057 [US3] Registrar la emisión en `pedidos.qr_emitido_en` y `pedidos.qr_simulacion`: sin
       esto no queda rastro de qué soporte físico salió, cuándo, ni si lo impreso era una tarjeta
       de simulación (research.md #22).
 - [ ] T058 [US3] Verificación manual de SC-008: imprimir la tarjeta al tamaño previsto y escanear

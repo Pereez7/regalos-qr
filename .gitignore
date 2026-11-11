@@ -24,3 +24,6 @@ playwright-report/
 .DS_Store
 # Local Pi runtime state
 .atl/
+
+# Tarjetas generadas: salida de `npm run qr`, no código
+qr/
