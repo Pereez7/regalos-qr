@@ -6,6 +6,11 @@ const foto = z.object({
   alt: z.string(),
   ancho: z.number().optional(),
   alto: z.number().optional(),
+  // Feature 002 (research.md #7): agregado OPCIONAL. `v` sigue siendo 1 porque agregar un
+  // campo opcional es exactamente la evolución que v1 admite. Que siga siendo opcional lo
+  // prueba el fixture dorado tests/fixtures/contenido-v1.json, que no tiene `ruta` y se
+  // renderiza en cada corrida sin modificarse.
+  ruta: z.string().optional(),
 });
 
 const base = { posicion: z.number() };

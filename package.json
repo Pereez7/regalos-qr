@@ -14,6 +14,7 @@
     "check": "astro check",
     "seed:regalo-demo": "tsx --env-file=.env scripts/seed-regalo-demo.ts",
     "bucket:fotos": "tsx --env-file=.env scripts/asegurar-bucket-fotos.ts",
+    "verificar:migracion": "tsx --env-file=.env scripts/verificar-migracion-0002.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

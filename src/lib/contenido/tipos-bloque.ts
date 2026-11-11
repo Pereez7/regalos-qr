@@ -6,6 +6,12 @@ export interface Foto {
   alt: string;
   ancho?: number;
   alto?: number;
+  // Agregado por la feature 002 (research.md #7): ruta de storage en el bucket privado
+  // `fotos`. Opcional, y `url` queda intacta con su significado de siempre — el Principio VI
+  // solo admite agregados. Si `ruta` está, src/lib/regalos.ts la firma y entrega el resultado
+  // en `url`; si no está, `url` se usa tal cual. Los componentes de src/bloques/ siguen
+  // recibiendo `foto.url` ya resuelto y no se enteran de que hay un bucket detrás.
+  ruta?: string;
 }
 
 export interface BloquePortada {

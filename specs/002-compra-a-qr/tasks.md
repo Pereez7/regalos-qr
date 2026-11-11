@@ -40,21 +40,21 @@ archivo de la 001 que aparezca modificado es un error de alcance:
 
 **Purpose**: infraestructura y configuración que todo lo demás necesita
 
-- [ ] T001 Escribir `supabase/migrations/0002_pedidos.sql` con las cuatro tablas de data-model.md
+- [x] T001 Escribir `supabase/migrations/0002_pedidos.sql` con las cuatro tablas de data-model.md
       (`pedidos`, `pagos`, `eventos_pago`, `avisos`), sus `check`, sus índices, la FK
       `pedidos.regalo_id → regalos.id` con `on delete set null` y la unicidad de
       `(proveedor, evento_id)`. No tocar las tablas de la 001.
-- [ ] T002 [P] Declarar el bucket `fotos` con `public = false` en `supabase/config.toml`, para que
+- [x] T002 [P] Declarar el bucket `fotos` con `public = false` en `supabase/config.toml`, para que
       su estado no dependa de correr un script (research.md #15).
-- [ ] T003 [P] Agregar a `.env.example` las variables nuevas con sus comentarios en español:
+- [x] T003 [P] Agregar a `.env.example` las variables nuevas con sus comentarios en español:
       `PAGO_PROVEEDOR`, `PAGO_SIMULADO_SECRETO` (nombre canónico, singular),
       `CORREO_PROVEEDOR`, `RESEND_API_KEY`, `PRECIO`, `MONEDA`.
-- [ ] T004 [P] Crear `tests/e2e/utils/crear-pedido.ts`: helper que inserta pedidos en estados
+- [x] T004 [P] Crear `tests/e2e/utils/crear-pedido.ts`: helper que inserta pedidos en estados
       `iniciado` y `pagado` con borrador arbitrario, al mismo estilo que
       `tests/e2e/utils/crear-regalo.ts`.
-- [ ] T005 [P] Crear `tests/e2e/utils/firmar-aviso.ts`: helper que firma un cuerpo JSON con
+- [x] T005 [P] Crear `tests/e2e/utils/firmar-aviso.ts`: helper que firma un cuerpo JSON con
       HMAC-SHA256 y `PAGO_SIMULADO_SECRETO`, para que los tests manden avisos auténticos.
-- [ ] T006 Aplicar la migración y verificar contra la base que `regalos`, `slugs` y `aperturas`
+- [x] T006 Aplicar la migración y verificar contra la base que `regalos`, `slugs` y `aperturas`
       no cambiaron ni una columna.
 
 ---
@@ -63,26 +63,26 @@ archivo de la 001 que aparezca modificado es un error de alcance:
 
 **Purpose**: lo que bloquea a TODAS las historias. Sin esto no se puede empezar ninguna.
 
-- [ ] T007 [P] Crear `src/lib/config.ts`: lectura de `PRECIO`, `MONEDA` y `SITIO_URL` con el
+- [x] T007 [P] Crear `src/lib/config.ts`: lectura de `PRECIO`, `MONEDA` y `SITIO_URL` con el
       patrón `import.meta.env.X ?? process.env.X`, obligatorio para que el valor se lea en
       runtime y no quede horneado en el bundle (research.md #18).
-- [ ] T008 [P] Crear `src/lib/pagos/tipos.ts`: interfaz `iniciarCobro(pedido)` /
+- [x] T008 [P] Crear `src/lib/pagos/tipos.ts`: interfaz `iniciarCobro(pedido)` /
       `interpretarAviso(request)` según contracts/api-iniciar-compra.md y
       contracts/api-webhook-pago.md.
-- [ ] T009 [P] Crear `src/lib/correo/tipos.ts`: interfaz `enviarAviso(tipo, destinatario, datos)`
+- [x] T009 [P] Crear `src/lib/correo/tipos.ts`: interfaz `enviarAviso(tipo, destinatario, datos)`
       según research.md #12.
-- [ ] T010 Crear `src/lib/pagos/registro.ts` y `src/lib/correo/registro.ts`: mapa proveedor →
+- [x] T010 Crear `src/lib/pagos/registro.ts` y `src/lib/correo/registro.ts`: mapa proveedor →
       adaptador, mismo patrón que `src/bloques/registro.ts` (Principio II).
-- [ ] T011 [P] Crear `src/lib/pedidos.ts`: alta en estado `iniciado`, transiciones de estado,
+- [x] T011 [P] Crear `src/lib/pedidos.ts`: alta en estado `iniciado`, transiciones de estado,
       lectura por id, y las consultas de la cola operativa (pagados sin regalo, iniciados nunca
       pagados, avisos fallidos).
-- [ ] T012 [P] Crear `src/lib/ops.ts`: compuerta derivada de `OPS_SECRET` para `/pedidos` y para
+- [x] T012 [P] Crear `src/lib/ops.ts`: compuerta derivada de `OPS_SECRET` para `/pedidos` y para
       las rutas de operación. **Independiente de `MODO_INTERNO`**: ese flag se apaga el día que
       la landing se abre al público, y la cola muestra correos de compradores (research.md #14).
-- [ ] T013 Agregar `foto.ruta` como campo **opcional** al objeto `foto` en
+- [x] T013 Agregar `foto.ruta` como campo **opcional** al objeto `foto` en
       `src/lib/contenido/esquema.ts` y `src/lib/contenido/tipos-bloque.ts`, sin tocar `foto.url`
       (research.md #7, Principio VI).
-- [ ] T014 Verificar que `tests/e2e/compatibilidad-versiones.spec.ts` sigue en verde con el
+- [x] T014 Verificar que `tests/e2e/compatibilidad-versiones.spec.ts` sigue en verde con el
       fixture dorado `tests/fixtures/contenido-v1.json` **sin modificar**: es la prueba de que el
       agregado fue aditivo.
 

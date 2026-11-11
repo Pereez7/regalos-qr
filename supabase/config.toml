@@ -124,6 +124,15 @@ file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# Bucket de las fotos de los regalos (research.md #15 de la feature 002). `public = false`
+# queda declarado como infraestructura y no como resultado de correr un script: un bucket
+# público permite leer cualquier objeto con solo conocer su ruta, y las fotos se sirven con
+# URLs firmadas por render (Principio V, FR-020).
+# `npm run bucket:fotos` sigue siendo la verificación idempotente para el proyecto remoto,
+# donde este archivo no manda.
+[storage.buckets.fotos]
+public = false
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true
