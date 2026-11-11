@@ -44,10 +44,15 @@ async function main() {
   // Un regalo sin pedido es un seed, una demo o un helper de test: nació sin venta detrás.
   let huerfanos = (regalos ?? []).filter((r) => !conPedido.has(r.id as string));
 
-  // El más reciente publicado es el que la landing muestra como ejemplo.
-  const demo = [...huerfanos]
-    .filter((r) => r.estado === "publicado")
-    .sort((a, b) => String(b.aprobado_en).localeCompare(String(a.aprobado_en)))[0];
+  // El ejemplo de la landing es el de `EJEMPLO_SLUG`; si no está configurado, el último
+  // publicado, que es a lo que caía la landing antes de que el ejemplo fuera explícito.
+  // Conservar el que de verdad se muestra importa: borrarlo deja la vidriera vacía.
+  const elegido = process.env.EJEMPLO_SLUG;
+  const demo =
+    (elegido && huerfanos.find((r) => r.slug === elegido)) ||
+    [...huerfanos]
+      .filter((r) => r.estado === "publicado")
+      .sort((a, b) => String(b.aprobado_en).localeCompare(String(a.aprobado_en)))[0];
 
   if (conservarDemo && demo) {
     huerfanos = huerfanos.filter((r) => r.id !== demo.id);

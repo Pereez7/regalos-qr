@@ -324,12 +324,15 @@ tres avisos se emitió una sola vez, con su enlace.
 - [ ] T074 Ejecutar la validación manual completa de `quickstart.md`: los cinco escenarios, las
       nueve verificaciones de lo que se rompe en silencio, y los cuatro criterios sin gate
       automatizado (SC-001, SC-002, SC-003, SC-008).
-- [ ] T075 Borrar los regalos y pedidos de prueba del proyecto Supabase antes de cualquier venta
-      real, y dejar constancia de qué filas de `slugs` quedaron huérfanas a propósito.
-      **Herramienta lista**: `npm run limpiar:pruebas` informa sin tocar nada;
-      `-- --hacer` ejecuta, y `-- --hacer --conservar-demo` deja en pie el ejemplo de la
-      landing. Al 11 de noviembre de 2026 hay 1 pedido de prueba y 534 regalos sin pedido.
-      Queda sin ejecutar a propósito: es una decisión del negocio, no del código.
+- [x] T075 Datos de prueba borrados con `npm run limpiar:pruebas -- --hacer --conservar-demo`
+      el 11 de noviembre de 2026: **578 regalos sin pedido y 2 archivos del bucket**. Quedan
+      en pie el regalo de demo `VGXKL7CQ` —el que la landing muestra como ejemplo— y un
+      pedido real, que no es de prueba.
+      **Constancia de los slugs**: quedaron **771 filas huérfanas** en `slugs`
+      (`regalo_id = null`). No se borran nunca y no es un descuido: si un slug volviera al
+      espacio disponible, un QR ya impreso podría abrir el regalo de otra persona
+      (Principio VI, research.md #16). La fila que queda es el string y una fecha: sin
+      contenido, sin correo y sin forma de llegar a nada.
 
 ---
 
