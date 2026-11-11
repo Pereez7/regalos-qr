@@ -307,18 +307,18 @@ tres avisos se emitió una sola vez, con su enlace.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T069 `tests/e2e/venta-completa.spec.ts` — el recorrido entero en un solo test: landing →
+- [x] T069 `tests/e2e/venta-completa.spec.ts` — el recorrido entero en un solo test: landing →
       cobro simulado → carga en varias sesiones → envío → revisión → aprobación → regalo público
       → QR generado. Es la prueba de que la feature está terminada (SC-005, research.md #19).
-- [ ] T070 [P] `tests/e2e/sin-scroll-horizontal-002.spec.ts` — cero scroll horizontal entre 320 y
+- [x] T070 [P] `tests/e2e/sin-scroll-horizontal-002.spec.ts` — cero scroll horizontal entre 320 y
       1440 px en landing, gracias, cada paso de la carga, baja y cola (FR-032, SC-010).
-- [ ] T071 [P] Verificar que `tests/e2e/presupuesto-js.spec.ts` sigue en verde: `/r/[slug]` no
+- [x] T071 [P] Verificar que `tests/e2e/presupuesto-js.spec.ts` sigue en verde: `/r/[slug]` no
       recibió ni un byte nuevo de JavaScript (Reglas de Calidad, research.md #17).
-- [ ] T072 [P] Verificar que `tests/e2e/lcp.spec.ts` sigue en verde con las fotos firmadas: la
+- [x] T072 [P] Verificar que `tests/e2e/lcp.spec.ts` sigue en verde con las fotos firmadas: la
       firma por lote agrega una ida y vuelta al render. Si rompe el presupuesto de 2,5 s, la
       mitigación es firmar con vigencia amplia y apoyarse en la caché del navegador, **nunca**
       volver al bucket público (research.md #6).
-- [ ] T073 Correr la suite completa y confirmar **28 tests de la feature 001 en verde** más los
+- [x] T073 Correr la suite completa y confirmar **28 tests de la feature 001 en verde** más los
       nuevos. Un solo test roto de la 001 significa que el cambio salió del perímetro de cuatro
       archivos.
 - [ ] T074 Ejecutar la validación manual completa de `quickstart.md`: los cinco escenarios, las
@@ -326,6 +326,10 @@ tres avisos se emitió una sola vez, con su enlace.
       automatizado (SC-001, SC-002, SC-003, SC-008).
 - [ ] T075 Borrar los regalos y pedidos de prueba del proyecto Supabase antes de cualquier venta
       real, y dejar constancia de qué filas de `slugs` quedaron huérfanas a propósito.
+      **Herramienta lista**: `npm run limpiar:pruebas` informa sin tocar nada;
+      `-- --hacer` ejecuta, y `-- --hacer --conservar-demo` deja en pie el ejemplo de la
+      landing. Al 11 de noviembre de 2026 hay 1 pedido de prueba y 534 regalos sin pedido.
+      Queda sin ejecutar a propósito: es una decisión del negocio, no del código.
 
 ---
 

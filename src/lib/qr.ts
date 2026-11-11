@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import sharp from "sharp";
+import type { OverlayOptions } from "sharp";
 import { sitioUrl } from "./config.ts";
 import { getServiceClient } from "./supabase.ts";
 
@@ -220,7 +221,7 @@ async function componerTarjeta(
       </text>
     </svg>`;
 
-  const capas: sharp.OverlayOptions[] = [{ input: Buffer.from(texto, "utf8"), top: 0, left: 0 }];
+  const capas: OverlayOptions[] = [{ input: Buffer.from(texto, "utf8"), top: 0, left: 0 }];
 
   if (marcada) {
     // La marca va SOBRE la imagen, cruzada y grande: un archivo se renombra o se reenvía sin

@@ -15,6 +15,7 @@
     "seed:regalo-demo": "tsx --env-file=.env scripts/seed-regalo-demo.ts",
     "qr": "tsx --env-file=.env scripts/generar-qr.ts",
     "bucket:fotos": "tsx --env-file=.env scripts/asegurar-bucket-fotos.ts",
+    "limpiar:pruebas": "tsx --env-file=.env scripts/limpiar-pruebas.ts",
     "migrar": "tsx --env-file=.env scripts/migrar.ts",
     "verificar:migracion": "tsx --env-file=.env scripts/verificar-migracion-0002.ts",
     "test:e2e": "playwright test"

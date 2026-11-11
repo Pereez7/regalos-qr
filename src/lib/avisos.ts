@@ -149,7 +149,10 @@ export async function reintentarAviso(avisoId: string): Promise<ResultadoReinten
   if (aviso.estado === "enviado") return { ok: false, motivo: "ese aviso ya se había enviado" };
 
   const tipo = aviso.tipo as TipoAviso;
-  const regaloId = (aviso as { pedidos: { regalo_id: string | null } | null }).pedidos?.regalo_id;
+  // PostgREST tipa el recurso embebido como lista aunque la relación sea de a uno; el cast
+  // pasa por `unknown` porque las dos formas no se superponen.
+  const embebido = (aviso as unknown as { pedidos: { regalo_id: string | null } | null }).pedidos;
+  const regaloId = embebido?.regalo_id ?? null;
 
   await intentarEnvio(
     aviso.id as string,
