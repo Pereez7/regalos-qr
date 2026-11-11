@@ -1,0 +1,232 @@
+---
+import VentaLayout from "../layouts/VentaLayout.astro";
+import {
+  COOKIE_OPS,
+  DURACION_COOKIE_OPS,
+  claveOpsValida,
+  cookieOpsValida,
+  secretoOps,
+  tokenOps,
+} from "../lib/ops.ts";
+import {
+  avisosPendientesOFallidos,
+  discrepanciasDeMonto,
+  eventosSinPedido,
+  pedidosIniciadosNuncaPagados,
+  pedidosPagadosSinRegalo,
+} from "../lib/pedidos.ts";
+
+export const prerender = false;
+
+// FR-008 y research.md #14: la cola operativa. Visibilidad, no administración — el panel
+// completo está fuera de alcance.
+//
+// Compuerta PROPIA, derivada de OPS_SECRET e independiente de MODO_INTERNO: ese flag se
+// apaga el día que la landing se abre al público, y esta página muestra correos de
+// compradores (CONTRADICCIONES H9). Sin credencial responde 404 y no 401, igual que
+// /acceso: un 401 delataría que acá hay algo.
+
+const clave = Astro.url.searchParams.get("clave");
+const cookie = Astro.cookies.get(COOKIE_OPS)?.value;
+const autorizado = claveOpsValida(clave) || cookieOpsValida(cookie);
+
+if (!autorizado) {
+  return new Response(null, { status: 404 });
+}
+
+// La clave correcta deja la cookie, para no tener que llevar el secreto en la barra de
+// direcciones en cada recarga. Lo que se guarda es el token DERIVADO, no OPS_SECRET: una
+// cookie filtrada no puede borrar pedidos por API.
+if (claveOpsValida(clave) && secretoOps()) {
+  Astro.cookies.set(COOKIE_OPS, tokenOps()!, {
+    httpOnly: true,
+    secure: Astro.url.protocol === "https:",
+    sameSite: "lax",
+    path: "/",
+    maxAge: DURACION_COOKIE_OPS,
+  });
+}
+
+const [pagadosSinRegalo, abandonados, avisos, huerfanos, discrepancias] = await Promise.all([
+  pedidosPagadosSinRegalo(),
+  pedidosIniciadosNuncaPagados(),
+  avisosPendientesOFallidos(),
+  eventosSinPedido(),
+  discrepanciasDeMonto(),
+]);
+
+function fecha(valor: string): string {
+  return new Date(valor).toLocaleString("es-AR");
+}
+---
+
+<VentaLayout titulo="Cola operativa" ancho="amplio">
+  <h1>Cola operativa</h1>
+  <p>
+    Lo que quedó a medio camino. Ningún pedido se pierde: si algo salió torcido, está en una
+    de estas cinco listas.
+  </p>
+
+  <h2>Pagados sin regalo entregado ({pagadosSinRegalo.length})</h2>
+  {
+    pagadosSinRegalo.length === 0 ? (
+      <p>Nada pendiente.</p>
+    ) : (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Correo</th>
+              <th>Pagado</th>
+              <th>Regalo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pagadosSinRegalo.map((pedido) => (
+              <tr data-pedido={pedido.id} data-estado={pedido.estado}>
+                <td><a href={`/gracias/${pedido.id}`}>{pedido.id.slice(0, 8)}</a></td>
+                <td>{pedido.email}</td>
+                <td>{pedido.pagadoEn ? fecha(pedido.pagadoEn) : "—"}</td>
+                <td>
+                  {pedido.regaloId == null
+                    ? "sin enviar"
+                    : pedido.estadoRegalo === "en_revision"
+                      ? "en revisión"
+                      : (pedido.estadoRegalo ?? "—")}
+                  {pedido.slugRegalo && <> · <a href={`/r/${pedido.slugRegalo}`}>{pedido.slugRegalo}</a></>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  <h2>Intentos abandonados ({abandonados.length})</h2>
+  <p>Pedidos iniciados que nunca se pagaron. Basura inofensiva: nunca una venta.</p>
+  {
+    abandonados.length > 0 && (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Correo</th>
+              <th>Iniciado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {abandonados.map((pedido) => (
+              <tr data-pedido={pedido.id} data-estado={pedido.estado}>
+                <td>{pedido.id.slice(0, 8)}</td>
+                <td>{pedido.email}</td>
+                <td>{fecha(pedido.creadoEn)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  <h2>Avisos sin enviar o fallidos ({avisos.length})</h2>
+  <p>El reintento manual se agrega con la historia 4 (tasks.md T068).</p>
+  {
+    avisos.length > 0 && (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Tipo</th>
+              <th>Destinatario</th>
+              <th>Estado</th>
+              <th>Intentos</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {avisos.map((aviso) => (
+              <tr data-aviso={aviso.id} data-estado={aviso.estado}>
+                <td>{aviso.pedidoId.slice(0, 8)}</td>
+                <td>{aviso.tipo}</td>
+                <td>{aviso.destinatario}</td>
+                <td>{aviso.estado}</td>
+                <td>{aviso.intentos}</td>
+                <td>{aviso.error ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  <h2>Avisos de pago sin pedido ({huerfanos.length})</h2>
+  <p>
+    No debería haber ninguno: el pedido nace antes de ir a pagar. Cada fila es un error real
+    —otro entorno, un pedido borrado, o un aviso apócrifo con firma válida—.
+  </p>
+  {
+    huerfanos.length > 0 && (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>Evento</th>
+              <th>Informó</th>
+              <th>Recibido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {huerfanos.map((evento) => (
+              <tr data-evento={evento.id}>
+                <td>{evento.proveedor}</td>
+                <td>{evento.eventoId}</td>
+                <td>{evento.estadoInformado}</td>
+                <td>{fecha(evento.recibidoEn)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  <h2>Discrepancias de monto ({discrepancias.length})</h2>
+  <p>
+    El comprador recibió lo que pagó y el pago no se bloqueó. Qué hacer con la diferencia
+    —reintegrar, cobrar el resto o dejarla pasar— se decide caso por caso.
+  </p>
+  {
+    discrepancias.length > 0 && (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Cotizado</th>
+              <th>Informado</th>
+              <th>Moneda</th>
+              <th>Actualizado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {discrepancias.map((d) => (
+              <tr data-discrepancia={d.pagoId}>
+                <td>{d.pedidoId.slice(0, 8)}</td>
+                <td>{d.montoCotizadoCentavos}</td>
+                <td>{d.montoInformadoCentavos}</td>
+                <td>{d.moneda}</td>
+                <td>{fecha(d.actualizadoEn)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</VentaLayout>

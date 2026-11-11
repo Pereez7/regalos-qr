@@ -100,45 +100,45 @@ quedó un pedido pagado accesible por su propio enlace.
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] `tests/e2e/pago-idempotente.spec.ts` — el mismo aviso entregado 10 veces y 2
+- [x] T015 [P] [US1] `tests/e2e/pago-idempotente.spec.ts` — el mismo aviso entregado 10 veces y 2
       veces en simultáneo deja un solo pedido pagado y un solo efecto derivado (FR-004, SC-006).
-- [ ] T016 [P] [US1] En el mismo archivo, un aviso con firma inválida se rechaza con 401 y **no
+- [x] T016 [P] [US1] En el mismo archivo, un aviso con firma inválida se rechaza con 401 y **no
       deja fila** en `eventos_pago`: si la dejara, cualquiera podría envenenar la clave de
       idempotencia con un `evento_id` inventado y el aviso legítimo se descartaría como duplicado
       (FR-005, research.md #2).
-- [ ] T017 [P] [US1] En el mismo archivo, los códigos por content-type: `application/json` pasa
+- [x] T017 [P] [US1] En el mismo archivo, los códigos por content-type: `application/json` pasa
       sin `Origin`; `x-www-form-urlencoded`, `text/plain` y la ausencia de content-type reciben
       **403 del framework** antes del manejador; `application/xml` recibe **415** del manejador.
       Son dos capas distintas y el test no debe confundirlas (research.md #1).
-- [ ] T018 [P] [US1] En el mismo archivo, un aviso cuyo pedido no existe responde 404, queda
+- [x] T018 [P] [US1] En el mismo archivo, un aviso cuyo pedido no existe responde 404, queda
       registrado con `resultado = 'sin_pedido'` y no altera nada (research.md #2).
-- [ ] T019 [P] [US1] `tests/e2e/pedido-ajeno.spec.ts` — el enlace de un pedido no da acceso a
+- [x] T019 [P] [US1] `tests/e2e/pedido-ajeno.spec.ts` — el enlace de un pedido no da acceso a
       otro: ni a su estado, ni a su borrador, ni a su regalo (FR-031).
 
 ### Implementation for User Story 1
 
-- [ ] T020 [P] [US1] Crear `src/lib/pagos/simulado.ts`: genera la URL de cobro simulado y firma
+- [x] T020 [P] [US1] Crear `src/lib/pagos/simulado.ts`: genera la URL de cobro simulado y firma
       sus avisos con HMAC-SHA256 y `PAGO_SIMULADO_SECRETO`, para que el camino de verificación de
       firma se ejercite de verdad en simulación (research.md #3).
-- [ ] T021 [US1] Crear `src/pages/comprar.astro` — `POST`: crea el pedido en estado `iniciado`
+- [x] T021 [US1] Crear `src/pages/comprar.astro` — `POST`: crea el pedido en estado `iniciado`
       **antes** de redirigir al cobro, guardando el monto cotizado y la moneda
       (contracts/api-iniciar-compra.md, research.md #4).
-- [ ] T022 [US1] Crear `src/pages/api/pagos/webhook/[proveedor].ts` — acepta solo
+- [x] T022 [US1] Crear `src/pages/api/pagos/webhook/[proveedor].ts` — acepta solo
       `application/json`; **verifica la firma primero**, después inserta en `eventos_pago`, y solo
       si la inserción tuvo éxito aplica el efecto sobre el pedido; duplicado responde 200 y nunca
       409, para no provocar reintentos infinitos (contracts/api-webhook-pago.md).
-- [ ] T023 [US1] En el mismo manejador, aplicar la decisión 23 ante discrepancia de monto: vale el
+- [x] T023 [US1] En el mismo manejador, aplicar la decisión 23 ante discrepancia de monto: vale el
       monto que informa el proveedor, se guardan los dos, el pago no se bloquea y el caso queda
       marcado para la cola.
-- [ ] T024 [P] [US1] Crear `src/pages/index.astro` — landing: qué es el regalo, al menos un
+- [x] T024 [P] [US1] Crear `src/pages/index.astro` — landing: qué es el regalo, al menos un
       ejemplo real navegable, el precio leído en runtime, y una sola acción de compra (FR-001).
-- [ ] T025 [P] [US1] Crear `src/pages/gracias/[pedido].astro` — muestra el **estado real** del
+- [x] T025 [P] [US1] Crear `src/pages/gracias/[pedido].astro` — muestra el **estado real** del
       pedido (pagado o pendiente de pago, nunca "todo salió bien" si no lo está) y el enlace de
       carga (FR-002, escenario de aceptación 4 de US1).
-- [ ] T026 [US1] Crear `src/pages/pedidos.astro` — cola operativa detrás de la compuerta de
+- [x] T026 [US1] Crear `src/pages/pedidos.astro` — cola operativa detrás de la compuerta de
       `src/lib/ops.ts`: pagados sin regalo, iniciados nunca pagados, avisos fallidos, eventos
       `sin_pedido` y discrepancias de monto (FR-008, research.md #14).
-- [ ] T027 [P] [US1] `tests/e2e/cola-operativa.spec.ts` — un pedido pagado sin regalo aparece en
+- [x] T027 [P] [US1] `tests/e2e/cola-operativa.spec.ts` — un pedido pagado sin regalo aparece en
       la cola; sin la credencial de `OPS_SECRET`, la página no se sirve (FR-008, SC-007).
 
 **Checkpoint**: se puede cobrar. Todavía no hay regalo.

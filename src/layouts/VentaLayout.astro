@@ -1,0 +1,150 @@
+---
+import "../styles/base.css";
+import "../temas/tokens-papel.css";
+
+// Cáscara de las páginas de venta y de operación (landing, cobro, gracias, cola). No
+// existe en el árbol de plan.md porque es un detalle de implementación: evita repetir el
+// <head> y los tokens en cinco páginas.
+//
+// Usa el tema `papel` fijo. No es una decisión de producto sobre el regalo —el clima visual
+// del regalo lo elige el comprador y vive en RegaloLayout—, sino la identidad del sitio que
+// vende. Cero JavaScript: estas páginas funcionan completas sin él (Principio I).
+
+interface Props {
+  titulo: string;
+  /** Las páginas de venta no se indexan todavía: el sitio está en simulación. */
+  noIndex?: boolean;
+  ancho?: "texto" | "amplio";
+}
+
+const { titulo, noIndex = true, ancho = "texto" } = Astro.props;
+---
+
+<html lang="es" data-tema="papel">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {noIndex && <meta name="robots" content="noindex" />}
+    <title>{titulo}</title>
+  </head>
+  <body>
+    <main data-ancho={ancho}>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  /* FR-032: 320–1440 px sin scroll horizontal. El ancho lo pone un max-width en ch/px y
+     nunca una medida fija. */
+  main {
+    position: relative;
+    z-index: 2;
+    margin: 0 auto;
+    padding: var(--e-3) var(--e-2) var(--e-5);
+  }
+
+  main[data-ancho="texto"] {
+    max-width: var(--ancho-pagina);
+  }
+
+  main[data-ancho="amplio"] {
+    max-width: 1100px;
+  }
+
+  :global(h1) {
+    font-family: var(--f-display);
+    font-size: var(--t-titulo);
+    line-height: var(--i-titulo);
+    font-weight: 300;
+    margin: 0 0 var(--e-2);
+  }
+
+  :global(h2) {
+    font-family: var(--f-display);
+    font-size: var(--t-subtitulo);
+    line-height: var(--i-titulo);
+    font-weight: 300;
+    margin: var(--e-4) 0 var(--e-1);
+  }
+
+  :global(p) {
+    margin: 0 0 var(--e-2);
+    max-width: 62ch;
+  }
+
+  :global(a) {
+    color: var(--acento);
+  }
+
+  :global(.boton) {
+    display: inline-block;
+    padding: var(--e-1) var(--e-3);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    font-weight: 500;
+    color: var(--papel);
+    background: var(--acento);
+    border: 1px solid var(--acento);
+    border-radius: var(--radio);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  :global(.boton-secundario) {
+    color: var(--acento);
+    background: transparent;
+  }
+
+  :global(.aviso) {
+    padding: var(--e-2);
+    background: var(--superficie);
+    border-left: 3px solid var(--realce);
+  }
+
+  :global(label) {
+    display: block;
+    margin-bottom: var(--e-1);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  :global(input[type="email"]),
+  :global(input[type="tel"]) {
+    width: 100%;
+    padding: var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  :global(.opcional) {
+    display: flex;
+    gap: var(--e-1);
+    align-items: flex-start;
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--t-pequeno);
+  }
+
+  :global(th),
+  :global(td) {
+    padding: var(--e-1);
+    text-align: left;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: top;
+  }
+
+  /* Una tabla ancha hace scroll dentro de su contenedor, nunca en el body (FR-032). */
+  :global(.tabla-scroll) {
+    overflow-x: auto;
+  }
+</style>

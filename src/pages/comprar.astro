@@ -1,0 +1,77 @@
+---
+import { crearPedido } from "../lib/pedidos.ts";
+import { precioVigente, proveedorPago } from "../lib/config.ts";
+import { obtenerAdaptadorPago } from "../lib/pagos/registro.ts";
+
+export const prerender = false;
+
+// Contrato: specs/002-compra-a-qr/contracts/api-iniciar-compra.md
+//
+// Es la acción del <form> plano de la landing: sin JavaScript de cliente. Vive en la misma
+// ruta que la página por decisión del contrato; no hay una ruta bajo /api/ porque no hay
+// ningún cliente programático que la necesite.
+//
+// Esta ruta NUNCA responde 200 con una pantalla de éxito: un pedido recién creado no está
+// pagado, y decir lo contrario es el caso que FR-002 prohíbe. El único lugar donde el
+// comprador ve el estado de su pedido es /gracias/[pedido], y muestra el estado real.
+
+// Un GET no crea nada: alguien llegó acá de más, vuelve a la landing.
+if (Astro.request.method !== "POST") {
+  return Astro.redirect("/", 303);
+}
+
+const formulario = await Astro.request.formData();
+const email = (formulario.get("email") ?? "").toString().trim();
+const celular = (formulario.get("celular") ?? "").toString().trim();
+// Casilla NO pre-marcada: solo cuenta como consentimiento si llega presente. Nunca se
+// deduce de la presencia del número (FR-035).
+const consentimiento = formulario.get("consentimiento_publicidad") != null;
+
+// Validación mínima. El formulario usa type="email" required, así que el navegador corta
+// este caso antes; el 400 cubre el envío programático. La columna es `not null` con check
+// de forma mínima: la regla la hace cumplir la tabla y no solo este manejador.
+const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+if (!emailValido) {
+  return new Response("Hace falta una dirección de correo válida.", {
+    status: 400,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+const adaptador = obtenerAdaptadorPago(proveedorPago());
+if (!adaptador) {
+  // Error de configuración, no del comprador. No se crea el pedido: no habría forma de
+  // llevarlo a ningún cobro.
+  return new Response("No hay un proveedor de cobro configurado.", { status: 500 });
+}
+
+const precio = precioVigente();
+
+// El pedido nace ANTES de ir a pagar, con su id ya asignado, para que el aviso de pago
+// siempre encuentre un pedido esperando — incluso si llega antes de que el comprador
+// vuelva del proveedor (research.md #4, Principio VII).
+const pedido = await crearPedido({
+  email,
+  celular: celular.length > 0 ? celular : null,
+  consentimientoPublicidad: consentimiento,
+});
+
+const cobro = await adaptador
+  .iniciarCobro({ id: pedido.id, email: pedido.email, precio })
+  .catch(() => null);
+
+// 502: el pedido queda en `iniciado` con su intento registrado y aparece en la cola
+// operativa como abandonado. No se borra: un intento de compra del que no queda rastro es
+// exactamente lo que el Principio VII prohíbe.
+if (!cobro) {
+  return new Response("El cobro no está disponible en este momento. Volvé a intentar.", {
+    status: 502,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+return Astro.redirect(cobro.urlDeCobro, 303);
+---
+
+<!-- Esta página nunca se renderiza: el POST redirige al cobro con 303 y el GET vuelve a
+     la landing. El cuerpo existe para que no quede un archivo .astro sin plantilla. -->

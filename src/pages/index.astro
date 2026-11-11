@@ -1,0 +1,138 @@
+---
+import VentaLayout from "../layouts/VentaLayout.astro";
+import { formatearPrecio, precioVigente, type Precio } from "../lib/config.ts";
+import { obtenerSlugDeEjemplo } from "../lib/ejemplos.ts";
+
+export const prerender = false;
+
+// FR-001: qué es el regalo, al menos un ejemplo real navegable, el precio, y una sola
+// acción de compra. Sin JavaScript: el formulario es un <form> plano que postea a /comprar.
+//
+// El precio se lee en runtime (research.md #18). Si falta, la página lo dice y NO ofrece
+// comprar: vender sin saber cuánto se cobra es peor que no vender.
+
+let precio: Precio | null = null;
+let errorPrecio: string | null = null;
+try {
+  precio = precioVigente();
+} catch (e) {
+  errorPrecio = e instanceof Error ? e.message : "Precio no configurado";
+}
+
+const slugEjemplo = await obtenerSlugDeEjemplo();
+---
+
+<VentaLayout titulo="Un regalo que se abre con un QR">
+  <h1>Una historia hecha página, que se abre escaneando un QR</h1>
+
+  <p>
+    Vos contás la historia —a quién va dedicada, los momentos que quieren recordar, las
+    fotos, la canción, la carta—. Nosotros la convertimos en una página web hecha para
+    leerse en el celular, y te damos una tarjeta con un código QR lista para imprimir.
+    Quien la recibe escanea y la historia se abre.
+  </p>
+
+  <h2>Qué recibís</h2>
+  <ul>
+    <li>Una página privada con tu historia, que se abre sin instalar nada.</li>
+    <li>Un enlace propio que no cambia nunca, y que solo tiene quien vos quieras.</li>
+    <li>Una tarjeta con el QR, en un archivo listo para llevar a imprimir.</li>
+    <li>Un enlace de revisión: nada se publica hasta que vos lo aprobás.</li>
+  </ul>
+
+  <h2>Mirá uno de verdad</h2>
+  {
+    slugEjemplo ? (
+      <p>
+        <a class="boton boton-secundario" href={`/r/${slugEjemplo}`} data-ejemplo>
+          Abrir un regalo de ejemplo
+        </a>
+      </p>
+    ) : (
+      <p data-sin-ejemplo>
+        Todavía no hay un ejemplo publicado para mostrar acá.
+      </p>
+    )
+  }
+
+  <h2>Cuánto cuesta</h2>
+  {
+    precio ? (
+      <p data-precio>
+        <strong>{formatearPrecio(precio)}</strong> por regalo, una sola vez. Sin suscripción:
+        la página queda publicada y el enlace no vence.
+      </p>
+    ) : (
+      <p class="aviso" data-precio-faltante>
+        El precio no está configurado, así que la compra está cerrada. ({errorPrecio})
+      </p>
+    )
+  }
+
+  {
+    precio && (
+      <>
+        <h2>Comprar</h2>
+        <form method="POST" action="/comprar" data-form-comprar>
+          <p>
+            <label for="email">Tu correo (acá te mandamos el enlace de tu pedido)</label>
+            <input type="email" id="email" name="email" required autocomplete="email" />
+          </p>
+
+          <fieldset>
+            <legend>Opcional</legend>
+            <p>
+              <label for="celular">Tu celular</label>
+              <input type="tel" id="celular" name="celular" autocomplete="tel" />
+            </p>
+            {/* FR-035: propósito declarado junto a la casilla, y la casilla NO viene
+                pre-marcada. El celular no hace falta para comprar. */}
+            <p class="opcional">
+              <input
+                type="checkbox"
+                id="consentimiento_publicidad"
+                name="consentimiento_publicidad"
+                value="si"
+              />
+              <label for="consentimiento_publicidad">
+                Quiero recibir novedades y promociones por mensaje a ese número. Lo usamos
+                solo para eso, y podés darte de baja cuando quieras: la baja borra el número.
+              </label>
+            </p>
+          </fieldset>
+
+          <p>
+            <button type="submit" class="boton">Comprar por {formatearPrecio(precio)}</button>
+          </p>
+        </form>
+      </>
+    )
+  }
+</VentaLayout>
+
+<style>
+  ul {
+    margin: 0 0 var(--e-2);
+    padding-left: var(--e-3);
+    max-width: 62ch;
+  }
+
+  li {
+    margin-bottom: var(--e-1);
+  }
+
+  fieldset {
+    margin: 0 0 var(--e-2);
+    padding: var(--e-2);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  legend {
+    padding: 0 var(--e-1);
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+</style>

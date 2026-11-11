@@ -1,0 +1,118 @@
+---
+import { randomBytes } from "node:crypto";
+import VentaLayout from "../../layouts/VentaLayout.astro";
+import { obtenerPedido } from "../../lib/pedidos.ts";
+import { getServiceClient } from "../../lib/supabase.ts";
+import { construirAviso, CABECERA_FIRMA, CLAVE } from "../../lib/pagos/simulado.ts";
+import { formatearPrecio } from "../../lib/config.ts";
+
+export const prerender = false;
+
+// Página de cobro del proveedor simulado (FR-007, research.md #3). Reproduce el
+// comportamiento OBSERVABLE de un proveedor real: el comprador sale del sitio hacia una
+// página de cobro, decide, y el resultado vuelve por un aviso servidor a servidor firmado
+// —nunca por el regreso del navegador—.
+//
+// Ese detalle es el que hace que la simulación sirva: si el pago se aplicara al volver el
+// comprador, el camino real (webhook + firma + idempotencia) quedaría sin ejercitar.
+
+const { pedido: pedidoId } = Astro.params;
+const pedido = pedidoId ? await obtenerPedido(pedidoId) : null;
+
+if (!pedido) {
+  return new Response(null, { status: 404 });
+}
+
+const supabase = getServiceClient();
+const { data: pago } = await supabase
+  .from("pagos")
+  .select("id, monto_centavos, moneda, estado, pago_id_proveedor")
+  .eq("pedido_id", pedido.id)
+  .order("creado_en", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+
+let error: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const formulario = await Astro.request.formData();
+  const decision = (formulario.get("decision") ?? "").toString();
+
+  if (decision !== "aprobado" && decision !== "rechazado") {
+    error = "Decisión no reconocida.";
+  } else if (!pago) {
+    error = "Este pedido no tiene un cobro iniciado.";
+  } else {
+    const { cuerpo, firma } = construirAviso({
+      id_evento: `ev_${randomBytes(8).toString("hex")}`,
+      id_pago: pago.pago_id_proveedor ?? `pay_${randomBytes(8).toString("hex")}`,
+      referencia: pedido.id,
+      monto_centavos: pago.monto_centavos as number,
+      moneda: pago.moneda as string,
+      estado: decision,
+    });
+
+    // Servidor a servidor contra nuestro propio webhook, igual que lo haría el proveedor:
+    // JSON, sin `Origin`, con la firma en su cabecera (research.md #1).
+    const respuesta = await fetch(new URL(`/api/pagos/webhook/${CLAVE}`, Astro.url.origin), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", [CABECERA_FIRMA]: firma },
+      body: cuerpo,
+    });
+
+    if (!respuesta.ok) {
+      // El aviso no se aplicó. No se inventa un estado: el comprador va a /gracias y ve el
+      // estado real, que sigue siendo "pendiente de pago".
+      error = `El aviso de pago no pudo aplicarse (${respuesta.status}).`;
+    } else {
+      return Astro.redirect(`/gracias/${pedido.id}`, 303);
+    }
+  }
+}
+
+const monto = pago
+  ? formatearPrecio({ centavos: pago.monto_centavos as number, moneda: pago.moneda as string })
+  : null;
+---
+
+<VentaLayout titulo="Cobro (simulación)">
+  <p class="aviso">
+    <strong>Simulación de cobro.</strong> Esta pantalla reemplaza al proveedor de pago
+    mientras el negocio no tenga una cuenta real. No se pide ningún dato de tarjeta y no se
+    mueve dinero.
+  </p>
+
+  <h1>Pagar el regalo</h1>
+
+  {
+    monto ? (
+      <p>
+        Total a pagar: <strong>{monto}</strong>
+      </p>
+    ) : (
+      <p>Este pedido no tiene un cobro iniciado.</p>
+    )
+  }
+
+  {error && <p class="aviso" data-error>{error}</p>}
+
+  <form method="POST">
+    <input type="hidden" name="decision" value="aprobado" />
+    <button type="submit" class="boton" data-pagar>Confirmar el pago</button>
+  </form>
+
+  <form method="POST">
+    <input type="hidden" name="decision" value="rechazado" />
+    <button type="submit" class="boton boton-secundario" data-rechazar>
+      Simular un pago rechazado
+    </button>
+  </form>
+
+  <p><a href={`/gracias/${pedido.id}`}>Volver sin pagar</a></p>
+</VentaLayout>
+
+<style>
+  form {
+    margin-bottom: var(--e-2);
+  }
+</style>

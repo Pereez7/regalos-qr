@@ -1,0 +1,105 @@
+---
+import VentaLayout from "../../layouts/VentaLayout.astro";
+import { obtenerPedido } from "../../lib/pedidos.ts";
+import { getServiceClient } from "../../lib/supabase.ts";
+import { formatearPrecio } from "../../lib/config.ts";
+
+export const prerender = false;
+
+// FR-002 y escenario 4 de la US1: acá se muestra el estado REAL del pedido. Un pedido
+// `iniciado` se ve como "pendiente de pago" y nunca como una pantalla de éxito, porque no
+// existe ningún estado intermedio optimista que pudiera mostrarse por error.
+//
+// FR-031: el id del pedido es la única credencial y solo abre este pedido. Un id ajeno,
+// manipulado o inexistente responde 404 — indistinguible de una ruta que no existe, para
+// que el enlace no sirva ni como oráculo de qué pedidos existen.
+
+const { pedido: pedidoId } = Astro.params;
+const pedido = pedidoId ? await obtenerPedido(pedidoId) : null;
+
+if (!pedido) {
+  return new Response(null, { status: 404 });
+}
+
+const supabase = getServiceClient();
+const { data: pago } = await supabase
+  .from("pagos")
+  .select("monto_centavos, moneda, estado, proveedor")
+  .eq("pedido_id", pedido.id)
+  .order("creado_en", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+
+const pagado = pedido.estado === "pagado";
+const monto = pago
+  ? formatearPrecio({ centavos: pago.monto_centavos as number, moneda: pago.moneda as string })
+  : null;
+const enlaceCarga = `/contar/${pedido.id}/destinatario`;
+---
+
+<VentaLayout titulo={pagado ? "Tu pedido está pagado" : "Tu pedido está pendiente de pago"}>
+  {
+    pagado ? (
+      <>
+        <h1>Listo, tu pedido está pagado</h1>
+        <p>
+          Guardá este enlace: es la única llave de tu pedido. No hace falta cuenta ni
+          contraseña, y es el mismo al que vas a volver cada vez que quieras seguir cargando
+          tu historia.
+        </p>
+        <p>
+          <a class="boton" href={enlaceCarga} data-enlace-carga>Empezar a contar la historia</a>
+        </p>
+      </>
+    ) : (
+      <>
+        <h1>Tu pedido está pendiente de pago</h1>
+        <p data-pendiente>
+          Todavía no recibimos la confirmación del pago. Si acabás de pagar, puede tardar
+          unos segundos: volvé a cargar esta página. Mientras el pago no esté confirmado, la
+          carga de la historia no se abre.
+        </p>
+        {pago?.proveedor === "simulado" && (
+          <p>
+            <a class="boton" href={`/cobro-simulado/${pedido.id}`}>Volver al cobro</a>
+          </p>
+        )}
+      </>
+    )
+  }
+
+  <h2>Tu pedido</h2>
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row">Estado</th>
+        <td data-estado={pedido.estado}>{pagado ? "Pagado" : "Pendiente de pago"}</td>
+      </tr>
+      <tr>
+        <th scope="row">Correo</th>
+        <td>{pedido.email}</td>
+      </tr>
+      {
+        monto && (
+          <tr>
+            <th scope="row">Importe</th>
+            <td>{monto}</td>
+          </tr>
+        )
+      }
+      <tr>
+        <th scope="row">Fecha</th>
+        <td>{new Date(pedido.creadoEn).toLocaleDateString("es-AR")}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  {
+    pedido.celular && (
+      <p class="opcional">
+        Guardamos tu celular para avisarte de novedades, con tu consentimiento.{" "}
+        <a href={`/baja/${pedido.tokenBaja}`}>Darme de baja de esos mensajes</a>.
+      </p>
+    )
+  }
+</VentaLayout>
