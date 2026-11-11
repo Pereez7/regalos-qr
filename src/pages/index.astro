@@ -27,6 +27,18 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 ---
 
 <VentaLayout titulo="Un regalo que se abre con un QR">
+  {/* El sobre no es una ilustración: es el mismo gesto que va a hacer quien reciba el
+      regalo, en chico y en bucle. Es lo más característico del producto y lo primero que
+      se ve. CSS puro, sin una imagen que descargar ni un byte de JavaScript. */}
+  <div class="vitrina" aria-hidden="true">
+    <div class="sobre-mini">
+      <span class="carta"></span>
+      <span class="cuerpo"></span>
+      <span class="solapa"></span>
+      <span class="sello">♥</span>
+    </div>
+  </div>
+
   <h1>Una tarjeta con un QR. Detrás, todo lo que no cabe en una tarjeta.</h1>
 
   <p>
@@ -70,12 +82,12 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     )
   }
 
-  <h2>Qué ve quien lo recibe</h2>
+  <h2 class="entra">Qué ve quien lo recibe</h2>
   <p>
     Un sobre cerrado. Nada más, hasta que lo toca. Y entonces, de a un bloque, aparece todo
     esto:
   </p>
-  <ul>
+  <ul class="entra">
     <li>Su nombre, y la cuenta de los días desde la fecha que vos elegiste.</li>
     <li>Los momentos, de a uno, como quien da vuelta una página.</li>
     <li>Las fotos que pusiste, hasta diez.</li>
@@ -89,13 +101,13 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     ningún listado: lo abre quien tenga el enlace, y el enlace lo das vos.
   </p>
 
-  <h2>Vos contás. No diseñás nada.</h2>
+  <h2 class="entra">Vos contás. No diseñás nada.</h2>
   <p>
     Son siete pasos, y cada paso es una pregunta. Contestás con tus palabras —nadie las
     reescribe ni las corrige— y el resto lo ponemos nosotros: el ritmo, la tipografía, el
     sobre que se abre.
   </p>
-  <ol class="pasos">
+  <ol class="pasos entra">
     <li>
       <strong>Para quién es.</strong> El nombre de quien lo recibe, cuál de los tres climas
       visuales querés —nocturno, papel o luminoso— y desde qué fecha se cuentan los días.
@@ -117,7 +129,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     mensaje a vos mismo— porque es la única llave.
   </p>
 
-  <h2>Nada se publica hasta que vos lo apruebes</h2>
+  <h2 class="entra">Nada se publica hasta que vos lo apruebes</h2>
   <p>
     Cuando terminás, te damos un enlace de revisión donde ves tu regalo exactamente como lo
     va a ver quien lo recibe, sobre incluido. Si algo no te gusta, volvés y lo cambiás. Y
@@ -129,7 +141,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     edita a espaldas de quien lo recibió.
   </p>
 
-  <h2>Qué recibís vos</h2>
+  <h2 class="entra">Qué recibís vos</h2>
   <ul>
     <li>La página de tu regalo, con su propio enlace, que no vence ni cambia nunca.</li>
     <li>
@@ -147,14 +159,14 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     papel.
   </p>
 
-  <h2>Para cuándo sirve</h2>
+  <h2 class="entra">Para cuándo sirve</h2>
   <p>
     Un aniversario. Una propuesta de matrimonio, con la pregunta escrita y guardada para
     siempre. Un cumpleaños. Y el caso para el que esto existe: estar lejos y querer mandar
     algo que no sea plata.
   </p>
 
-  <h2>Cuánto cuesta</h2>
+  <h2 class="entra">Cuánto cuesta</h2>
   {
     precio ? (
       <p data-precio>
@@ -169,8 +181,8 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     )
   }
 
-  <h2>Preguntas</h2>
-  <dl>
+  <h2 class="entra">Preguntas</h2>
+  <dl class="entra">
     <dt>¿Tiene que instalar algo o abrirse una cuenta?</dt>
     <dd>
       No. Escanea, se abre en el navegador del celular y listo. Vos tampoco tenés cuenta
@@ -219,7 +231,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   {
     precio && (
       <>
-        <h2 id="comprar">Empezá</h2>
+        <h2 id="comprar" class="entra">Empezá</h2>
         <p>
           Dejanos tu correo y te llevamos al QR para pagar. Apenas pagues te damos el enlace
           de tu pedido: <strong>guardalo</strong>, es tu única llave. Confirmamos la
@@ -270,6 +282,185 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 <style>
   h1 {
     max-width: 24ch;
+  }
+
+  /* ── El sobre de la cabecera ─────────────────────────────────────────────────────────
+     Mismo gesto que el del regalo, en chico. Se abre y se cierra en bucle lento: lo
+     suficiente para que se entienda qué pasa al escanear, sin convertirse en un cartel que
+     parpadea. Todo con transformaciones, que el navegador resuelve en la tarjeta gráfica y
+     no en el hilo principal. */
+
+  .vitrina {
+    display: flex;
+    justify-content: center;
+    padding: var(--e-2) 0 var(--e-3);
+  }
+
+  .sobre-mini {
+    position: relative;
+    width: min(260px, 70vw);
+    aspect-ratio: 1.5 / 1;
+    transform-style: preserve-3d;
+  }
+
+  .sobre-mini span {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radio);
+  }
+
+  .sobre-mini .cuerpo {
+    background: linear-gradient(170deg, var(--sobre-a), var(--sobre-b));
+    box-shadow: var(--sombra-card);
+    z-index: 2;
+  }
+
+  /* Los pliegues en V del sobre, dibujados con dos degradados en vez de una imagen. */
+  .sobre-mini .cuerpo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    background:
+      linear-gradient(to bottom right, transparent 49.6%, var(--sobre-c) 49.8%, transparent 50.2%),
+      linear-gradient(to bottom left, transparent 49.6%, var(--sobre-c) 49.8%, transparent 50.2%);
+  }
+
+  .sobre-mini .carta {
+    inset: 8% 10% auto 10%;
+    height: 78%;
+    display: grid;
+    place-items: center;
+    color: var(--acento);
+    font-size: 1.4rem;
+    background: var(--papel);
+    box-shadow: var(--sombra-card);
+    z-index: 1;
+    animation: carta-sube 7s var(--curva) infinite;
+  }
+
+  .sobre-mini .carta::before {
+    content: "♥";
+    margin-top: -12%;
+    opacity: 0.85;
+  }
+
+  .sobre-mini .solapa {
+    bottom: auto;
+    height: 58%;
+    transform-origin: top center;
+    background: linear-gradient(185deg, var(--sobre-b), var(--sobre-c));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    z-index: 3;
+    animation: solapa-abre 7s var(--curva) infinite;
+  }
+
+  .sobre-mini .sello {
+    inset: auto auto 38% 50%;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%, 50%);
+    color: var(--papel);
+    background: var(--acento);
+    border-radius: 50%;
+    box-shadow: var(--sombra-card);
+    z-index: 4;
+    animation: sello-late 7s ease-in-out infinite;
+  }
+
+  /* `z-index` salta de un valor al otro sin pasar por el medio, y eso es justo lo que hace
+     falta: la solapa abierta tiene que caer DETRÁS del sobre para que la carta se vea salir.
+     Es el mismo truco que usa el sobre grande del regalo. */
+  @keyframes solapa-abre {
+    0%, 18% { transform: rotateX(0deg); z-index: 3; }
+    30% { z-index: 0; }
+    42%, 78% { transform: rotateX(178deg); z-index: 0; }
+    90% { z-index: 3; }
+    96%, 100% { transform: rotateX(0deg); z-index: 3; }
+  }
+
+  @keyframes carta-sube {
+    0%, 26% { transform: translateY(0) scale(0.97); z-index: 1; }
+    34% { z-index: 3; }
+    52%, 74% { transform: translateY(-46%) scale(1); z-index: 3; }
+    88% { z-index: 1; }
+    94%, 100% { transform: translateY(0) scale(0.97); z-index: 1; }
+  }
+
+  @keyframes sello-late {
+    0%, 14% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+    24%, 86% { opacity: 0; transform: translate(-50%, 50%) scale(0.3); }
+    98%, 100% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+  }
+
+  /* ── Secciones que entran al llegar a la pantalla ────────────────────────────────────
+     `animation-timeline: view()` ata la animación al scroll, sin JavaScript y sin medir
+     posiciones a mano. Donde no está soportado, el `@supports` no aplica y el contenido se
+     ve de entrada: el que no tiene la función no pierde nada. */
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .entra {
+        animation: entra-seccion linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 60%;
+      }
+    }
+  }
+
+  @keyframes entra-seccion {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ── Respuesta al tacto ──────────────────────────────────────────────────────────── */
+
+  .boton {
+    transition: transform var(--rapido) var(--resorte), box-shadow var(--rapido) ease;
+  }
+
+  .boton:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-card);
+  }
+
+  .boton:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sobre-mini .carta,
+    .sobre-mini .solapa,
+    .sobre-mini .sello {
+      animation: none;
+    }
+
+    /* Sin movimiento, el sobre se queda abierto: así sigue contando lo que tiene que
+       contar en vez de quedar como un rectángulo cerrado sin sentido. */
+    .sobre-mini .solapa {
+      transform: rotateX(178deg);
+    }
+
+    .sobre-mini .carta {
+      transform: translateY(-46%);
+      z-index: 3;
+    }
+
+    .sobre-mini .solapa {
+      z-index: 0;
+    }
+
+    .sobre-mini .sello {
+      opacity: 0;
+    }
   }
 
   ul,
