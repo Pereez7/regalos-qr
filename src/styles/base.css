@@ -122,9 +122,57 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* ─── Navegación entre páginas ────────────────────────────────────────
+   Transición de documento cruzado, nativa del navegador: el paso de una página a otra deja
+   de ser un parpadeo en blanco y pasa a ser un fundido. No cuesta un byte de JavaScript —no
+   hay router de cliente, siguen siendo navegaciones de verdad— y donde no está soportada,
+   simplemente no pasa nada.                                                              */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: salida-pagina 180ms ease both;
+}
+
+::view-transition-new(root) {
+  animation: entrada-pagina 280ms var(--curva) both;
+}
+
+@keyframes salida-pagina {
+  to { opacity: 0; }
+}
+
+@keyframes entrada-pagina {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Los anclas dentro de una página larga (la landing) se desplazan, no saltan. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* ─── Accesibilidad ───────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
+  /* Quien pidió menos movimiento no recibe ni transición de página ni entradas por scroll:
+     la regla de abajo acorta duraciones, pero una animación atada al scroll no tiene
+     duración que acortar, así que hay que apagarla por nombre. */
+  @view-transition {
+    navigation: none;
+  }
+
+  html.js #contenido.revelado,
+  html.js #contenido.revelado > [data-bloque] {
+    animation: none !important;
+  }
+
   *, *::before, *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
@@ -166,8 +214,69 @@ body::before {
 html.js #contenido {
   display: none;
 }
+
+/* El contenido pasaba de `display: none` a `display: flex` y aparecía de un golpe seco,
+   justo en el momento que más importa del producto: el segundo después de abrir el sobre.
+   Ahora sube y aparece, y los bloques entran escalonados detrás de él.
+
+   `display` no se puede animar, pero una animación aplicada al elemento recién mostrado sí
+   corre: por eso el movimiento vive en `.revelado` y no en una transición. */
 html.js #contenido.revelado {
   display: flex;
+  animation: entrada-contenido 800ms var(--curva) both;
+}
+
+@keyframes entrada-contenido {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes entrada-bloque {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Escalonado: cada bloque entra un poco después del anterior, como quien pasa páginas.
+   Se corta en el sexto para que una receta larga no haga esperar al final. */
+html.js #contenido.revelado > [data-bloque] {
+  animation: entrada-bloque 700ms var(--curva) both;
+  animation-delay: 260ms;
+}
+html.js #contenido.revelado > [data-bloque]:nth-child(2) { animation-delay: 380ms; }
+html.js #contenido.revelado > [data-bloque]:nth-child(3) { animation-delay: 500ms; }
+html.js #contenido.revelado > [data-bloque]:nth-child(4) { animation-delay: 620ms; }
+html.js #contenido.revelado > [data-bloque]:nth-child(5) { animation-delay: 740ms; }
+html.js #contenido.revelado > [data-bloque]:nth-child(n + 6) { animation-delay: 860ms; }
+
+/* Donde el navegador sabe animar según el scroll, cada bloque entra cuando entra en
+   pantalla, y no todos juntos al principio. Es progresivo: sin soporte queda el escalonado
+   de arriba, que ya es suficiente. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html.js #contenido.revelado > [data-bloque],
+    html.js #contenido.revelado > [data-bloque]:nth-child(2),
+    html.js #contenido.revelado > [data-bloque]:nth-child(3),
+    html.js #contenido.revelado > [data-bloque]:nth-child(4),
+    html.js #contenido.revelado > [data-bloque]:nth-child(5),
+    html.js #contenido.revelado > [data-bloque]:nth-child(n + 6) {
+      animation: entrada-bloque linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+      animation-delay: 0s;
+    }
+  }
 }
 
 #contenido::before {

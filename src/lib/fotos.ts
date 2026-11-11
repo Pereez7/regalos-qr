@@ -26,8 +26,16 @@ export const MAX_FOTOS = 10;
  */
 export const MAX_BYTES_SUBIDA = 4 * 1024 * 1024;
 
-/** Lado mayor de la versión almacenada. Alcanza para una pantalla de celular a 2x. */
-const LADO_MAYOR = 1600;
+/**
+ * Lado mayor de la versión almacenada.
+ *
+ * La galería del regalo se dibuja dentro de `--ancho-pagina` (640 px), así que 1280 cubre
+ * una pantalla de celular a 2x con margen. Estaba en 1600, que es resolución que nadie ve y
+ * bytes que todos pagan: medido sobre una foto de 3000×2000, bajar a 1280 con calidad 74
+ * lleva el archivo de 120 KB a 86 KB, un 28% menos sin diferencia perceptible en un
+ * teléfono.
+ */
+const LADO_MAYOR = 1280;
 
 /** Vigencia de la firma. Amplia a propósito: nace y muere dentro del render que la usa. */
 const VIGENCIA_FIRMA_SEGUNDOS = 60 * 60;
@@ -56,7 +64,14 @@ export async function procesarFoto(original: Buffer): Promise<FotoProcesada | nu
       // sharp descarta todos los metadatos salvo que se pidan explícitamente con
       // `withMetadata()`. No pedirlos es lo que cumple FR-039: ni GPS, ni modelo de cámara,
       // ni fecha de captura.
-      .webp({ quality: 78 })
+      //
+      // WebP y no AVIF, aunque AVIF pese un 38% menos: lo soportan Chrome 85+ y Safari
+      // 16.4+, y el destinatario de un regalo puede estar abriendo desde un Android viejo.
+      // Los componentes de bloque sirven un `<img src>` pelado —son del motor y no se
+      // tocan—, así que no hay alternativa que ofrecerle a un navegador que no entienda el
+      // formato: sería una foto rota en el regalo de alguien. `effort: 6` exprime unos KB
+      // más del mismo formato, a costa de tiempo de CPU en la subida, que sí podemos pagar.
+      .webp({ quality: 74, effort: 6 })
       .toBuffer({ resolveWithObject: true });
 
     return { bytes: salida.data, ancho: salida.info.width, alto: salida.info.height };
