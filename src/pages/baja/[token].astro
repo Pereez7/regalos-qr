@@ -1,0 +1,76 @@
+---
+import VentaLayout from "../../layouts/VentaLayout.astro";
+import { getServiceClient } from "../../lib/supabase.ts";
+import { obtenerPedidoPorTokenBaja } from "../../lib/pedidos.ts";
+
+export const prerender = false;
+
+// Contrato: specs/002-compra-a-qr/contracts/api-baja-publicidad.md
+//
+// FR-036 y Principio V: la baja BORRA el número, no lo marca. No existe ninguna columna
+// `baja` ni `activo` donde marcarlo, y eso es deliberado (research.md #13).
+//
+// El token es propio y distinto del id del pedido: el enlace de baja viaja dentro de
+// mensajes publicitarios, el canal más propenso a reenvíos y capturas. Con este token no se
+// puede leer el pedido, el borrador, las fotos ni el regalo.
+//
+// Esta página NO muestra el número que está por borrar, ni el correo, ni ningún otro dato:
+// un enlace que llegó a la bandeja equivocada no debe revelar a quién pertenece.
+
+const { token } = Astro.params;
+const pedido = token ? await obtenerPedidoPorTokenBaja(token) : null;
+
+// No se distingue un token inexistente de uno ya usado.
+if (!pedido) return new Response(null, { status: 404 });
+
+// El POST ejecuta la baja. Es POST y no GET a propósito: un GET lo dispara cualquier
+// precargador de enlaces del cliente de correo, y una baja involuntaria sería irreversible
+// —el número ya no está para volver a guardarlo—.
+if (Astro.request.method === "POST") {
+  const supabase = getServiceClient();
+
+  // Incondicional, así que repetir la baja deja el mismo estado y responde igual.
+  // `consentimiento_en` se conserva: es lo que permite demostrar que el consentimiento
+  // existió, y una fecha sin número no identifica a nadie.
+  await supabase
+    .from("pedidos")
+    .update({
+      celular: null,
+      consentimiento_publicidad: false,
+      baja_publicidad_en: new Date().toISOString(),
+    })
+    .eq("token_baja", token);
+
+  return Astro.redirect(`/baja/${token}`, 303);
+}
+
+const dadoDeBaja = pedido.celular === null && pedido.bajaPublicidadEn !== null;
+---
+
+<VentaLayout titulo="Dejar de recibir mensajes">
+  {
+    dadoDeBaja ? (
+      <>
+        <h1>Listo, borramos tu número</h1>
+        <p data-confirmado>
+          No vas a recibir más mensajes nuestros. El número no quedó marcado como dado de
+          baja: lo borramos, que no es lo mismo.
+        </p>
+      </>
+    ) : (
+      <>
+        <h1>Dejar de recibir mensajes</h1>
+        <p>
+          Si confirmás, borramos el número de celular asociado a esta compra. No lo marcamos
+          como dado de baja: lo borramos, y no vas a recibir más mensajes nuestros.
+        </p>
+        <p>
+          Tu pedido y tu regalo no se tocan: esto es solo sobre los mensajes publicitarios.
+        </p>
+        <form method="POST" data-form-baja>
+          <button type="submit" class="boton">Borrar mi número</button>
+        </form>
+      </>
+    )
+  }
+</VentaLayout>

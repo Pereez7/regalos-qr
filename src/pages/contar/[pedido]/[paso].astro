@@ -1,0 +1,613 @@
+---
+import VentaLayout from "../../../layouts/VentaLayout.astro";
+import { cargaCerrada, obtenerPedidoConRegalo } from "../../../lib/pedidos.ts";
+import { PASOS, TEMAS, TOPES, parsearBorrador } from "../../../lib/borrador/esquema.ts";
+import { faltantes } from "../../../lib/borrador/a-contenido.ts";
+import { MAX_BYTES_SUBIDA, MAX_FOTOS, firmarRutas } from "../../../lib/fotos.ts";
+
+export const prerender = false;
+
+// FR-009, FR-010, FR-011. Un paso = un <form> que postea, guarda su rama y redirige al
+// siguiente (research.md #8). Eso es autoguardado real sin una línea de JavaScript: quien
+// cierra la pestaña ya tiene guardado todo lo anterior (SC-004).
+//
+// Esta página funciona COMPLETA sin JavaScript. La reducción de fotos en el navegador es
+// una mejora opcional sobre un camino que ya anda (research.md #5, #17).
+
+const { pedido: pedidoId, paso } = Astro.params;
+
+const PANTALLAS = [...PASOS, "resumen", "enviado"] as const;
+type Pantalla = (typeof PANTALLAS)[number];
+
+if (!paso || !(PANTALLAS as readonly string[]).includes(paso)) {
+  return new Response(null, { status: 404 });
+}
+const pantalla = paso as Pantalla;
+
+const pedido = pedidoId ? await obtenerPedidoConRegalo(pedidoId) : null;
+if (!pedido) return new Response(null, { status: 404 });
+
+const cerrada = cargaCerrada(pedido);
+const borrador = parsearBorrador(pedido.borrador);
+const falta = faltantes(borrador);
+
+const accionBorrador = `/api/pedidos/${pedido.id}/borrador`;
+const momentos = borrador.momentos ?? [];
+const fotos = borrador.fotos ?? [];
+const preguntas = borrador.preguntas ?? [];
+
+// Las direcciones de las fotos se firman acá y mueren con este request: nunca se guardan
+// ni se imprimen (FR-020, research.md #6).
+const firmadas = pantalla === "fotos" ? await firmarRutas(fotos.map((f) => f.ruta)) : new Map();
+
+const TITULOS: Record<Pantalla, string> = {
+  destinatario: "Para quién es",
+  momentos: "Los momentos",
+  fotos: "Las fotos",
+  cancion: "La canción",
+  carta: "La carta",
+  preguntas: "Las preguntas",
+  cierre: "El cierre",
+  resumen: "Revisar y enviar",
+  enviado: "Enviado",
+};
+
+// Filas en blanco para poder agregar sin JavaScript: el formulario trae siempre un par de
+// huecos de más, y una fila enteramente vacía se descarta al guardar.
+const huecosMomentos = Math.min(2, Math.max(0, TOPES.momentos - momentos.length));
+const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.length));
+---
+
+<VentaLayout titulo={`${TITULOS[pantalla]} · tu historia`}>
+  {
+    cerrada === "no_pagado" ? (
+      <>
+        <h1>Tu pedido está pendiente de pago</h1>
+        <p>
+          La carga de la historia se abre cuando el pago queda confirmado. Nada de lo que
+          cargues se pierde: este enlace sigue siendo el tuyo.
+        </p>
+        <p>
+          <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
+        </p>
+      </>
+    ) : cerrada === "publicado" ? (
+      <>
+        <h1>Tu regalo ya está publicado</h1>
+        <p>
+          Lo aprobaste, así que ya es definitivo: una vez entregado, el regalo no se cambia.
+          El enlace y el QR que tengas impresos siguen siendo válidos para siempre.
+        </p>
+        {pedido.slugRegalo && (
+          <p>
+            <a class="boton" href={`/r/${pedido.slugRegalo}`}>Ver el regalo</a>
+          </p>
+        )}
+      </>
+    ) : (
+      <>
+        <nav aria-label="Pasos de la carga">
+          <ol>
+            {PASOS.map((p) => (
+              <li aria-current={p === pantalla ? "step" : undefined}>
+                <a href={`/contar/${pedido.id}/${p}`}>{TITULOS[p]}</a>
+              </li>
+            ))}
+            <li aria-current={pantalla === "resumen" ? "step" : undefined}>
+              <a href={`/contar/${pedido.id}/resumen`}>{TITULOS.resumen}</a>
+            </li>
+          </ol>
+        </nav>
+
+        <h1>{TITULOS[pantalla]}</h1>
+
+        {pantalla === "destinatario" && (
+          <form method="POST" action={accionBorrador} data-paso="destinatario">
+            <input type="hidden" name="paso" value="destinatario" />
+            <p>Lo único imprescindible es el nombre de quien lo recibe.</p>
+
+            <p>
+              <label for="nombre">Nombre de quien recibe el regalo</label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                maxlength={TOPES.nombre}
+                value={borrador.destinatario?.nombre ?? ""}
+              />
+            </p>
+
+            <p>
+              <label for="subtitulo">Una línea debajo del nombre (opcional)</label>
+              <input
+                type="text"
+                id="subtitulo"
+                name="subtitulo"
+                maxlength={TOPES.subtitulo}
+                value={borrador.destinatario?.subtitulo ?? ""}
+              />
+            </p>
+
+            <fieldset>
+              <legend>Clima visual</legend>
+              {TEMAS.map((tema) => (
+                <label class="opcion">
+                  <input type="radio" name="tema" value={tema} checked={borrador.tema === tema} />
+                  <span>{tema}</span>
+                </label>
+              ))}
+            </fieldset>
+
+            <p>
+              <label for="fecha_inicio">
+                Fecha desde la que quieren contar el tiempo (opcional)
+              </label>
+              <input
+                type="date"
+                id="fecha_inicio"
+                name="fecha_inicio"
+                value={borrador.fechaInicio ?? ""}
+              />
+            </p>
+
+            <button type="submit" class="boton">Guardar y seguir</button>
+          </form>
+        )}
+
+        {pantalla === "momentos" && (
+          <form method="POST" action={accionBorrador} data-paso="momentos">
+            <input type="hidden" name="paso" value="momentos" />
+            <p>
+              Cada momento es una tarjeta del regalo. Podés dejar los que no uses en blanco:
+              se descartan solos.
+            </p>
+
+            {[...momentos, ...Array(huecosMomentos).fill(null)].map((momento, i) => (
+              <fieldset>
+                <legend>Momento {i + 1}</legend>
+                <p>
+                  <label for={`momento_titulo_${i}`}>Título (opcional)</label>
+                  <input
+                    type="text"
+                    id={`momento_titulo_${i}`}
+                    name="momento_titulo"
+                    maxlength={TOPES.momentoTitulo}
+                    value={momento?.titulo ?? ""}
+                  />
+                </p>
+                <p>
+                  <label for={`momento_texto_${i}`}>Qué pasó</label>
+                  <textarea
+                    id={`momento_texto_${i}`}
+                    name="momento_texto"
+                    rows="3"
+                    maxlength={TOPES.momentoTexto}
+                  >{momento?.texto ?? ""}</textarea>
+                </p>
+                <p>
+                  <label for={`momento_fecha_${i}`}>Cuándo (opcional)</label>
+                  <input
+                    type="date"
+                    id={`momento_fecha_${i}`}
+                    name="momento_fecha"
+                    value={momento?.fecha ?? ""}
+                  />
+                </p>
+              </fieldset>
+            ))}
+
+            <button type="submit" class="boton">Guardar y seguir</button>
+          </form>
+        )}
+
+        {pantalla === "fotos" && (
+          <>
+            <p>
+              Hasta {MAX_FOTOS} fotos. Las guardamos reducidas y sin los datos que traen
+              adentro —incluida la ubicación—: el archivo original no se almacena.
+            </p>
+
+            <form
+              method="POST"
+              action={`/api/pedidos/${pedido.id}/fotos`}
+              enctype="multipart/form-data"
+              data-form-subir
+            >
+              <input type="hidden" name="accion" value="subir" />
+              <p>
+                <label for="foto">Elegí una foto</label>
+                <input type="file" id="foto" name="foto" accept="image/*" required />
+              </p>
+              <p>
+                <label for="alt">Qué muestra (para quien no puede verla)</label>
+                <input type="text" id="alt" name="alt" maxlength={TOPES.alt} />
+              </p>
+              <p class="opcional" data-tope>
+                Sin JavaScript, el máximo por archivo es de{" "}
+                {Math.round(MAX_BYTES_SUBIDA / (1024 * 1024))} MB. Con JavaScript la
+                reducimos en tu teléfono antes de subirla y podés usar fotos de hasta 10 MB.
+              </p>
+              <button type="submit" class="boton">Subir la foto</button>
+            </form>
+
+            {fotos.length > 0 && (
+              <form method="POST" action={accionBorrador} data-paso="fotos">
+                <input type="hidden" name="paso" value="fotos" />
+                <h2>Las fotos que subiste</h2>
+
+                {fotos.map((foto, i) => (
+                  <fieldset class="foto">
+                    <legend>Foto {i + 1}</legend>
+                    {firmadas.get(foto.ruta) && (
+                      <img src={firmadas.get(foto.ruta)} alt={foto.alt ?? ""} width="220" />
+                    )}
+                    <input type="hidden" name="foto_ruta" value={foto.ruta} />
+                    <p>
+                      <label for={`foto_alt_${i}`}>Qué muestra</label>
+                      <input
+                        type="text"
+                        id={`foto_alt_${i}`}
+                        name="foto_alt"
+                        maxlength={TOPES.alt}
+                        value={foto.alt ?? ""}
+                      />
+                    </p>
+                  </fieldset>
+                ))}
+
+                {momentos.length > 0 && (
+                  <fieldset>
+                    <legend>Qué foto va con cada momento</legend>
+                    {momentos.map((momento, i) => (
+                      <p>
+                        <label for={`momento_foto_${i}`}>
+                          {momento.titulo || momento.texto?.slice(0, 40) || `Momento ${i + 1}`}
+                        </label>
+                        <select id={`momento_foto_${i}`} name="momento_foto">
+                          <option value="">— sin foto —</option>
+                          {fotos.map((foto, j) => (
+                            <option value={foto.ruta} selected={momento.fotoRuta === foto.ruta}>
+                              Foto {j + 1}
+                              {foto.alt ? ` · ${foto.alt}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </p>
+                    ))}
+                  </fieldset>
+                )}
+
+                <button type="submit" class="boton">Guardar y seguir</button>
+              </form>
+            )}
+
+            {fotos.length > 0 && (
+              <div class="quitar">
+                <h2>Quitar una foto</h2>
+                <p>Se borra en el momento, no al enviar.</p>
+                {fotos.map((foto, i) => (
+                  <form method="POST" action={`/api/pedidos/${pedido.id}/fotos`}>
+                    <input type="hidden" name="accion" value="quitar" />
+                    <input type="hidden" name="ruta" value={foto.ruta} />
+                    <button type="submit" class="boton boton-secundario">
+                      Quitar la foto {i + 1}
+                    </button>
+                  </form>
+                ))}
+              </div>
+            )}
+
+            {fotos.length === 0 && (
+              <p>
+                <a href={`/contar/${pedido.id}/cancion`}>Seguir sin fotos</a>
+              </p>
+            )}
+          </>
+        )}
+
+        {pantalla === "cancion" && (
+          <form method="POST" action={accionBorrador} data-paso="cancion">
+            <input type="hidden" name="paso" value="cancion" />
+            <p>Un enlace de Spotify o de YouTube. Suena dentro del regalo.</p>
+            <p>
+              <label for="cancion_url">Enlace</label>
+              <input
+                type="url"
+                id="cancion_url"
+                name="cancion_url"
+                maxlength={TOPES.cancionUrl}
+                value={borrador.cancion?.url ?? ""}
+              />
+            </p>
+            <p>
+              <label for="cancion_titulo">Título (opcional)</label>
+              <input
+                type="text"
+                id="cancion_titulo"
+                name="cancion_titulo"
+                maxlength={TOPES.cancionTexto}
+                value={borrador.cancion?.titulo ?? ""}
+              />
+            </p>
+            <p>
+              <label for="cancion_artista">Quién la canta (opcional)</label>
+              <input
+                type="text"
+                id="cancion_artista"
+                name="cancion_artista"
+                maxlength={TOPES.cancionTexto}
+                value={borrador.cancion?.artista ?? ""}
+              />
+            </p>
+            <button type="submit" class="boton">Guardar y seguir</button>
+          </form>
+        )}
+
+        {pantalla === "carta" && (
+          <form method="POST" action={accionBorrador} data-paso="carta">
+            <input type="hidden" name="paso" value="carta" />
+            <p>Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del mundo.</p>
+            <p>
+              <label for="carta_texto">La carta</label>
+              <textarea id="carta_texto" name="carta_texto" rows="12" maxlength={TOPES.carta}
+              >{borrador.carta?.texto ?? ""}</textarea>
+            </p>
+            <button type="submit" class="boton">Guardar y seguir</button>
+          </form>
+        )}
+
+        {pantalla === "preguntas" && (
+          <form method="POST" action={accionBorrador} data-paso="preguntas">
+            <input type="hidden" name="paso" value="preguntas" />
+            <p>Preguntas con su respuesta, que aparecen de a una en el regalo.</p>
+            {[...preguntas, ...Array(huecosPreguntas).fill(null)].map((pregunta, i) => (
+              <fieldset>
+                <legend>Pregunta {i + 1}</legend>
+                <p>
+                  <label for={`pregunta_texto_${i}`}>La pregunta</label>
+                  <input
+                    type="text"
+                    id={`pregunta_texto_${i}`}
+                    name="pregunta_texto"
+                    maxlength={TOPES.preguntaTexto}
+                    value={pregunta?.texto ?? ""}
+                  />
+                </p>
+                <p>
+                  <label for={`pregunta_respuesta_${i}`}>La respuesta (opcional)</label>
+                  <input
+                    type="text"
+                    id={`pregunta_respuesta_${i}`}
+                    name="pregunta_respuesta"
+                    maxlength={TOPES.preguntaRespuesta}
+                    value={pregunta?.respuesta ?? ""}
+                  />
+                </p>
+              </fieldset>
+            ))}
+            <button type="submit" class="boton">Guardar y seguir</button>
+          </form>
+        )}
+
+        {pantalla === "cierre" && (
+          <form method="POST" action={accionBorrador} data-paso="cierre">
+            <input type="hidden" name="paso" value="cierre" />
+            <p>Las últimas palabras, al final de todo.</p>
+            <p>
+              <label for="cierre_texto">El cierre</label>
+              <textarea id="cierre_texto" name="cierre_texto" rows="4" maxlength={TOPES.cierre}
+              >{borrador.cierre?.texto ?? ""}</textarea>
+            </p>
+            <button type="submit" class="boton">Guardar y revisar</button>
+          </form>
+        )}
+
+        {pantalla === "resumen" && (
+          <>
+            {falta.length > 0 ? (
+              <>
+                <p>Antes de enviar falta esto:</p>
+                <ul class="faltantes" data-faltantes>
+                  {falta.map((texto) => (
+                    <li>{texto}</li>
+                  ))}
+                </ul>
+                <p>
+                  Volvé al paso que corresponda, completalo y volvé acá. Lo que ya cargaste
+                  está guardado.
+                </p>
+              </>
+            ) : (
+              <>
+                <p data-listo>
+                  Tu historia está completa. Al enviarla nace tu regalo con su enlace de
+                  revisión: lo vas a poder mirar entero antes de aprobarlo, y corregir todo lo
+                  que quieras hasta entonces.
+                </p>
+                <form method="POST" action={`/api/pedidos/${pedido.id}/enviar`} data-form-enviar>
+                  <button type="submit" class="boton">
+                    {pedido.regaloId ? "Enviar las correcciones" : "Enviar mi historia"}
+                  </button>
+                </form>
+              </>
+            )}
+
+            <h2>Lo que cargaste</h2>
+            <ul class="puntos">
+              <li>Para: {borrador.destinatario?.nombre || "—"}</li>
+              <li>Clima visual: {borrador.tema ?? "—"}</li>
+              <li>Momentos: {momentos.filter((m) => m.texto?.trim()).length}</li>
+              <li>Fotos: {fotos.length}</li>
+              <li>Canción: {borrador.cancion?.url ? "sí" : "no"}</li>
+              <li>Carta: {borrador.carta?.texto?.trim() ? "sí" : "no"}</li>
+              <li>Preguntas: {preguntas.filter((p) => p.texto?.trim()).length}</li>
+              <li>Cierre: {borrador.cierre?.texto?.trim() ? "sí" : "no"}</li>
+            </ul>
+          </>
+        )}
+
+        {pantalla === "enviado" && (
+          <>
+            <p data-enviado>
+              Tu regalo ya existe y está en revisión. Miralo completo en tu enlace de
+              revisión: desde ahí lo aprobás cuando estés conforme, y recién entonces queda
+              definitivo.
+            </p>
+            {pedido.regaloId && (
+              <p>
+                <a class="boton" href={`/revisar/${pedido.regaloId}`} data-enlace-revision>
+                  Ver y aprobar mi regalo
+                </a>
+              </p>
+            )}
+            <p>
+              ¿Querés cambiar algo? Mientras no lo apruebes, podés{" "}
+              <a href={`/contar/${pedido.id}/destinatario`}>volver a tu carga</a> y reenviar
+              las veces que quieras. El enlace del regalo no cambia nunca.
+            </p>
+          </>
+        )}
+      </>
+    )
+  }
+</VentaLayout>
+
+<script>
+  // T046 · Mejora opcional sobre un camino que ya funciona: si hay JavaScript, la foto se
+  // reduce en el navegador ANTES de subirla. Sin esto el formulario anda igual, con el tope
+  // de la plataforma (research.md #5).
+  //
+  // Canvas vanilla, sin librería, y solo en esta página: /r/[slug] no recibe ni un byte
+  // (research.md #17, presupuesto-js.spec.ts es el gate).
+  const form = document.querySelector("[data-form-subir]");
+  const entrada = form?.querySelector('input[type="file"]');
+
+  if (form instanceof HTMLFormElement && entrada instanceof HTMLInputElement) {
+    const nota = form.querySelector("[data-tope]");
+    if (nota) {
+      nota.textContent =
+        "Reducimos la foto en tu teléfono antes de subirla, así que podés usar fotos de hasta 10 MB.";
+    }
+
+    const LADO = 1600;
+
+    form.addEventListener("submit", async (evento) => {
+      const archivo = entrada.files?.[0];
+      if (!archivo || !archivo.type.startsWith("image/")) return;
+
+      evento.preventDefault();
+      const boton = form.querySelector("button[type=submit]");
+      if (boton instanceof HTMLButtonElement) {
+        boton.disabled = true;
+        boton.textContent = "Subiendo…";
+      }
+
+      const datos = new FormData(form);
+
+      try {
+        const mapa = await createImageBitmap(archivo);
+        const escala = Math.min(1, LADO / Math.max(mapa.width, mapa.height));
+        const lienzo = document.createElement("canvas");
+        lienzo.width = Math.round(mapa.width * escala);
+        lienzo.height = Math.round(mapa.height * escala);
+        lienzo.getContext("2d")?.drawImage(mapa, 0, 0, lienzo.width, lienzo.height);
+
+        const reducida = await new Promise((resolver) =>
+          lienzo.toBlob(resolver, "image/webp", 0.82),
+        );
+
+        // El canvas no copia los metadatos del original, así que lo que sube ya viaja sin
+        // ubicación. `sharp` lo vuelve a garantizar del lado del servidor igual.
+        if (reducida instanceof Blob) {
+          datos.set("foto", new File([reducida], "foto.webp", { type: "image/webp" }));
+        }
+      } catch {
+        // Si algo falla, se sube el archivo tal cual: el camino sin JavaScript sigue ahí.
+      }
+
+      const respuesta = await fetch(form.action, { method: "POST", body: datos });
+      if (respuesta.redirected) window.location.href = respuesta.url;
+      else window.location.reload();
+    });
+  }
+</script>
+
+<style>
+  nav ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1) var(--e-2);
+    margin: 0 0 var(--e-3);
+    padding: 0;
+    list-style: none;
+    font-size: var(--t-pequeno);
+  }
+
+  nav li[aria-current="step"] a {
+    color: var(--texto);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 2px solid var(--acento);
+  }
+
+  fieldset {
+    margin: 0 0 var(--e-2);
+    padding: var(--e-2);
+    border: 1px solid var(--borde);
+  }
+
+  legend {
+    padding: 0 var(--e-1);
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  input[type="text"],
+  input[type="url"],
+  input[type="date"],
+  input[type="file"],
+  select,
+  textarea {
+    width: 100%;
+    padding: var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  .opcion {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--e-1);
+    margin-right: var(--e-2);
+  }
+
+  .foto img {
+    margin-bottom: var(--e-1);
+    border: 1px solid var(--borde);
+  }
+
+  .quitar form {
+    display: inline-block;
+    margin: 0 var(--e-1) var(--e-1) 0;
+  }
+
+  .faltantes {
+    padding: var(--e-2) var(--e-2) var(--e-2) var(--e-3);
+    background: var(--superficie);
+    border-left: 3px solid var(--acento);
+  }
+
+  .faltantes li {
+    margin-bottom: var(--e-1);
+  }
+</style>

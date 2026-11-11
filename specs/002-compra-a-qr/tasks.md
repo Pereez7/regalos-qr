@@ -155,71 +155,71 @@ revisión con exactamente lo cargado.
 
 ### Tests for User Story 2
 
-- [ ] T028 [P] [US2] `tests/e2e/borrador-autoguardado.spec.ts` — cargar tres pasos, cerrar el
+- [x] T028 [P] [US2] `tests/e2e/borrador-autoguardado.spec.ts` — cargar tres pasos, cerrar el
       contexto del navegador, volver al mismo enlace y encontrar todo lo cargado (FR-010,
       SC-004).
-- [ ] T029 [P] [US2] En el mismo archivo, 30 recargas no corrompen ni duplican el borrador, y no
+- [x] T029 [P] [US2] En el mismo archivo, 30 recargas no corrompen ni duplican el borrador, y no
       nacen regalos repetidos (caso límite del spec).
-- [ ] T030 [P] [US2] En el mismo archivo, la carga funciona **con JavaScript deshabilitado**: cada
+- [x] T030 [P] [US2] En el mismo archivo, la carga funciona **con JavaScript deshabilitado**: cada
       paso guarda al enviarse (research.md #8, Principio I).
-- [ ] T031 [P] [US2] `tests/e2e/envio-unico.spec.ts` — dos envíos simultáneos producen **un solo
+- [x] T031 [P] [US2] `tests/e2e/envio-unico.spec.ts` — dos envíos simultáneos producen **un solo
       regalo con un solo slug**. El reclamo atómico sobre el pedido es lo que lo garantiza; la
       restricción única es red de contención, no la defensa (FR-021, research.md #9).
-- [ ] T032 [P] [US2] En el mismo archivo, tres correcciones sucesivas reemplazan el contenido y
+- [x] T032 [P] [US2] En el mismo archivo, tres correcciones sucesivas reemplazan el contenido y
       **nunca** cambian el slug ni la fila de `slugs` (FR-015, Principio VI).
-- [ ] T033 [P] [US2] En el mismo archivo, intentar modificar la historia de un regalo ya publicado
+- [x] T033 [P] [US2] En el mismo archivo, intentar modificar la historia de un regalo ya publicado
       se rechaza (FR-016).
-- [ ] T034 [P] [US2] `tests/e2e/fotos-privadas.spec.ts` — el original subido **no queda
+- [x] T034 [P] [US2] `tests/e2e/fotos-privadas.spec.ts` — el original subido **no queda
       almacenado**, la versión guardada pesa menos de 600 KB y no conserva metadatos de ubicación
       (FR-038, FR-039, SC-013, SC-015).
-- [ ] T035 [P] [US2] En el mismo archivo, la ubicación de una foto no es accesible para quien no
+- [x] T035 [P] [US2] En el mismo archivo, la ubicación de una foto no es accesible para quien no
       está viendo el regalo al que pertenece (FR-020, SC-011).
-- [ ] T036 [P] [US2] En el mismo archivo, una foto quitada antes de enviar no queda almacenada
+- [x] T036 [P] [US2] En el mismo archivo, una foto quitada antes de enviar no queda almacenada
       (FR-019).
-- [ ] T037 [P] [US2] `tests/e2e/minimo-envio.spec.ts` — una historia sin ningún bloque de
+- [x] T037 [P] [US2] `tests/e2e/minimo-envio.spec.ts` — una historia sin ningún bloque de
       contenido no se puede enviar y el sistema dice exactamente qué falta; con tema, nombre y un
       solo bloque, se envía (FR-011, research.md #21).
-- [ ] T038 [P] [US2] `tests/e2e/carga-escape-html.spec.ts` — texto con etiquetas HTML se guarda y
+- [x] T038 [P] [US2] `tests/e2e/carga-escape-html.spec.ts` — texto con etiquetas HTML se guarda y
       se muestra literal, en la carga y en el regalo resultante (FR-017).
 
 ### Implementation for User Story 2
 
-- [ ] T039 [P] [US2] Crear `src/lib/borrador/esquema.ts` — zod del borrador según
+- [x] T039 [P] [US2] Crear `src/lib/borrador/esquema.ts` — zod del borrador según
       contracts/borrador.schema.md: admite incompleto, con su propio contrato de validación,
       distinto del esquema de contenido del motor (research.md #8).
-- [ ] T040 [US2] Crear `src/lib/borrador/a-contenido.ts` — traducción borrador → `{ v: 1, receta[] }`
+- [x] T040 [US2] Crear `src/lib/borrador/a-contenido.ts` — traducción borrador → `{ v: 1, receta[] }`
       usando solo los ocho tipos de bloque existentes, con la validación de completitud de la
       decisión 21 (FR-012).
-- [ ] T041 [P] [US2] Crear `src/lib/fotos.ts` — reducción con `sharp` al tamaño que la página
+- [x] T041 [P] [US2] Crear `src/lib/fotos.ts` — reducción con `sharp` al tamaño que la página
       necesita, eliminación de metadatos, y firma por lote con `createSignedUrls`
       (contracts/api-fotos.md, research.md #5, #6).
-- [ ] T042 [US2] Modificar `src/lib/regalos.ts` — resolver `foto.ruta` a dirección firmada **antes**
+- [x] T042 [US2] Modificar `src/lib/regalos.ts` — resolver `foto.ruta` a dirección firmada **antes**
       de entregar el contenido, de modo que los componentes de bloque sigan recibiendo `foto.url`
       ya resuelto y no se toquen (research.md #6, #20).
-- [ ] T043 [US2] Crear `src/pages/api/pedidos/[id]/borrador.ts` — guarda un paso por petición y lo
+- [x] T043 [US2] Crear `src/pages/api/pedidos/[id]/borrador.ts` — guarda un paso por petición y lo
       recupera; rechaza paso inválido y pedido no pagado (contracts/api-borrador.md).
-- [ ] T044 [US2] Crear `src/pages/api/pedidos/[id]/fotos.ts` — subir y quitar. Tope de 10 MB con
+- [x] T044 [US2] Crear `src/pages/api/pedidos/[id]/fotos.ts` — subir y quitar. Tope de 10 MB con
       JavaScript (la foto se reduce antes de salir del dispositivo) y de 4 MB sin JavaScript, que
       es el límite real de la plataforma; el formulario lo explica en vez de fallar sin mensaje
       (research.md #5).
-- [ ] T045 [US2] Crear `src/pages/contar/[pedido]/[paso].astro` — un `<form>` por paso que guarda y
+- [x] T045 [US2] Crear `src/pages/contar/[pedido]/[paso].astro` — un `<form>` por paso que guarda y
       redirige al siguiente; funciona completo sin JavaScript (FR-009, FR-010).
-- [ ] T046 [P] [US2] Agregar a esa página la reducción de foto en el navegador con canvas vanilla,
+- [x] T046 [P] [US2] Agregar a esa página la reducción de foto en el navegador con canvas vanilla,
       como mejora opcional sobre el camino que ya funciona sin JavaScript. No toca el presupuesto
       de `/r/[slug]` (research.md #5, #17).
-- [ ] T047 [US2] Crear `src/pages/api/pedidos/[id]/enviar.ts` — **reclamo atómico** sobre el pedido
+- [x] T047 [US2] Crear `src/pages/api/pedidos/[id]/enviar.ts` — **reclamo atómico** sobre el pedido
       antes de crear el regalo; el que gana crea, el que pierde devuelve el existente. Después del
       reclamo, mueve las fotos de `pedidos/{id}/` a `regalos/{regalo_id}/`, que es el prefijo que
       el borrado de la 001 ya barre (contracts/api-enviar-historia.md, research.md #9, #16).
-- [ ] T048 [US2] Crear `src/pages/api/pedidos/[id]/eliminar.ts` — `DELETE` con `OPS_SECRET`:
+- [x] T048 [US2] Crear `src/pages/api/pedidos/[id]/eliminar.ts` — `DELETE` con `OPS_SECRET`:
       borra el pedido, su borrador, sus fotos en **los dos** prefijos, sus pagos, sus avisos, su
       contacto, su consentimiento y el regalo asociado. **Nunca** borra la fila de `slugs`
       (FR-030, contracts/api-eliminar-pedido.md, research.md #16).
-- [ ] T049 [P] [US2] Crear `src/pages/baja/[token].astro` — baja publicitaria por token propio,
+- [x] T049 [P] [US2] Crear `src/pages/baja/[token].astro` — baja publicitaria por token propio,
       distinto del id del pedido para que un mensaje publicitario no filtre la credencial del
       pedido. Pone el celular en nulo, el consentimiento en falso y fecha la baja (FR-036,
       research.md #13).
-- [ ] T050 [P] [US2] `tests/e2e/celular-opcional.spec.ts` — la compra se completa sin dar celular
+- [x] T050 [P] [US2] `tests/e2e/celular-opcional.spec.ts` — la compra se completa sin dar celular
       en el 100% de los intentos (SC-016), y la baja **borra** el número en vez de marcarlo
       (FR-036).
 

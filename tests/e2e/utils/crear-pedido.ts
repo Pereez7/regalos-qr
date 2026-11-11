@@ -103,3 +103,43 @@ export async function crearPago(
 
   return { id: data.id as string };
 }
+
+/**
+ * Limpieza de test: borra el pedido, su regalo y sus fotos en los dos prefijos, dejando la
+ * fila de `slugs` huérfana a propósito — ese valor no se reasigna nunca (Principio VI).
+ *
+ * Va por la base y no por `DELETE /api/pedidos/[id]/eliminar` para que una falla del
+ * endpoint no se disfrace de test que limpia bien. Ese endpoint tiene su propio test.
+ */
+export async function borrarPedidoDeTest(pedidoId: string): Promise<void> {
+  const supabase = clienteDeTest();
+
+  const { data: pedido } = await supabase
+    .from("pedidos")
+    .select("regalo_id")
+    .eq("id", pedidoId)
+    .maybeSingle();
+
+  const regaloId = pedido?.regalo_id as string | null | undefined;
+
+  for (const prefijo of [`pedidos/${pedidoId}`, ...(regaloId ? [`regalos/${regaloId}`] : [])]) {
+    const { data: archivos } = await supabase.storage.from("fotos").list(prefijo);
+    if (archivos && archivos.length > 0) {
+      await supabase.storage.from("fotos").remove(archivos.map((a) => `${prefijo}/${a.name}`));
+    }
+  }
+
+  if (regaloId) {
+    const { data: regalo } = await supabase
+      .from("regalos")
+      .select("slug")
+      .eq("id", regaloId)
+      .maybeSingle();
+    if (regalo) {
+      await supabase.from("slugs").update({ regalo_id: null }).eq("slug", regalo.slug);
+      await supabase.from("regalos").delete().eq("id", regaloId);
+    }
+  }
+
+  await supabase.from("pedidos").delete().eq("id", pedidoId);
+}

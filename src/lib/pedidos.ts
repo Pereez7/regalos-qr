@@ -381,3 +381,114 @@ export async function discrepanciasDeMonto(): Promise<DiscrepanciaDeMonto[]> {
       actualizadoEn: fila.actualizado_en as string,
     }));
 }
+
+// --- Borrador (feature 002, historia 2) ---
+//
+// Las escrituras del borrador pasan por las funciones de supabase/migrations/0003_borrador.sql
+// y no por un leer-modificar-escribir desde acá: el contrato exige escribir la rama del paso
+// sin reescribir el documento entero, y eso solo es atómico del lado de la base
+// (contracts/api-borrador.md, paso 7).
+
+export interface PedidoConRegalo extends Pedido {
+  estadoRegalo: "en_revision" | "publicado" | null;
+  slugRegalo: string | null;
+}
+
+/** El pedido más el estado de su regalo, que es lo que decide si la carga sigue abierta. */
+export async function obtenerPedidoConRegalo(id: string): Promise<PedidoConRegalo | null> {
+  if (!UUID.test(id)) return null;
+
+  const supabase = getServiceClient();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select(COLUMNAS_CON_REGALO)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const fila = data as unknown as FilaPedido & {
+    regalos: { estado: string; slug: string } | null;
+  };
+
+  return {
+    ...mapear(fila),
+    estadoRegalo: (fila.regalos?.estado ?? null) as PedidoConRegalo["estadoRegalo"],
+    slugRegalo: fila.regalos?.slug ?? null,
+  };
+}
+
+/** Motivo por el que la carga está cerrada, o `null` si se puede escribir. */
+export type CargaCerrada = "no_pagado" | "publicado";
+
+export function cargaCerrada(pedido: PedidoConRegalo): CargaCerrada | null {
+  // Un pedido en `iniciado` no tiene historia que cargar todavía: /gracias ya está
+  // mostrando "pendiente de pago" (Escenario 4 de la US1).
+  if (pedido.estado !== "pagado") return "no_pagado";
+  // Lo entregado es inmutable (FR-016, Principio VI). Mientras el regalo siga en revisión,
+  // el comprador corrige cuantas veces quiera (FR-014).
+  if (pedido.estadoRegalo === "publicado") return "publicado";
+  return null;
+}
+
+/** Escribe las ramas de un paso y deja `borrador.paso` apuntando a él (FR-010). */
+export async function guardarRamas(
+  pedidoId: string,
+  paso: string,
+  ramas: Record<string, unknown>,
+  borrar: string[] = [],
+): Promise<boolean> {
+  const supabase = getServiceClient();
+
+  const { error } = await supabase.rpc("guardar_ramas_borrador", {
+    p_pedido_id: pedidoId,
+    p_ramas: ramas,
+    p_paso: paso,
+    p_borrar: borrar,
+  });
+
+  return !error;
+}
+
+/** Agrega una foto al final de `fotos[]`, en una sola sentencia. */
+export async function agregarFoto(
+  pedidoId: string,
+  foto: { ruta: string; alt?: string; ancho?: number; alto?: number },
+): Promise<boolean> {
+  const supabase = getServiceClient();
+
+  const { error } = await supabase.rpc("agregar_foto_borrador", {
+    p_pedido_id: pedidoId,
+    p_foto: foto,
+  });
+
+  return !error;
+}
+
+/** Quita una foto por su ruta y limpia los momentos que la referenciaban. */
+export async function quitarFoto(pedidoId: string, ruta: string): Promise<boolean> {
+  const supabase = getServiceClient();
+
+  const { error } = await supabase.rpc("quitar_foto_borrador", {
+    p_pedido_id: pedidoId,
+    p_ruta: ruta,
+  });
+
+  return !error;
+}
+
+/** Reescribe las rutas del borrador tras mudar los objetos al prefijo del regalo. */
+export async function mudarRutasDelBorrador(
+  pedidoId: string,
+  regaloId: string,
+): Promise<boolean> {
+  const supabase = getServiceClient();
+
+  const { error } = await supabase.rpc("mudar_rutas_borrador", {
+    p_pedido_id: pedidoId,
+    p_regalo_id: regaloId,
+  });
+
+  return !error;
+}

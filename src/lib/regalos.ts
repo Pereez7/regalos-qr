@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { getServiceClient } from "./supabase.ts";
+import { firmarRutas } from "./fotos.ts";
 import { parsearContenido } from "./contenido/esquema.ts";
-import type { Contenido } from "./contenido/tipos-bloque.ts";
+import type { Bloque, Contenido, Foto } from "./contenido/tipos-bloque.ts";
 
 export interface Regalo {
   id: string;
@@ -52,6 +53,79 @@ function mapear(fila: FilaRegalo): Regalo | null {
   }
 }
 
+// Resolución de `foto.ruta` a dirección firmada (feature 002, research.md #6, #7).
+//
+// Vive acá y no en los componentes de bloque: la capa de datos entrega el contenido ya
+// resuelto, y el motor sigue sin saber si detrás hay un bucket privado, uno público o un
+// enlace externo. Es lo que hace compatible el bucket privado con la restricción de no
+// tocar el motor (research.md #20).
+//
+// Tres reglas, en orden:
+//   1. `ruta` presente → se firma por lote y el resultado se entrega en `url`.
+//   2. `ruta` ausente  → `url` se usa tal cual. Es el caso del contenido nacido antes de
+//      esta feature y del seed de demo, que apuntan a un origen externo.
+//   3. Ninguna de las dos resuelve → la foto se omite, como ya hace la 001 con un bloque
+//      sin contenido renderizable. Nunca una imagen rota (Principio I).
+
+function rutasDe(contenido: Contenido): string[] {
+  const rutas: string[] = [];
+
+  for (const bloque of contenido.receta) {
+    const foto = (bloque as { foto?: Foto }).foto;
+    if (foto?.ruta) rutas.push(foto.ruta);
+
+    for (const deGaleria of (bloque as { fotos?: Foto[] }).fotos ?? []) {
+      if (deGaleria.ruta) rutas.push(deGaleria.ruta);
+    }
+  }
+
+  return rutas;
+}
+
+/** `null` si la foto no se puede mostrar: quien llama la omite. */
+function resolverFoto(foto: Foto, firmadas: Map<string, string>): Foto | null {
+  if (foto.ruta) {
+    const url = firmadas.get(foto.ruta);
+    return url ? { ...foto, url } : null;
+  }
+
+  return foto.url ? foto : null;
+}
+
+async function resolverFotos(contenido: Contenido): Promise<Contenido> {
+  const rutas = rutasDe(contenido);
+  // Sin rutas no hay nada que firmar: el contenido de la 001 no paga ninguna ida y vuelta.
+  if (rutas.length === 0) return contenido;
+
+  // Una sola llamada por render, no una por foto (research.md #6, vigilado por lcp.spec.ts).
+  const firmadas = await firmarRutas(rutas);
+
+  const receta: Bloque[] = contenido.receta.map((bloque) => {
+    const foto = (bloque as { foto?: Foto }).foto;
+    if (foto) {
+      const resuelta = resolverFoto(foto, firmadas);
+      const copia = { ...bloque } as Bloque & { foto?: Foto };
+      if (resuelta) copia.foto = resuelta;
+      else delete copia.foto;
+      return copia;
+    }
+
+    const fotos = (bloque as { fotos?: Foto[] }).fotos;
+    if (fotos) {
+      return {
+        ...bloque,
+        fotos: fotos
+          .map((f) => resolverFoto(f, firmadas))
+          .filter((f): f is Foto => f !== null),
+      } as Bloque;
+    }
+
+    return bloque;
+  });
+
+  return { ...contenido, receta };
+}
+
 // FR-002/FR-017: solo sirve un regalo publicado y no vencido.
 export async function obtenerRegaloPublicado(slug: string): Promise<Regalo | null> {
   const supabase = getServiceClient();
@@ -67,7 +141,7 @@ export async function obtenerRegaloPublicado(slug: string): Promise<Regalo | nul
 
   if (error || !data) return null;
 
-  return mapear(data as FilaRegalo);
+  return await conFotosResueltas(mapear(data as FilaRegalo));
 }
 
 // FR-012: sin filtro de estado — el comprador ve exactamente lo que hay, cualquiera
@@ -83,7 +157,12 @@ export async function obtenerRegaloParaRevision(id: string): Promise<Regalo | nu
 
   if (error || !data) return null;
 
-  return mapear(data as FilaRegalo);
+  return await conFotosResueltas(mapear(data as FilaRegalo));
+}
+
+async function conFotosResueltas(regalo: Regalo | null): Promise<Regalo | null> {
+  if (!regalo) return null;
+  return { ...regalo, contenido: await resolverFotos(regalo.contenido) };
 }
 
 // research.md #5: UPDATE condicional atómica — ante dos llamadas simultáneas, solo una
