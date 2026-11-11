@@ -75,7 +75,25 @@ export function proveedorCorreo(): string {
   return leer("CORREO_PROVEEDOR") ?? "consola";
 }
 
-/** Formato humano del precio, para la landing. No participa de ningún cobro. */
+/**
+ * Formato humano del precio, para mostrar. No participa de ningún cobro: los montos se
+ * mueven siempre en centavos enteros, y esta función solo existe para la pantalla.
+ *
+ * `es-AR` fijo, igual que las fechas de la cola: el sitio está escrito en un solo idioma y
+ * para un solo mercado. Si un día hay más de uno, el locale sale de la configuración y no de
+ * la cabecera del navegador —el precio que ve el comprador no puede depender de cómo tenga
+ * configurado el teléfono—.
+ */
 export function formatearPrecio({ centavos, moneda }: Precio): string {
-  return `${(centavos / 100).toFixed(2)} ${moneda}`;
+  try {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: moneda,
+      // Los centavos solo se muestran si el precio los tiene: "$ 12.000", no "$ 12.000,00".
+      minimumFractionDigits: centavos % 100 === 0 ? 0 : 2,
+    }).format(centavos / 100);
+  } catch {
+    // Un código de moneda que Intl no conoce no puede romper la landing (Principio I).
+    return `${(centavos / 100).toFixed(2)} ${moneda}`;
+  }
 }
