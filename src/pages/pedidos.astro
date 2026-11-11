@@ -60,7 +60,7 @@ const [porConfirmar, pagadosSinRegalo, abandonados, avisos, huerfanos, discrepan
   ]);
 
 function fecha(valor: string): string {
-  return new Date(valor).toLocaleString("es-AR");
+  return new Date(valor).toLocaleString("es-BO");
 }
 ---
 
@@ -70,6 +70,10 @@ function fecha(valor: string): string {
     Lo que quedó a medio camino. Ningún pedido se pierde: si algo salió torcido, está en una
     de estas listas.
   </p>
+
+  <form method="POST" action="/salir-cola" class="salir">
+    <button type="submit" class="boton boton-secundario" data-salir>Salir</button>
+  </form>
 
   <h2>Pagos por QR esperando confirmación ({porConfirmar.length})</h2>
   <p>
@@ -296,3 +300,9 @@ function fecha(valor: string): string {
     )
   }
 </VentaLayout>
+
+<style>
+  .salir {
+    margin: 0 0 var(--e-3);
+  }
+</style>

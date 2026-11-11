@@ -1,0 +1,81 @@
+---
+import VentaLayout from "../layouts/VentaLayout.astro";
+import {
+  COOKIE_OPS,
+  DURACION_COOKIE_OPS,
+  claveOpsValida,
+  secretoOps,
+  tokenOps,
+} from "../lib/ops.ts";
+
+export const prerender = false;
+
+// Puerta de la cola operativa. Existe para no tener que llevar `OPS_SECRET` en la barra de
+// direcciones: un enlace con el secreto adentro queda en el historial del navegador, en la
+// lista de sugerencias y en cualquier captura de pantalla.
+//
+// `/pedidos?clave=…` sigue funcionando: es lo que usan los tests y es la vía de entrada
+// cuando todavía no hay cookie en ese navegador.
+//
+// A diferencia de `/pedidos`, esta página NO contesta 404 sin credencial: muestra su
+// formulario. Es una concesión consciente —revela que hay un área de operación detrás del
+// sitio— a cambio de que el operador no ande pegando el secreto en la URL. Lo que protege
+// los datos de los compradores sigue siendo el secreto, no el desconocimiento de esta ruta.
+
+let error: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const formulario = await Astro.request.formData();
+  const clave = (formulario.get("clave") ?? "").toString();
+
+  if (claveOpsValida(clave) && secretoOps()) {
+    // Lo que se guarda es el token DERIVADO, nunca `OPS_SECRET`: una cookie filtrada no
+    // entrega la credencial con la que se borran pedidos por API.
+    Astro.cookies.set(COOKIE_OPS, tokenOps()!, {
+      httpOnly: true,
+      secure: Astro.url.protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: DURACION_COOKIE_OPS,
+    });
+
+    return Astro.redirect("/pedidos", 303);
+  }
+
+  // 401 y un mensaje: acá el operador ya sabe que la página existe, y decirle "no existe"
+  // ante un error de tipeo sería mentirle sin proteger nada.
+  Astro.response.status = 401;
+  error = "Esa clave no es. Fijate que no haya quedado un espacio al pegarla.";
+}
+---
+
+<VentaLayout titulo="Entrar a la cola">
+  <h1>Cola operativa</h1>
+  <p>
+    Pegá la clave de operación para entrar. Queda guardada en este navegador por 30 días; en
+    uno prestado, salí al terminar.
+  </p>
+
+  {error && <p class="aviso" data-error>{error}</p>}
+
+  <form method="POST" data-form-acceso>
+    <p>
+      <label for="clave">Clave de operación</label>
+      <input type="password" id="clave" name="clave" autocomplete="off" required autofocus />
+    </p>
+    <button type="submit" class="boton">Entrar</button>
+  </form>
+</VentaLayout>
+
+<style>
+  input[type="password"] {
+    width: 100%;
+    padding: var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+</style>

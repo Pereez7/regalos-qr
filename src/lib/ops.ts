@@ -16,10 +16,18 @@ import { coincideSecreto } from "./acceso.ts";
 export const COOKIE_OPS = "acceso_ops";
 
 /**
- * Vida de la cookie: 12 horas. Mucho más corta que la del acceso interno (30 días) porque lo
- * que esta cookie abre son datos de compradores, no una landing.
+ * Vida de la cookie: 30 días.
+ *
+ * Arrancó en 12 horas por lo que abre —correos de compradores y el botón que confirma
+ * pagos—, pero el operador entra todos los días y volver a pegar el secreto cada mañana
+ * empuja a dejarlo anotado en cualquier lado, que es peor que una cookie larga.
+ *
+ * El contrapeso que lo hace aceptable: la cookie guarda un token DERIVADO de `OPS_SECRET`,
+ * así que cambiar ese secreto invalida todas las sesiones abiertas de golpe. Si se pierde un
+ * teléfono, la revocación es una variable de entorno y un deploy, no una lista de sesiones
+ * que nadie tiene.
  */
-export const DURACION_COOKIE_OPS = 12 * 60 * 60;
+export const DURACION_COOKIE_OPS = 30 * 24 * 60 * 60;
 
 /** El mismo secreto de servidor que protege las rutas de borrado. `undefined` si falta. */
 export function secretoOps(): string | undefined {
