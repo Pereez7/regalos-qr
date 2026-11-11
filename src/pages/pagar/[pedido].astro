@@ -1,0 +1,176 @@
+---
+import VentaLayout from "../../layouts/VentaLayout.astro";
+import { obtenerPedido } from "../../lib/pedidos.ts";
+import { getServiceClient } from "../../lib/supabase.ts";
+import { datosQr, formatearPrecio } from "../../lib/config.ts";
+
+export const prerender = false;
+
+// Página de cobro con QR interbancario (research.md #24). El comprador paga desde la app de
+// su banco y declara el pago con su número de comprobante; el negocio lo confirma desde la
+// cola operativa.
+//
+// Esta página NO marca nada como pagado. Lo único que escribe es el comprobante que el
+// comprador declara, en `pagos.referencia_comprador`. El pedido pasa a `pagado` por un solo
+// camino en todo el sistema: el aviso firmado que entra por el webhook (Principio VII).
+
+const { pedido: pedidoId } = Astro.params;
+const pedido = pedidoId ? await obtenerPedido(pedidoId) : null;
+
+if (!pedido) return new Response(null, { status: 404 });
+
+// Si el pago ya está confirmado, acá no hay nada que hacer.
+if (pedido.estado === "pagado") return Astro.redirect(`/gracias/${pedido.id}`, 303);
+
+const supabase = getServiceClient();
+const { data: pago } = await supabase
+  .from("pagos")
+  .select("id, monto_centavos, moneda, referencia_comprador")
+  .eq("pedido_id", pedido.id)
+  .order("creado_en", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+
+let error: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const formulario = await Astro.request.formData();
+  const comprobante = (formulario.get("comprobante") ?? "").toString().trim();
+
+  if (comprobante.length === 0) {
+    error = "Escribí el número de comprobante de tu transferencia.";
+  } else if (comprobante.length > 64) {
+    error = "Ese número es más largo de lo que puede ser un comprobante.";
+  } else if (!pago) {
+    error = "Este pedido no tiene un cobro iniciado.";
+  } else {
+    const { error: errorGuardado } = await supabase
+      .from("pagos")
+      .update({ referencia_comprador: comprobante, actualizado_en: new Date().toISOString() })
+      .eq("id", pago.id);
+
+    if (errorGuardado) error = "No pudimos guardar el comprobante. Probá de nuevo.";
+    else return Astro.redirect(`/pagar/${pedido.id}`, 303);
+  }
+}
+
+const qr = datosQr();
+const monto = pago
+  ? formatearPrecio({ centavos: pago.monto_centavos as number, moneda: pago.moneda as string })
+  : null;
+const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
+---
+
+<VentaLayout titulo="Pagar con QR">
+  {
+    yaDeclarado ? (
+      <>
+        <h1>Recibimos tu aviso</h1>
+        <p data-declarado>
+          Estamos confirmando el pago con el banco. En cuanto aparezca, te llega el correo con
+          el enlace para empezar a contar tu historia. Suele tardar unas horas; si pagaste
+          fuera del horario bancario, puede ser al día siguiente.
+        </p>
+        <p>Guardá este enlace: es el de tu pedido. Podés volver cuando quieras para ver cómo va.</p>
+        <p>
+          <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
+        </p>
+        <p class="opcional">
+          Comprobante que nos pasaste: <strong>{yaDeclarado}</strong>. Si te equivocaste,
+          mandanos el correcto abajo.
+        </p>
+      </>
+    ) : (
+      <h1>Pagá escaneando el QR</h1>
+    )
+  }
+
+  {
+    monto && (
+      <p>
+        Total a pagar: <strong>{monto}</strong>
+      </p>
+    )
+  }
+
+  {
+    qr.imagen ? (
+      <figure>
+        <img src={qr.imagen} alt="Código QR para pagar desde la app de tu banco" width="320" />
+        <figcaption>
+          {qr.titular && (
+            <>
+              A nombre de <strong>{qr.titular}</strong>.{" "}
+            </>
+          )}
+          {qr.banco && <>Banco: {qr.banco}. </>}
+          Escaneá desde la app de tu banco, con cualquier banco de la red.
+        </figcaption>
+      </figure>
+    ) : (
+      <p class="aviso" data-sin-qr>
+        El cobro por QR todavía no está configurado. Escribinos y lo resolvemos a mano.
+      </p>
+    )
+  }
+
+  <h2>Después de pagar, avisanos</h2>
+  <p>
+    Pasanos el <strong>número de comprobante</strong> de la transferencia. Es lo que nos
+    permite encontrar tu pago entre los demás y confirmarlo.
+  </p>
+
+  {error && <p class="aviso" data-error>{error}</p>}
+
+  <form method="POST" data-form-comprobante>
+    <p>
+      <label for="comprobante">Número de comprobante</label>
+      <input
+        type="text"
+        id="comprobante"
+        name="comprobante"
+        maxlength="64"
+        required
+        value={yaDeclarado ?? ""}
+      />
+    </p>
+    <button type="submit" class="boton">Ya pagué</button>
+  </form>
+
+  <p class="opcional">
+    No te cobramos nada por adelantado ni guardamos datos de tu tarjeta: el pago ocurre dentro
+    de la app de tu banco.
+  </p>
+</VentaLayout>
+
+<style>
+  figure {
+    margin: 0 0 var(--e-3);
+    max-width: 360px;
+  }
+
+  figure img {
+    width: 100%;
+    height: auto;
+    padding: var(--e-2);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+  }
+
+  figcaption {
+    margin-top: var(--e-1);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+</style>

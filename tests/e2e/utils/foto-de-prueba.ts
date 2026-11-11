@@ -41,10 +41,15 @@ export async function fotoDePrueba(opciones: Opciones = {}): Promise<Buffer> {
   let imagen = sharp(await lienzo(ancho, alto));
 
   if (opciones.conUbicacion) {
-    imagen = imagen.withExif({
+    // El bloque GPS es justamente el que FR-039 obliga a eliminar. Los tipos de sharp no lo
+    // declaran, pero la biblioteca lo escribe igual, así que el cast es sobre el tipo y no
+    // sobre el comportamiento: el test después verifica que la foto guardada no lo tiene.
+    const exif = {
       IFD0: { Make: "Marca de prueba", Model: "Modelo de prueba" },
       GPS: { GPSLatitudeRef: "S", GPSLongitudeRef: "W" },
-    });
+    } as Parameters<typeof imagen.withExif>[0];
+
+    imagen = imagen.withExif(exif);
   }
 
   return imagen.jpeg({ quality: 92 }).toBuffer();

@@ -329,6 +329,45 @@ tres avisos se emitió una sola vez, con su enlace.
 
 ---
 
+---
+
+## Phase 8: Cobro real en Bolivia — QR interbancario
+
+**Purpose**: reemplazar el proveedor simulado por el cobro con el que el producto se vende de
+verdad. Entra después de la 75 porque la decisión que lo habilita —research.md #24— se tomó
+con la feature ya construida: el país es Bolivia y el cobro es QR.
+
+Es la prueba de que el Principio II se sostuvo: todo esto es **un archivo nuevo en
+`src/lib/pagos/`, una página y un botón**. Ni las rutas del pedido, ni el webhook, ni el
+modelo de datos cambiaron para que entrara un proveedor real.
+
+- [x] T076 Escribir `supabase/migrations/0004_referencia_comprador.sql`: `pagos.referencia_comprador`
+      con su tope y el índice parcial de la cola. Es un dato del cobro, no un estado de la
+      venta: el pedido sigue teniendo dos estados y una sola transición.
+- [x] T077 Crear `src/lib/pagos/qr-manual.ts` y registrarlo: firma HMAC propia con
+      `PAGO_QR_SECRETO`, cabecera propia, y `iniciarCobro` que devuelve `/pagar/[pedido]`.
+- [x] T078 Crear `src/pages/pagar/[pedido].astro`: el QR de la cuenta, el monto, y el
+      formulario donde el comprador declara su número de comprobante. **No marca nada como
+      pagado.**
+- [x] T079 Crear `src/pages/api/pagos/confirmar/[pedido].ts`: la confirmación operativa emite
+      el mismo aviso firmado que emitiría un proveedor con API y lo manda al webhook. No
+      escribe el estado del pedido: si lo escribiera, el cobro manual sería un segundo camino
+      hacia el dinero, sin idempotencia ni registro previo del evento (Principio VII).
+- [x] T080 Agregar a `src/pages/pedidos.astro` la lista de pagos por QR esperando
+      confirmación, con el comprobante declarado y el botón.
+- [x] T081 `tests/e2e/pago-qr-manual.spec.ts`: declarar no es pagar; confirmar dos veces no
+      cobra dos veces; sin credencial nadie confirma; y un pago sin comprobante declarado se
+      confirma igual pero queda anotado como tal.
+- [ ] T082 **No es código, y es del negocio**: poner la imagen del QR de la cuenta en
+      `public/`, completar `QR_PAGO_IMAGEN`, `QR_PAGO_TITULAR` y `QR_PAGO_BANCO`, fijar
+      `MONEDA=BOB` y el `PRECIO` real en centavos, y recién entonces pasar `PAGO_PROVEEDOR` de
+      `simulado` a `qr-manual`. Hasta ese cambio el sitio sigue cobrando en simulación.
+- [ ] T083 Cuando el volumen pase de ~15–20 ventas mensuales, evaluar un proveedor con API de
+      QR Simple y escribir su adaptador. El QR por pedido elimina la conciliación manual, que
+      es el único trabajo que el camino actual deja a mano (research.md #24).
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

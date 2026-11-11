@@ -97,3 +97,28 @@ export function formatearPrecio({ centavos, moneda }: Precio): string {
     return `${(centavos / 100).toFixed(2)} ${moneda}`;
   }
 }
+
+export interface DatosQr {
+  /** Imagen del QR de cobro: ruta bajo `public/` o dirección completa. */
+  imagen: string;
+  /** A nombre de quién figura la cuenta, para que el comprador reconozca el destino. */
+  titular: string | undefined;
+  /** Banco de la cuenta, por el mismo motivo. */
+  banco: string | undefined;
+}
+
+/**
+ * Datos del QR de cobro (research.md #24). El QR es el de la cuenta del negocio y no cambia
+ * entre pedidos: es una imagen, no un dato generado. Cuando se contrate un proveedor con API,
+ * el QR pasa a generarse por pedido y esto deja de usarse.
+ *
+ * `imagen` vacía significa que el cobro por QR no está configurado, y la página lo dice en
+ * vez de mostrar un hueco.
+ */
+export function datosQr(): DatosQr {
+  return {
+    imagen: leer("QR_PAGO_IMAGEN") ?? "",
+    titular: leer("QR_PAGO_TITULAR"),
+    banco: leer("QR_PAGO_BANCO"),
+  };
+}

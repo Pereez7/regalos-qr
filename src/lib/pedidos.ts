@@ -492,3 +492,43 @@ export async function mudarRutasDelBorrador(
 
   return !error;
 }
+
+export interface PagoPorConfirmar {
+  pagoId: string;
+  pedidoId: string;
+  email: string;
+  montoCentavos: number;
+  moneda: string;
+  referenciaComprador: string;
+  creadoEn: string;
+}
+
+/**
+ * Cobros por QR que el comprador declaró y que todavía nadie confirmó (research.md #24).
+ *
+ * Es la lista de trabajo del cobro manual: cada fila es alguien que dice haber pagado y está
+ * esperando. Apoyada en el índice parcial `pagos_por_confirmar_idx`.
+ */
+export async function pagosPorConfirmar(): Promise<PagoPorConfirmar[]> {
+  const supabase = getServiceClient();
+
+  const { data, error } = await supabase
+    .from("pagos")
+    .select("id, pedido_id, monto_centavos, moneda, referencia_comprador, creado_en, pedidos (email)")
+    .eq("estado", "pendiente")
+    .not("referencia_comprador", "is", null)
+    .order("creado_en", { ascending: true });
+
+  if (error || !data) return [];
+
+  return (data as unknown as (Record<string, unknown> & { pedidos: { email: string } | null })[])
+    .map((fila) => ({
+      pagoId: fila.id as string,
+      pedidoId: fila.pedido_id as string,
+      email: fila.pedidos?.email ?? "—",
+      montoCentavos: fila.monto_centavos as number,
+      moneda: fila.moneda as string,
+      referenciaComprador: fila.referencia_comprador as string,
+      creadoEn: fila.creado_en as string,
+    }));
+}

@@ -12,9 +12,11 @@ import {
   avisosPendientesOFallidos,
   discrepanciasDeMonto,
   eventosSinPedido,
+  pagosPorConfirmar,
   pedidosIniciadosNuncaPagados,
   pedidosPagadosSinRegalo,
 } from "../lib/pedidos.ts";
+import { formatearPrecio } from "../lib/config.ts";
 
 export const prerender = false;
 
@@ -47,13 +49,15 @@ if (claveOpsValida(clave) && secretoOps()) {
   });
 }
 
-const [pagadosSinRegalo, abandonados, avisos, huerfanos, discrepancias] = await Promise.all([
-  pedidosPagadosSinRegalo(),
-  pedidosIniciadosNuncaPagados(),
-  avisosPendientesOFallidos(),
-  eventosSinPedido(),
-  discrepanciasDeMonto(),
-]);
+const [porConfirmar, pagadosSinRegalo, abandonados, avisos, huerfanos, discrepancias] =
+  await Promise.all([
+    pagosPorConfirmar(),
+    pedidosPagadosSinRegalo(),
+    pedidosIniciadosNuncaPagados(),
+    avisosPendientesOFallidos(),
+    eventosSinPedido(),
+    discrepanciasDeMonto(),
+  ]);
 
 function fecha(valor: string): string {
   return new Date(valor).toLocaleString("es-AR");
@@ -64,8 +68,58 @@ function fecha(valor: string): string {
   <h1>Cola operativa</h1>
   <p>
     Lo que quedó a medio camino. Ningún pedido se pierde: si algo salió torcido, está en una
-    de estas cinco listas.
+    de estas listas.
   </p>
+
+  <h2>Pagos por QR esperando confirmación ({porConfirmar.length})</h2>
+  <p>
+    Compradores que dicen haber pagado. Buscá el comprobante en la app del banco y confirmá;
+    el pedido pasa a pagado por el mismo aviso firmado que mandaría un proveedor con API, así
+    que confirmar dos veces no cobra dos veces (research.md #24).
+  </p>
+  {
+    porConfirmar.length === 0 ? (
+      <p>Nada esperando.</p>
+    ) : (
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Correo</th>
+              <th>Importe</th>
+              <th>Comprobante</th>
+              <th>Declarado</th>
+              <th>Confirmar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {porConfirmar.map((pago) => (
+              <tr data-por-confirmar={pago.pedidoId}>
+                <td>
+                  <a href={`/gracias/${pago.pedidoId}`}>{pago.pedidoId.slice(0, 8)}</a>
+                </td>
+                <td>{pago.email}</td>
+                <td>
+                  {formatearPrecio({ centavos: pago.montoCentavos, moneda: pago.moneda })}
+                </td>
+                <td>{pago.referenciaComprador}</td>
+                <td>{fecha(pago.creadoEn)}</td>
+                <td>
+                  <form method="POST" action={`/api/pagos/confirmar/${pago.pedidoId}`}>
+                    <input type="hidden" name="decision" value="aprobado" />
+                    <button type="submit" class="boton" data-confirmar>
+                      Recibí este pago
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 
   <h2>Pagados sin regalo entregado ({pagadosSinRegalo.length})</h2>
   {

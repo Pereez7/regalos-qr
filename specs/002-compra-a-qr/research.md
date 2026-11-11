@@ -115,6 +115,10 @@ VII: el flujo de pedido no se acopla a ningún proveedor concreto.
 La decisión de qué proveedor real conectar (Stripe, Mercado Pago u otro) depende del país y de
 la situación fiscal del negocio, y queda fuera de esta feature por diseño, no por olvido.
 
+**Resuelto por la decisión 24**: el país es Bolivia y el cobro es QR interbancario. El primer
+proveedor real es `qr-manual` —QR de la cuenta del negocio con confirmación desde la cola
+operativa—, y un proveedor con API se suma después sin tocar nada más que un archivo.
+
 **Alternatives considered**:
 - *Integrar Stripe en modo test desde el principio* — rechazado: obliga a tener cuenta, y
   acopla las decisiones de diseño a la forma de un proveedor antes de saber si es el elegido.
@@ -595,3 +599,61 @@ ante lo inesperado: no frenar al comprador, hacerlo visible en la cola.
 - *Confiar en el monto cotizado* — rechazado: el dinero que entró es el del proveedor, y
   anotar otro número es tener la contabilidad mal a propósito.
 - *No guardar el cotizado* — rechazado: sin los dos montos la discrepancia es indetectable.
+
+---
+
+## 24. El cobro real es QR boliviano, y arranca con confirmación manual
+
+**Decision**: el producto se vende en Bolivia y se cobra con **QR interbancario (QR Simple)**,
+no con una pasarela internacional en dólares. Se implementa en dos tiempos, con el mismo
+adaptador de por medio:
+
+1. **Ahora — `qr-manual`**: el comprador ve el QR de la cuenta del negocio, paga desde la app
+   de su banco y declara el pago dejando su número de comprobante. El negocio confirma desde
+   la cola operativa, mirando su app del banco. La confirmación **emite el mismo aviso firmado
+   contra el webhook** que emitiría un proveedor real.
+2. **Después — un proveedor con API**: cada pedido genera su propio QR con monto y referencia,
+   y el aviso llega solo. Es un archivo nuevo en `src/lib/pagos/` y una línea en su registro.
+
+**Rationale**: la decisión 3 dejó el proveedor real fuera de alcance *«porque depende del país
+y de la situación fiscal del negocio»*. Ese dato ya existe: Bolivia.
+
+- **Una pasarela internacional no es una opción, no es una preferencia.** Stripe no opera en
+  Bolivia, PayPal no permite retirar a cuentas bolivianas y Mercado Pago no está en el país.
+  Las que sí llegan son de volumen de empresa. Cobrar en dólares además le trasladaría al
+  comprador una fricción que hoy no tiene: tarjeta internacional habilitada para compras
+  online y tipo de cambio.
+- **QR Simple es cómo la gente efectivamente paga.** Es interbancario desde 2019, funciona
+  desde la app de cualquier banco de la red, y por la vía de los bancos de ASOBAN no cobra
+  comisión ni al comercio ni al comprador.
+- **La confirmación manual no debilita el Principio VII, y es la parte que importa.** No es
+  un camino paralelo: entra por la misma puerta que un proveedor real. La acción del operador
+  emite un aviso firmado contra `POST /api/pagos/webhook/[proveedor]`, de modo que la
+  idempotencia por `(proveedor, evento_id)`, el registro del evento **antes** de cualquier
+  acción derivada y el comprobante por correo siguen siendo exactamente los mismos. Confirmar
+  dos veces produce un solo pedido pagado, igual que veinte avisos duplicados de un proveedor.
+- **No hace falta un estado nuevo de pedido.** Mientras el pago no esté confirmado, el pedido
+  sigue `iniciado` y `/gracias/[pedido]` muestra *pendiente de pago*, que es la verdad. Lo que
+  el comprador declara se guarda en `pagos.referencia_comprador`, que es un dato del cobro y
+  no un estado de la venta (data-model.md: dos estados, una transición, ninguna vuelta atrás).
+
+**El punto que decide cuándo migrar a una API**: el QR estático cobra bien pero **no dice qué
+pedido pagó**. Esa conciliación es el trabajo manual —unos dos minutos por venta— y es lo que
+una API elimina generando un QR por pedido. Con los precios de mercado relevados en noviembre
+de 2026 —del orden de 2,5% sin cuota mensual, o cuota mensual de Bs 280–420 más 1–1,8%—, la
+cuota fija se paga sola alrededor de las **15–20 ventas mensuales**. Antes de eso, pagar por
+automatizar dos minutos es comprar infraestructura que el volumen no justifica.
+
+**Alternatives considered**:
+- *Pasarela internacional en dólares* — rechazado: no liquida en Bolivia y le agrega al
+  comprador la fricción que el QR elimina.
+- *Contratar la API desde el día uno* — rechazado para esta vuelta: tiene costo de
+  integración y cuota mensual antes de la primera venta, y el camino manual deja el sistema
+  listo para enchufarla sin cambiar nada más que un archivo.
+- *Confirmar el pago con una captura de pantalla que suba el comprador* — rechazado: una
+  imagen no es verificable sin mirar igual la app del banco, y guardaría un documento
+  financiero del comprador que el Principio V no necesita. El número de comprobante alcanza
+  para encontrar la transferencia y no es un dato sensible por sí solo.
+- *Monto único por pedido (centavos distintos) para identificar quién pagó* — rechazado: hace
+  la conciliación automática a costa de cobrar un importe distinto del publicado, y rompe la
+  explicación más simple del precio.

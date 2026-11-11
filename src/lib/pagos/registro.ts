@@ -1,5 +1,6 @@
 import type { AdaptadorPago } from "./tipos.ts";
 import { simulado } from "./simulado.ts";
+import { qrManual } from "./qr-manual.ts";
 
 // Mapa clave -> adaptador de pago, mismo patrón que src/bloques/registro.ts (Principio II).
 // Conectar un proveedor real es un archivo nuevo en esta carpeta más una línea acá; ni las
@@ -7,6 +8,7 @@ import { simulado } from "./simulado.ts";
 // catálogo de proveedores vive en este archivo, no en una migración.
 export const registro: Record<string, AdaptadorPago> = {
   simulado,
+  "qr-manual": qrManual,
 };
 
 /**
