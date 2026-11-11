@@ -36,6 +36,11 @@ export interface CuerpoAvisoSimulado {
   estado: string;
 }
 
+function secretoConfigurado(): boolean {
+  const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+  return Boolean(env?.PAGO_SIMULADO_SECRETO ?? process.env.PAGO_SIMULADO_SECRETO);
+}
+
 function secreto(): string {
   const env = (import.meta as { env?: Record<string, string | undefined> }).env;
   const valor = env?.PAGO_SIMULADO_SECRETO ?? process.env.PAGO_SIMULADO_SECRETO;
@@ -95,6 +100,11 @@ export const simulado: AdaptadorPago = {
   verificarFirma(cuerpoCrudo: string, headers: Headers): boolean {
     const recibida = headers.get(CABECERA_FIRMA);
     if (!recibida) return false;
+
+    // Sin secreto configurado no se puede verificar nada, y no verificar es no autenticar:
+    // devuelve `false` —401— en vez de lanzar. En producción este proveedor puede no tener
+    // su secreto cargado, y una petición suelta a su webhook no debe contestar 500.
+    if (!secretoConfigurado()) return false;
 
     const esperada = firmar(cuerpoCrudo);
 
