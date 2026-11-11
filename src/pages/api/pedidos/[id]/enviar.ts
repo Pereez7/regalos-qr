@@ -11,6 +11,7 @@ import {
 import { parsearBorrador } from "../../../../lib/borrador/esquema.ts";
 import { aContenido, sePuedeEnviar } from "../../../../lib/borrador/a-contenido.ts";
 import { mudarFotos } from "../../../../lib/fotos.ts";
+import { emitirAviso, enlaceDeAviso } from "../../../../lib/avisos.ts";
 
 export const prerender = false;
 
@@ -124,7 +125,14 @@ export const POST: APIRoute = async ({ params, redirect }) => {
   if (!(await mudarFotos(id, regaloId))) return new Response(null, { status: 500 });
   await mudarRutasDelBorrador(id, regaloId);
 
-  // El aviso de regalo listo (`tipo = 'revision'`) se emite desde acá en T065.
+  // Aviso de regalo listo, con el enlace de revisión (FR-026). Se emite solo en el primer
+  // envío: las correcciones posteriores no vuelven a avisar, y la restricción
+  // `unique (pedido_id, tipo)` lo hace cumplir aunque este camino se recorriera dos veces.
+  // Sin eso, cada corrección le llenaría la casilla al comprador (FR-014).
+  await emitirAviso("revision", pedido, {
+    enlace: enlaceDeAviso("revision", { pedidoId: id, regaloId }),
+    ...(borrador.destinatario?.nombre ? { nombreDestinatario: borrador.destinatario.nombre } : {}),
+  });
 
   return redirect(`/contar/${id}/enviado`, 303);
 };

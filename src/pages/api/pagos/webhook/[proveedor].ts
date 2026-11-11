@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { getServiceClient } from "../../../../lib/supabase.ts";
 import { obtenerAdaptadorPago } from "../../../../lib/pagos/registro.ts";
 import { marcarPagado, obtenerPedido } from "../../../../lib/pedidos.ts";
+import { emitirAviso, enlaceDeAviso } from "../../../../lib/avisos.ts";
 
 export const prerender = false;
 
@@ -137,10 +138,17 @@ export const POST: APIRoute = async ({ params, request }) => {
       resultado = "sin_efecto";
       await supabase.from("eventos_pago").update({ resultado }).eq("id", evento.id);
     }
-  }
 
-  // 10. Acciones derivadas (comprobante de compra) se suman acá en T064, y solo las ejecuta
-  // el ganador de la inserción del paso 6: un aviso duplicado no vuelve a mandar correo.
+    // 10. Acción derivada: el comprobante de compra (FR-026). Solo lo emite quien ganó la
+    // transición, así que un aviso duplicado no vuelve a mandar correo. La restricción
+    // `unique (pedido_id, tipo)` de `avisos` es la segunda red. Una falla de envío no
+    // revierte el pago ni cambia la respuesta de esta ruta (FR-029).
+    if (gano) {
+      await emitirAviso("comprobante", pedido, {
+        enlace: enlaceDeAviso("comprobante", { pedidoId: pedido.id }),
+      });
+    }
+  }
 
   return VACIO();
 };

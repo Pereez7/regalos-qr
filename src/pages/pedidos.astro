@@ -186,7 +186,11 @@ function fecha(valor: string): string {
   }
 
   <h2>Avisos sin enviar o fallidos ({avisos.length})</h2>
-  <p>El reintento manual se agrega con la historia 4 (tasks.md T068).</p>
+  <p>
+    Reintentar es un UPDATE sobre la misma fila que incrementa los intentos: el registro del
+    aviso es la intención de avisar, no cada intento de red. No hay reintento automático
+    (research.md #12).
+  </p>
   {
     avisos.length > 0 && (
       <div class="tabla-scroll">
@@ -199,6 +203,7 @@ function fecha(valor: string): string {
               <th>Estado</th>
               <th>Intentos</th>
               <th>Error</th>
+              <th>Reintentar</th>
             </tr>
           </thead>
           <tbody>
@@ -210,6 +215,13 @@ function fecha(valor: string): string {
                 <td>{aviso.estado}</td>
                 <td>{aviso.intentos}</td>
                 <td>{aviso.error ?? "—"}</td>
+                <td>
+                  <form method="POST" action={`/api/avisos/${aviso.id}/reintentar`}>
+                    <button type="submit" class="boton" data-reintentar>
+                      Reintentar
+                    </button>
+                  </form>
+                </td>
               </tr>
             ))}
           </tbody>

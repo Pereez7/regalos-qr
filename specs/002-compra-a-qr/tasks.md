@@ -275,30 +275,30 @@ tres avisos se emitió una sola vez, con su enlace.
 
 ### Tests for User Story 4
 
-- [ ] T059 [P] [US4] `tests/e2e/avisos.spec.ts` — los tres avisos (comprobante, revisión,
+- [x] T059 [P] [US4] `tests/e2e/avisos.spec.ts` — los tres avisos (comprobante, revisión,
       aprobación) se emiten una sola vez cada uno, con el enlace correcto (FR-026).
-- [ ] T060 [P] [US4] En el mismo archivo, una falla de envío no bloquea ni pierde el pedido, y
+- [x] T060 [P] [US4] En el mismo archivo, una falla de envío no bloquea ni pierde el pedido, y
       queda registrada con su estado para poder reintentarse (FR-029).
 
 ### Implementation for User Story 4
 
-- [ ] T061 [P] [US4] Crear `src/lib/correo/consola.ts` — proveedor de desarrollo y simulación, que
+- [x] T061 [P] [US4] Crear `src/lib/correo/consola.ts` — proveedor de desarrollo y simulación, que
       permite recorrer la feature sin cuenta de correo (FR-028).
-- [ ] T062 [P] [US4] Crear `src/lib/correo/resend.ts` — proveedor de producción detrás de la misma
+- [x] T062 [P] [US4] Crear `src/lib/correo/resend.ts` — proveedor de producción detrás de la misma
       interfaz.
-- [ ] T063 [US4] Crear `src/lib/avisos.ts` — emisión, registro en la tabla `avisos` con su estado
+- [x] T063 [US4] Crear `src/lib/avisos.ts` — emisión, registro en la tabla `avisos` con su estado
       cualquiera sea el proveedor, y reencolado manual (research.md #12).
-- [ ] T064 [US4] Emitir el comprobante de compra al quedar pagado el pedido, desde
+- [x] T064 [US4] Emitir el comprobante de compra al quedar pagado el pedido, desde
       `src/pages/api/pagos/webhook/[proveedor].ts`.
-- [ ] T065 [US4] Emitir el aviso de revisión al nacer el regalo, desde
+- [x] T065 [US4] Emitir el aviso de revisión al nacer el regalo, desde
       `src/pages/api/pedidos/[id]/enviar.ts`.
-- [ ] T066 [US4] Modificar `src/pages/api/regalos/[id]/aprobar.ts` para emitir el aviso de
+- [x] T066 [US4] Modificar `src/pages/api/regalos/[id]/aprobar.ts` para emitir el aviso de
       aprobación. Es el **único** punto del sistema que se entera de que la aprobación ocurrió, y
       por eso entra al perímetro de los cuatro archivos tocados. El cambio es aditivo: no altera
       la transición de estado ni la respuesta del endpoint (research.md #20).
-- [ ] T067 [US4] Verificar que `tests/e2e/revision-y-aprobacion.spec.ts` de la feature 001 sigue en
+- [x] T067 [US4] Verificar que `tests/e2e/revision-y-aprobacion.spec.ts` de la feature 001 sigue en
       verde: es el gate de que el agregado a `aprobar.ts` no cambió su comportamiento.
-- [ ] T068 [US4] Agregar a `src/pages/pedidos.astro` el botón de reintento de cada aviso fallido
+- [x] T068 [US4] Agregar a `src/pages/pedidos.astro` el botón de reintento de cada aviso fallido
       (research.md #12).
 
 **Checkpoint**: recorrido completo y pulido.
