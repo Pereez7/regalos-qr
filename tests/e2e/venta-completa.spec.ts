@@ -40,9 +40,12 @@ test("de la landing al QR: el recorrido completo de una venta", async ({ browser
     await pagina.click("[data-form-comprar] button[type=submit]");
 
     // Sale hacia el cobro, con el pedido ya creado: el aviso de pago siempre va a encontrar
-    // un pedido esperando (research.md #4).
-    await expect(pagina).toHaveURL(/\/cobro-simulado\/[0-9a-f-]{36}$/);
+    // un pedido esperando (research.md #4). A dónde sale depende del proveedor configurado,
+    // y el test recorre EL QUE ESTÉ PUESTO en vez de forzar uno: si mañana se cambia a otro,
+    // este test prueba la venta real y no una simulación que ya nadie usa.
+    await expect(pagina).toHaveURL(/\/(cobro-simulado|pagar)\/[0-9a-f-]{36}$/);
     pedidoId = pagina.url().split("/").pop()!;
+    const conQr = pagina.url().includes("/pagar/");
 
     const { data: pedido } = await supabase
       .from("pedidos")
@@ -53,8 +56,31 @@ test("de la landing al QR: el recorrido completo de una venta", async ({ browser
     expect(pedido!.email).toBe(correo);
 
     // ── 2 · Paga ──────────────────────────────────────────────────────────────────────
-    await pagina.click("[data-pagar]");
-    await expect(pagina).toHaveURL(new RegExp(`/gracias/${pedidoId}$`));
+    if (conQr) {
+      // Cobro con QR: el comprador paga desde la app de su banco y declara su comprobante.
+      // Declarar no lo deja pagado —eso lo decide el negocio al ver la transferencia—, así
+      // que el pedido sigue pendiente hasta que alguien confirma desde la cola.
+      await expect(pagina.locator("img")).toBeVisible();
+      await pagina.fill("#comprobante", `TRX-${randomBytes(4).toString("hex")}`);
+      await pagina.click("[data-form-comprobante] button");
+      await expect(pagina.locator("[data-declarado]")).toBeVisible();
+
+      const { data: sinConfirmar } = await supabase
+        .from("pedidos")
+        .select("estado")
+        .eq("id", pedidoId)
+        .single();
+      expect(sinConfirmar!.estado).toBe("iniciado");
+
+      const cola = await contexto.newPage();
+      await cola.goto(`/pedidos?clave=${encodeURIComponent(process.env.OPS_SECRET!)}`);
+      await cola.click(`[data-por-confirmar="${pedidoId}"] [data-confirmar]`);
+      await cola.close();
+    } else {
+      await pagina.click("[data-pagar]");
+    }
+
+    await pagina.goto(`/gracias/${pedidoId}`);
     await expect(pagina.locator('[data-estado="pagado"]')).toBeVisible();
     await expect(pagina.locator("[data-enlace-carga]")).toBeVisible();
 

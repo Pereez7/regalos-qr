@@ -95,18 +95,29 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
 
   {
     qr.imagen ? (
-      <figure>
-        <img src={qr.imagen} alt="Código QR para pagar desde la app de tu banco" width="320" />
-        <figcaption>
-          {qr.titular && (
-            <>
-              A nombre de <strong>{qr.titular}</strong>.{" "}
-            </>
-          )}
-          {qr.banco && <>Banco: {qr.banco}. </>}
-          Escaneá desde la app de tu banco, con cualquier banco de la red.
-        </figcaption>
-      </figure>
+      <>
+        <ol class="pasos">
+          <li>Escaneá el código desde la app de tu banco.</li>
+          <li>
+            Escribí el monto: <strong>{monto ?? "el total de arriba"}</strong>. El código no
+            lo lleva adentro, así que lo ponés vos.
+          </li>
+          <li>Confirmá la transferencia y volvé acá con el número de comprobante.</li>
+        </ol>
+
+        <figure>
+          <img src={qr.imagen} alt="Código QR para pagar desde la app de tu banco" width="320" />
+          <figcaption>
+            {qr.titular && (
+              <>
+                A nombre de <strong>{qr.titular}</strong>.{" "}
+              </>
+            )}
+            {qr.banco && <>{qr.banco}. </>}
+            Funciona desde la app de cualquier banco de la red.
+          </figcaption>
+        </figure>
+      </>
     ) : (
       <p class="aviso" data-sin-qr>
         El cobro por QR todavía no está configurado. Escribinos y lo resolvemos a mano.
@@ -144,6 +155,16 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
 </VentaLayout>
 
 <style>
+  .pasos {
+    margin: 0 0 var(--e-2);
+    padding-left: 1.2rem;
+    max-width: 62ch;
+  }
+
+  .pasos li {
+    margin-bottom: var(--e-1);
+  }
+
   figure {
     margin: 0 0 var(--e-3);
     max-width: 360px;

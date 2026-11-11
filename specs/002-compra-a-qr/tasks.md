@@ -362,10 +362,12 @@ modelo de datos cambiaron para que entrara un proveedor real.
 - [x] T081 `tests/e2e/pago-qr-manual.spec.ts`: declarar no es pagar; confirmar dos veces no
       cobra dos veces; sin credencial nadie confirma; y un pago sin comprobante declarado se
       confirma igual pero queda anotado como tal.
-- [ ] T082 **No es código, y es del negocio**: poner la imagen del QR de la cuenta en
-      `public/`, completar `QR_PAGO_IMAGEN`, `QR_PAGO_TITULAR` y `QR_PAGO_BANCO`, fijar
-      `MONEDA=BOB` y el `PRECIO` real en centavos, y recién entonces pasar `PAGO_PROVEEDOR` de
-      `simulado` a `qr-manual`. Hasta ese cambio el sitio sigue cobrando en simulación.
+- [x] T082 Configuración real del cobro: `public/QR.jpeg` (QR de Yape, a nombre de Charles
+      Perez Paredes, válido hasta el 3 de noviembre de 2028), `PRECIO=10000` y `MONEDA=BOB`
+      —Bs 100—, y `PAGO_PROVEEDOR=qr-manual`. El QR es **estático y de monto libre**: el
+      comprador escribe los Bs 100 a mano en su app, y la página de cobro lo dice en tres
+      pasos numerados en vez de dejarlo librado a que se dé cuenta.
+      **Falta replicarlo en las variables de entorno de Vercel**: `.env` es solo local.
 - [ ] T083 Cuando el volumen pase de ~15–20 ventas mensuales, evaluar un proveedor con API de
       QR Simple y escribir su adaptador. El QR por pedido elimina la conciliación manual, que
       es el único trabajo que el camino actual deja a mano (research.md #24).

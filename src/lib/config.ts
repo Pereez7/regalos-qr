@@ -79,14 +79,14 @@ export function proveedorCorreo(): string {
  * Formato humano del precio, para mostrar. No participa de ningún cobro: los montos se
  * mueven siempre en centavos enteros, y esta función solo existe para la pantalla.
  *
- * `es-AR` fijo, igual que las fechas de la cola: el sitio está escrito en un solo idioma y
- * para un solo mercado. Si un día hay más de uno, el locale sale de la configuración y no de
- * la cabecera del navegador —el precio que ve el comprador no puede depender de cómo tenga
- * configurado el teléfono—.
+ * `es-BO` fijo: el producto se vende en Bolivia (research.md #24), y con esa combinación
+ * `Intl` escribe "Bs 100", que es como se escribe un precio ahí. El locale sale de la
+ * configuración y no de la cabecera del navegador: el precio que ve el comprador no puede
+ * depender de cómo tenga configurado el teléfono.
  */
 export function formatearPrecio({ centavos, moneda }: Precio): string {
   try {
-    return new Intl.NumberFormat("es-AR", {
+    return new Intl.NumberFormat("es-BO", {
       style: "currency",
       currency: moneda,
       // Los centavos solo se muestran si el precio los tiene: "$ 12.000", no "$ 12.000,00".
