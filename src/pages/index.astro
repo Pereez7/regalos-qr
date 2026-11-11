@@ -8,6 +8,10 @@ export const prerender = false;
 // FR-001: qué es el regalo, al menos un ejemplo real navegable, el precio, y una sola
 // acción de compra. Sin JavaScript: el formulario es un <form> plano que postea a /comprar.
 //
+// El enlace de arriba no es una segunda oferta: es un ancla al mismo formulario. La página
+// es larga porque responde objeciones, y obligar a scrollear hasta el final para comprar
+// sería cobrarle al que ya está convencido.
+//
 // El precio se lee en runtime (research.md #18). Si falta, la página lo dice y NO ofrece
 // comprar: vender sin saber cuánto se cobra es peor que no vender.
 
@@ -23,44 +27,140 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 ---
 
 <VentaLayout titulo="Un regalo que se abre con un QR">
-  <h1>Una historia hecha página, que se abre escaneando un QR</h1>
+  <h1>Una tarjeta con un QR. Detrás, todo lo que no cabe en una tarjeta.</h1>
 
   <p>
-    Vos contás la historia —a quién va dedicada, los momentos que quieren recordar, las
-    fotos, la canción, la carta—. Nosotros la convertimos en una página web hecha para
-    leerse en el celular, y te damos una tarjeta con un código QR lista para imprimir.
-    Quien la recibe escanea y la historia se abre.
+    Quien lo recibe escanea el código y se abre un sobre. Adentro está su nombre, los
+    momentos que elegiste guardar, las fotos, la canción que elegiste, la carta que le escribiste
+    y las preguntas que le dejaste. Se lee en el celular, sin instalar nada y sin crear
+    ninguna cuenta.
   </p>
 
-  <h2>Qué recibís</h2>
-  <ul>
-    <li>Una página privada con tu historia, que se abre sin instalar nada.</li>
-    <li>Un enlace propio que no cambia nunca, y que solo tiene quien vos quieras.</li>
-    <li>Una tarjeta con el QR, en un archivo listo para llevar a imprimir.</li>
-    <li>Un enlace de revisión: nada se publica hasta que vos lo aprobás.</li>
-  </ul>
+  <p>
+    Una tarjeta se lee una vez y termina en un cajón. Esto se vuelve a abrir el mes que
+    viene, el aniversario que viene y dentro de diez años: el enlace no vence nunca y no
+    cambia nunca.
+  </p>
 
-  <h2>Mirá uno de verdad</h2>
-  {
-    slugEjemplo ? (
-      <p>
+  <p class="acciones">
+    {
+      precio && (
+        <a class="boton" href="#comprar">
+          Quiero el mío por {formatearPrecio(precio)}
+        </a>
+      )
+    }
+    {
+      slugEjemplo ? (
         <a class="boton boton-secundario" href={`/r/${slugEjemplo}`} data-ejemplo>
           Abrir un regalo de ejemplo
         </a>
-      </p>
-    ) : (
-      <p data-sin-ejemplo>
-        Todavía no hay un ejemplo publicado para mostrar acá.
+      ) : (
+        <span data-sin-ejemplo>Todavía no hay un ejemplo publicado para mostrar acá.</span>
+      )
+    }
+  </p>
+
+  {
+    slugEjemplo && (
+      <p class="opcional">
+        Es un regalo publicado de verdad, servido por el mismo motor que va a servir el tuyo.
+        Abrilo desde el celular si podés: está hecho para una mano, no para un escritorio.
       </p>
     )
   }
+
+  <h2>Qué ve quien lo recibe</h2>
+  <p>
+    Un sobre cerrado. Nada más, hasta que lo toca. Y entonces, de a un bloque, aparece todo
+    esto:
+  </p>
+  <ul>
+    <li>Su nombre, y la cuenta de los días desde la fecha que vos elegiste.</li>
+    <li>Los momentos, de a uno, como quien da vuelta una página.</li>
+    <li>Las fotos que pusiste, hasta diez.</li>
+    <li>La canción que elegiste, para escuchar sin salir del regalo.</li>
+    <li>Tu carta, entera y sin recortar.</li>
+    <li>Las preguntas que le dejaste, de a una, con su respuesta.</li>
+    <li>El cierre: las últimas palabras.</li>
+  </ul>
+  <p>
+    No le pedimos cuenta, contraseña ni una app. Y el regalo no está en buscadores ni en
+    ningún listado: lo abre quien tenga el enlace, y el enlace lo das vos.
+  </p>
+
+  <h2>Vos contás. No diseñás nada.</h2>
+  <p>
+    Son siete pasos, y cada paso es una pregunta. Contestás con tus palabras —nadie las
+    reescribe ni las corrige— y el resto lo ponemos nosotros: el ritmo, la tipografía, el
+    sobre que se abre.
+  </p>
+  <ol class="pasos">
+    <li>
+      <strong>Para quién es.</strong> El nombre de quien lo recibe, cuál de los tres climas
+      visuales querés —nocturno, papel o luminoso— y desde qué fecha se cuentan los días.
+    </li>
+    <li><strong>Los momentos.</strong> Lo que pasó y vale la pena volver a contar.</li>
+    <li><strong>Las fotos.</strong> Hasta diez.</li>
+    <li><strong>La canción.</strong> Un enlace de Spotify o de YouTube, que se escucha adentro del regalo.</li>
+    <li>
+      <strong>La carta.</strong> Lo que le dirías si tuvieras una hoja en blanco y todo el
+      tiempo del mundo.
+    </li>
+    <li><strong>Las preguntas.</strong> Con su respuesta, para que aparezcan de a una.</li>
+    <li><strong>El cierre.</strong> Cómo lo terminás.</li>
+  </ol>
+  <p>
+    Se guarda a cada paso. Podés empezar en el colectivo, cerrar el celular en el segundo
+    paso y seguir tres días después desde otra computadora: tu pedido es un enlace propio,
+    no una cuenta que tengas que recordar. Guardalo apenas lo tengas —marcalo, mandátelo por
+    mensaje a vos mismo— porque es la única llave.
+  </p>
+
+  <h2>Nada se publica hasta que vos lo apruebes</h2>
+  <p>
+    Cuando terminás, te damos un enlace de revisión donde ves tu regalo exactamente como lo
+    va a ver quien lo recibe, sobre incluido. Si algo no te gusta, volvés y lo cambiás. Y
+    otra vez. Y otra. Corregir no tiene límite ni cuesta nada: recién cuando vos aprobás,
+    queda.
+  </p>
+  <p>
+    Después de eso ya no se toca, y eso también es a propósito: un regalo entregado no se
+    edita a espaldas de quien lo recibió.
+  </p>
+
+  <h2>Qué recibís vos</h2>
+  <ul>
+    <li>La página de tu regalo, con su propio enlace, que no vence ni cambia nunca.</li>
+    <li>
+      La tarjeta con el QR en un archivo listo para imprimir: 10 por 15 centímetros a 300
+      puntos, el tamaño de una foto revelada.
+    </li>
+    <li>
+      El código también suelto, aparte de la tarjeta, por si lo querés pegar en una caja, un
+      ramo o un sobre de verdad.
+    </li>
+  </ul>
+  <p>
+    No te lo mandamos impreso a tu casa: el archivo es tuyo y lo llevás a imprimir donde
+    quieras. Por eso no hay envío que esperar, ni dirección que dejarnos, y elegís vos el
+    papel.
+  </p>
+
+  <h2>Para cuándo sirve</h2>
+  <p>
+    Un aniversario. Una propuesta de matrimonio, con la pregunta escrita y guardada para
+    siempre. Un cumpleaños. Y el caso para el que esto existe: estar lejos y querer mandar
+    algo que no sea plata.
+  </p>
 
   <h2>Cuánto cuesta</h2>
   {
     precio ? (
       <p data-precio>
-        <strong>{formatearPrecio(precio)}</strong> por regalo, una sola vez. Sin suscripción:
-        la página queda publicada y el enlace no vence.
+        <strong>{formatearPrecio(precio)}</strong>, una sola vez. No hay suscripción, ni
+        mensualidad, ni un plan que se vence y te apaga la página: pagás una vez y queda
+        publicada.
       </p>
     ) : (
       <p class="aviso" data-precio-faltante>
@@ -69,13 +169,66 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     )
   }
 
+  <h2>Preguntas</h2>
+  <dl>
+    <dt>¿Tiene que instalar algo o abrirse una cuenta?</dt>
+    <dd>
+      No. Escanea, se abre en el navegador del celular y listo. Vos tampoco tenés cuenta
+      acá: tu pedido es un enlace propio, sin contraseña que recordar ni registro que
+      completar.
+    </dd>
+
+    <dt>¿El enlace vence?</dt>
+    <dd>
+      No vence y no cambia. El QR que imprimas hoy va a seguir abriendo el mismo regalo
+      dentro de años.
+    </dd>
+
+    <dt>¿Lo puede ver cualquiera?</dt>
+    <dd>
+      No sale en buscadores ni en ningún listado, y la dirección no se adivina. Las fotos
+      tampoco quedan en una carpeta pública: viven en un depósito privado y se sirven con
+      direcciones firmadas que se mueren al terminar la visita.
+    </dd>
+
+    <dt>¿Y si escribo algo y después me arrepiento?</dt>
+    <dd>
+      Mientras no lo apruebes, lo cambiás todas las veces que quieras, sin costo. Para eso
+      está el enlace de revisión.
+    </dd>
+
+    <dt>¿Lo escribe una inteligencia artificial?</dt>
+    <dd>
+      No. Nadie le pone palabras a tu historia. Si vos no lo contás, no existe: eso es,
+      exactamente, lo que hace que el regalo sea tuyo.
+    </dd>
+
+    <dt>¿Cuánto me va a llevar?</dt>
+    <dd>
+      Lo que quieras. No hay reloj ni fecha de entrega que corra: se guarda a cada paso y
+      volvés cuando puedas.
+    </dd>
+
+    <dt>¿Cómo se paga?</dt>
+    <dd>
+      Escaneando un QR interbancario desde la app de tu banco. No te pedimos ni guardamos
+      datos de tarjeta en ningún momento, porque nunca los tocamos.
+    </dd>
+  </dl>
+
   {
     precio && (
       <>
-        <h2>Comprar</h2>
+        <h2 id="comprar">Empezá</h2>
+        <p>
+          Dejanos tu correo y te llevamos al QR para pagar. Apenas pagues te damos el enlace
+          de tu pedido: <strong>guardalo</strong>, es tu única llave. Confirmamos la
+          transferencia a mano, así que puede tardar unas horas; cuando esté, se abre el
+          primer paso y ya estás contando.
+        </p>
         <form method="POST" action="/comprar" data-form-comprar>
           <p>
-            <label for="email">Tu correo (acá te mandamos el enlace de tu pedido)</label>
+            <label for="email">Tu correo (para encontrarte si algo sale mal con el pago)</label>
             <input type="email" id="email" name="email" required autocomplete="email" />
           </p>
 
@@ -105,13 +258,22 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
             <button type="submit" class="boton">Comprar por {formatearPrecio(precio)}</button>
           </p>
         </form>
+
+        <p class="opcional">
+          No guardamos datos de tu tarjeta: el pago ocurre dentro de la app de tu banco.
+        </p>
       </>
     )
   }
 </VentaLayout>
 
 <style>
-  ul {
+  h1 {
+    max-width: 24ch;
+  }
+
+  ul,
+  .pasos {
     margin: 0 0 var(--e-2);
     padding-left: var(--e-3);
     max-width: 62ch;
@@ -119,6 +281,42 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 
   li {
     margin-bottom: var(--e-1);
+    overflow-wrap: anywhere;
+  }
+
+  /* Las dos acciones de la cabecera son la MISMA compra (el ancla al formulario) y el
+     ejemplo. Envuelven en vez de desbordar a 320 px (FR-032). */
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1) var(--e-2);
+    align-items: center;
+  }
+
+  .acciones .boton {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  dl {
+    margin: 0 0 var(--e-2);
+    max-width: 62ch;
+  }
+
+  dt {
+    margin-top: var(--e-2);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  dt:first-child {
+    margin-top: 0;
+  }
+
+  dd {
+    margin: var(--e-1) 0 0;
+    color: var(--texto-suave);
+    overflow-wrap: anywhere;
   }
 
   fieldset {

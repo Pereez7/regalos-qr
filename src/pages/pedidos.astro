@@ -71,22 +71,23 @@ function fecha(valor: string): string {
     de estas listas.
   </p>
 
+  <p class="pista">En el celular, las listas de abajo se desplazan de lado para leerse enteras.</p>
+
   <form method="POST" action="/salir-cola" class="salir">
     <button type="submit" class="boton boton-secundario" data-salir>Salir</button>
   </form>
 
   <h2>Pagos por QR esperando confirmación ({porConfirmar.length})</h2>
   <p>
-    Compradores que dicen haber pagado. Buscá el comprobante en la app del banco y confirmá;
-    el pedido pasa a pagado por el mismo aviso firmado que mandaría un proveedor con API, así
-    que confirmar dos veces no cobra dos veces (research.md #24).
+    Compradores que dicen haber pagado. Buscá el comprobante en la app del banco y confirmá.
+    Confirmar dos veces no cobra dos veces: podés apretar sin miedo.
   </p>
   {
     porConfirmar.length === 0 ? (
       <p>Nada esperando.</p>
     ) : (
       <div class="tabla-scroll">
-        <table>
+        <table class="confirmar">
           <thead>
             <tr>
               <th>Pedido</th>
@@ -100,16 +101,16 @@ function fecha(valor: string): string {
           <tbody>
             {porConfirmar.map((pago) => (
               <tr data-por-confirmar={pago.pedidoId}>
-                <td>
+                <td data-etiqueta="Pedido">
                   <a href={`/gracias/${pago.pedidoId}`}>{pago.pedidoId.slice(0, 8)}</a>
                 </td>
-                <td>{pago.email}</td>
-                <td>
+                <td class="correo" data-etiqueta="Correo">{pago.email}</td>
+                <td data-etiqueta="Importe">
                   {formatearPrecio({ centavos: pago.montoCentavos, moneda: pago.moneda })}
                 </td>
-                <td>{pago.referenciaComprador}</td>
-                <td>{fecha(pago.creadoEn)}</td>
-                <td>
+                <td data-etiqueta="Comprobante">{pago.referenciaComprador}</td>
+                <td class="fecha" data-etiqueta="Declarado">{fecha(pago.creadoEn)}</td>
+                <td class="accion">
                   <form method="POST" action={`/api/pagos/confirmar/${pago.pedidoId}`}>
                     <input type="hidden" name="decision" value="aprobado" />
                     <button type="submit" class="boton" data-confirmar>
@@ -144,8 +145,8 @@ function fecha(valor: string): string {
             {pagadosSinRegalo.map((pedido) => (
               <tr data-pedido={pedido.id} data-estado={pedido.estado}>
                 <td><a href={`/gracias/${pedido.id}`}>{pedido.id.slice(0, 8)}</a></td>
-                <td>{pedido.email}</td>
-                <td>{pedido.pagadoEn ? fecha(pedido.pagadoEn) : "—"}</td>
+                <td class="correo">{pedido.email}</td>
+                <td class="fecha">{pedido.pagadoEn ? fecha(pedido.pagadoEn) : "—"}</td>
                 <td>
                   {pedido.regaloId == null
                     ? "sin enviar"
@@ -179,8 +180,8 @@ function fecha(valor: string): string {
             {abandonados.map((pedido) => (
               <tr data-pedido={pedido.id} data-estado={pedido.estado}>
                 <td>{pedido.id.slice(0, 8)}</td>
-                <td>{pedido.email}</td>
-                <td>{fecha(pedido.creadoEn)}</td>
+                <td class="correo">{pedido.email}</td>
+                <td class="fecha">{fecha(pedido.creadoEn)}</td>
               </tr>
             ))}
           </tbody>
@@ -191,9 +192,8 @@ function fecha(valor: string): string {
 
   <h2>Avisos sin enviar o fallidos ({avisos.length})</h2>
   <p>
-    Reintentar es un UPDATE sobre la misma fila que incrementa los intentos: el registro del
-    aviso es la intención de avisar, no cada intento de red. No hay reintento automático
-    (research.md #12).
+    Nada se reintenta solo: el aviso que falló se queda acá hasta que vos lo reencoles.
+    Reintentar no crea un aviso nuevo, usa el mismo y suma un intento.
   </p>
   {
     avisos.length > 0 && (
@@ -215,7 +215,7 @@ function fecha(valor: string): string {
               <tr data-aviso={aviso.id} data-estado={aviso.estado}>
                 <td>{aviso.pedidoId.slice(0, 8)}</td>
                 <td>{aviso.tipo}</td>
-                <td>{aviso.destinatario}</td>
+                <td class="correo">{aviso.destinatario}</td>
                 <td>{aviso.estado}</td>
                 <td>{aviso.intentos}</td>
                 <td>{aviso.error ?? "—"}</td>
@@ -257,7 +257,7 @@ function fecha(valor: string): string {
                 <td>{evento.proveedor}</td>
                 <td>{evento.eventoId}</td>
                 <td>{evento.estadoInformado}</td>
-                <td>{fecha(evento.recibidoEn)}</td>
+                <td class="fecha">{fecha(evento.recibidoEn)}</td>
               </tr>
             ))}
           </tbody>
@@ -291,7 +291,7 @@ function fecha(valor: string): string {
                 <td>{d.montoCotizadoCentavos}</td>
                 <td>{d.montoInformadoCentavos}</td>
                 <td>{d.moneda}</td>
-                <td>{fecha(d.actualizadoEn)}</td>
+                <td class="fecha">{fecha(d.actualizadoEn)}</td>
               </tr>
             ))}
           </tbody>
@@ -304,5 +304,76 @@ function fecha(valor: string): string {
 <style>
   .salir {
     margin: 0 0 var(--e-3);
+  }
+
+  .pista {
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  /* FR-032: en vez de aplastarse hasta lo ilegible, la tabla hace scroll dentro de
+     .tabla-scroll. El body nunca se desplaza de lado. */
+  table {
+    min-width: 48rem;
+  }
+
+  .tabla-scroll {
+    margin: 0 0 var(--e-3);
+  }
+
+  td .boton {
+    white-space: nowrap;
+  }
+
+  td.fecha {
+    white-space: nowrap;
+  }
+
+  td.correo {
+    overflow-wrap: anywhere;
+  }
+
+  /* En el celular, la tabla de confirmación deja de ser tabla y pasa a ser una ficha por
+     pago. Es la acción que el negocio hace todos los días y desde el teléfono: tener que
+     desplazar la tabla de lado para alcanzar el botón la vuelve incómoda justo donde más se
+     usa. Las otras cuatro tablas se consultan, no se operan, y se quedan como están. */
+  @media (max-width: 40rem) {
+    .confirmar,
+    .confirmar tbody,
+    .confirmar tr,
+    .confirmar td {
+      display: block;
+      width: auto;
+      min-width: 0;
+    }
+
+    .confirmar thead {
+      display: none;
+    }
+
+    .confirmar tr {
+      padding: var(--e-2) 0;
+      border-bottom: 1px solid var(--borde);
+    }
+
+    .confirmar td {
+      padding: 0 0 var(--e-1);
+      border: 0;
+    }
+
+    .confirmar td::before {
+      content: attr(data-etiqueta) ": ";
+      color: var(--texto-suave);
+    }
+
+    .confirmar td.accion::before {
+      content: none;
+    }
+
+    .confirmar td.accion .boton {
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
   }
 </style>
