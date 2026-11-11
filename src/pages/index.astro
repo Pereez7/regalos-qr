@@ -32,7 +32,10 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
       se ve. CSS puro, sin una imagen que descargar ni un byte de JavaScript. */}
   <div class="vitrina" aria-hidden="true">
     <div class="sobre-mini">
-      <span class="carta"></span>
+      <span class="carta">
+        <em class="para">Ana</em>
+        <em class="dias"><b data-contador>1001</b> días juntos</em>
+      </span>
       <span class="cuerpo"></span>
       <span class="solapa"></span>
       <span class="sello">♥</span>
@@ -279,21 +282,90 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   }
 </VentaLayout>
 
+<script>
+  // Motion One, ~5 KB: `animation-timeline: view()` ya hace esto sin JavaScript, pero
+  // todavía no está en todos los navegadores —Safari entre ellos—, y la mitad del mercado
+  // de este producto es un iPhone. Esta es la única razón por la que hay una librería acá:
+  // que el movimiento se vea en TODOS los teléfonos, no solo en Chrome.
+  //
+  // Nada se oculta desde el HTML: si este script no corre, la página se ve entera. El
+  // opacity 0 lo pone el propio script, una fracción antes de animar.
+  import { animate } from "motion/mini";
+  import { inView, stagger } from "motion";
+
+  const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (!sinMovimiento) {
+    const entradas = document.querySelectorAll(".entra");
+
+    for (const elemento of entradas) {
+      elemento.style.opacity = "0";
+      elemento.style.transform = "translateY(20px)";
+    }
+
+    inView(
+      entradas,
+      (elemento) => {
+        animate(
+          elemento,
+          { opacity: 1, transform: "translateY(0px)" },
+          { duration: 0.7, easing: [0.2, 0.8, 0.3, 1] },
+        );
+
+        // Las listas entran de a un ítem: es lo que hace que se lea como algo que se está
+        // escribiendo y no como un bloque que aparece.
+        const hijos = elemento.querySelectorAll(":scope > li, :scope > dt, :scope > dd");
+        if (hijos.length > 0) {
+          animate(
+            hijos,
+            { opacity: [0, 1], transform: ["translateY(10px)", "translateY(0px)"] },
+            { duration: 0.5, delay: stagger(0.06), easing: [0.2, 0.8, 0.3, 1] },
+          );
+        }
+      },
+      { amount: 0.15 },
+    );
+
+    // El contador del sobre cuenta hasta su número cuando la página abre: es el gesto que
+    // mejor explica el producto —tiempo que se acumula— sin una línea de texto más.
+    const contador = document.querySelector("[data-contador]");
+    if (contador) {
+      const final = Number(contador.textContent) || 0;
+      animate(0, final, {
+        duration: 2.2,
+        easing: "ease-out",
+        onUpdate: (valor) => {
+          contador.textContent = Math.round(valor).toLocaleString("es-BO");
+        },
+      });
+    }
+  }
+</script>
+
 <style>
   h1 {
     max-width: 24ch;
   }
 
   /* ── El sobre de la cabecera ─────────────────────────────────────────────────────────
-     Mismo gesto que el del regalo, en chico. Se abre y se cierra en bucle lento: lo
-     suficiente para que se entienda qué pasa al escanear, sin convertirse en un cartel que
-     parpadea. Todo con transformaciones, que el navegador resuelve en la tarjeta gráfica y
-     no en el hilo principal. */
+     Mismo gesto que el del regalo, en chico y en bucle lento: la solapa se abre, la carta
+     sale, se vuelve a guardar.
+
+     Dentro de `preserve-3d` el orden de dibujo NO lo decide `z-index`: lo decide la
+     profundidad en Z. Por eso cada pieza tiene la suya, fija y explícita, en vez de pelear
+     con capas. Sin `perspective` en el contenedor, mover algo en Z no cambia su tamaño:
+     solo decide quién tapa a quién.
+
+         carta    0px   — el papel, dentro del sobre
+         cuerpo  10px   — la cara frontal, siempre delante de la carta
+         solapa  20px cerrada / -10px abierta — al abrirse cae por detrás de todo
+         sello   30px   — delante de todo, hasta que se desvanece              */
 
   .vitrina {
     display: flex;
     justify-content: center;
-    padding: var(--e-2) 0 var(--e-3);
+    /* El espacio de arriba es por dónde asoma la carta: sin él, saldría recortada. */
+    padding: var(--e-5) 0 var(--e-3);
   }
 
   .sobre-mini {
@@ -312,7 +384,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   .sobre-mini .cuerpo {
     background: linear-gradient(170deg, var(--sobre-a), var(--sobre-b));
     box-shadow: var(--sombra-card);
-    z-index: 2;
+    transform: translateZ(10px);
   }
 
   /* Los pliegues en V del sobre, dibujados con dos degradados en vez de una imagen. */
@@ -330,19 +402,38 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     inset: 8% 10% auto 10%;
     height: 78%;
     display: grid;
-    place-items: center;
-    color: var(--acento);
-    font-size: 1.4rem;
+    align-content: start;
+    padding-top: 4%;
+    text-align: center;
+    line-height: 1.25;
     background: var(--papel);
     box-shadow: var(--sombra-card);
-    z-index: 1;
     animation: carta-sube 7s var(--curva) infinite;
   }
 
-  .sobre-mini .carta::before {
-    content: "♥";
-    margin-top: -12%;
-    opacity: 0.85;
+  /* Lo que asoma de la carta es una muestra del regalo —un nombre y los días contados—,
+     no un adorno: es la promesa del producto en dos líneas. */
+  .sobre-mini .carta em {
+    display: block;
+    font-style: normal;
+  }
+
+  .sobre-mini .para {
+    font-family: var(--f-mano);
+    font-size: 1.6rem;
+    color: var(--tinta);
+  }
+
+  .sobre-mini .dias {
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--realce);
+  }
+
+  .sobre-mini .dias b {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 
   .sobre-mini .solapa {
@@ -351,7 +442,6 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     transform-origin: top center;
     background: linear-gradient(185deg, var(--sobre-b), var(--sobre-c));
     clip-path: polygon(0 0, 100% 0, 50% 100%);
-    z-index: 3;
     animation: solapa-abre 7s var(--curva) infinite;
   }
 
@@ -361,38 +451,29 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     height: 2.4rem;
     display: grid;
     place-items: center;
-    transform: translate(-50%, 50%);
     color: var(--papel);
     background: var(--acento);
     border-radius: 50%;
     box-shadow: var(--sombra-card);
-    z-index: 4;
     animation: sello-late 7s ease-in-out infinite;
   }
 
-  /* `z-index` salta de un valor al otro sin pasar por el medio, y eso es justo lo que hace
-     falta: la solapa abierta tiene que caer DETRÁS del sobre para que la carta se vea salir.
-     Es el mismo truco que usa el sobre grande del regalo. */
   @keyframes solapa-abre {
-    0%, 18% { transform: rotateX(0deg); z-index: 3; }
-    30% { z-index: 0; }
-    42%, 78% { transform: rotateX(178deg); z-index: 0; }
-    90% { z-index: 3; }
-    96%, 100% { transform: rotateX(0deg); z-index: 3; }
+    0%, 18% { transform: translateZ(20px) rotateX(0deg); }
+    42%, 78% { transform: translateZ(-10px) rotateX(178deg); }
+    96%, 100% { transform: translateZ(20px) rotateX(0deg); }
   }
 
   @keyframes carta-sube {
-    0%, 26% { transform: translateY(0) scale(0.97); z-index: 1; }
-    34% { z-index: 3; }
-    52%, 74% { transform: translateY(-46%) scale(1); z-index: 3; }
-    88% { z-index: 1; }
-    94%, 100% { transform: translateY(0) scale(0.97); z-index: 1; }
+    0%, 26% { transform: translateY(0) scale(0.97); }
+    52%, 74% { transform: translateY(-62%) scale(1); }
+    94%, 100% { transform: translateY(0) scale(0.97); }
   }
 
   @keyframes sello-late {
-    0%, 14% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
-    24%, 86% { opacity: 0; transform: translate(-50%, 50%) scale(0.3); }
-    98%, 100% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+    0%, 14% { opacity: 1; transform: translateZ(30px) translate(-50%, 50%) scale(1); }
+    24%, 86% { opacity: 0; transform: translateZ(30px) translate(-50%, 50%) scale(0.3); }
+    98%, 100% { opacity: 1; transform: translateZ(30px) translate(-50%, 50%) scale(1); }
   }
 
   /* ── Secciones que entran al llegar a la pantalla ────────────────────────────────────
@@ -446,16 +527,11 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     /* Sin movimiento, el sobre se queda abierto: así sigue contando lo que tiene que
        contar en vez de quedar como un rectángulo cerrado sin sentido. */
     .sobre-mini .solapa {
-      transform: rotateX(178deg);
+      transform: translateZ(-10px) rotateX(178deg);
     }
 
     .sobre-mini .carta {
-      transform: translateY(-46%);
-      z-index: 3;
-    }
-
-    .sobre-mini .solapa {
-      z-index: 0;
+      transform: translateY(-62%);
     }
 
     .sobre-mini .sello {
