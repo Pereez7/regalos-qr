@@ -1,4 +1,5 @@
 import { getServiceClient } from "../src/lib/supabase.ts";
+import { slugsPorOcasion } from "../src/lib/ejemplos.ts";
 
 // Borra los datos de prueba acumulados por la suite y por los recorridos a mano (T075).
 //
@@ -54,14 +55,22 @@ async function main() {
       .filter((r) => r.estado === "publicado")
       .sort((a, b) => String(b.aprobado_en).localeCompare(String(a.aprobado_en)))[0];
 
-  if (conservarDemo && demo) {
-    huerfanos = huerfanos.filter((r) => r.id !== demo.id);
+  // Los ejemplos por ocasión tampoco tienen pedido —nacen de un seed, no de una venta—, así
+  // que sin esto la limpieza se los llevaría y la landing se quedaría sin vidriera.
+  const porOcasion = new Set(Object.values(slugsPorOcasion()));
+
+  if (conservarDemo) {
+    if (demo) huerfanos = huerfanos.filter((r) => r.id !== demo.id);
+    huerfanos = huerfanos.filter((r) => !porOcasion.has(r.slug as string));
   }
 
   console.log(`pedidos de prueba (correo .test): ${dePrueba.length}`);
   console.log(`pedidos que NO se tocan:          ${reales}`);
   console.log(`regalos sin pedido asociado:      ${huerfanos.length}`);
   if (conservarDemo && demo) console.log(`regalo de demo conservado:        ${demo.slug}`);
+  if (conservarDemo && porOcasion.size > 0) {
+    console.log(`ejemplos por ocasión conservados: ${[...porOcasion].join(", ")}`);
+  }
 
   if (!hacer) {
     console.log("\nmodo informe: no se borró nada. Agregá --hacer para ejecutarlo.");

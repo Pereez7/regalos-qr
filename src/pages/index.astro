@@ -6,16 +6,19 @@ import VentaLayout from "../layouts/VentaLayout.astro";
 // de la sección que lleva ese atributo.
 import "../temas/tokens-nocturno.css";
 import { formatearPrecio, precioVigente, type Precio } from "../lib/config.ts";
-import { obtenerSlugDeEjemplo } from "../lib/ejemplos.ts";
+import { OCASIONES, obtenerEjemplos, obtenerSlugDeEjemplo } from "../lib/ejemplos.ts";
 
 export const prerender = false;
 
 // FR-001: qué es el regalo, al menos un ejemplo real navegable, el precio, y una sola
 // acción de compra. Sin JavaScript: el formulario es un <form> plano que postea a /comprar.
 //
-// El enlace de arriba no es una segunda oferta: es un ancla al mismo formulario. La página
-// es larga porque responde objeciones, y obligar a scrollear hasta el final para comprar
-// sería cobrarle al que ya está convencido.
+// La página es corta a propósito. Antes respondía cada objeción con un párrafo; ahora cada
+// objeción es un titular, una tarjeta de tres palabras o una pregunta plegada. El que
+// quiere leer abre; el que ya está convencido compra sin scrollear un metro de texto.
+//
+// El texto no asume pareja: sirve igual para un amigo, una madre o un hijo, porque abajo
+// hay cuatro ocasiones y mañana puede haber ocho.
 //
 // El precio se lee en runtime (research.md #18). Si falta, la página lo dice y NO ofrece
 // comprar: vender sin saber cuánto se cobra es peor que no vender.
@@ -29,6 +32,55 @@ try {
 }
 
 const slugEjemplo = await obtenerSlugDeEjemplo();
+
+// Las cuatro ocasiones se muestran siempre; solo las que tienen un regalo publicado y
+// servible llevan enlace. Nunca un enlace roto (ejemplos.ts).
+const ejemplos = await obtenerEjemplos();
+const slugPorOcasion = new Map(ejemplos.map((e) => [e.clave, e.slug]));
+
+// Lo que hay adentro del sobre, en nombres sueltos. El detalle lo cuenta el ejemplo real,
+// que se abre a un toque de acá arriba, y no una línea de texto por bloque.
+const PIEZAS = [
+  "Su nombre",
+  "Los momentos",
+  "Las fotos",
+  "La canción",
+  "Tu carta",
+  "Las preguntas",
+  "El cierre",
+];
+
+const PASOS = [
+  { titulo: "Contás", texto: "Siete preguntas, con tus palabras. Se guarda a cada paso." },
+  { titulo: "Revisás", texto: "Nada se publica hasta que vos lo aprobés. Corregís sin límite." },
+  { titulo: "Imprimís", texto: "Un archivo de 10 × 15 cm, listo. No hay envío que esperar." },
+];
+
+// Plegadas. No es contenido escondido: el <summary> se ve y se abre sin JavaScript.
+const PREGUNTAS = [
+  {
+    q: "¿Hace falta una app o una cuenta?",
+    r: "No, ni para quien lo recibe ni para vos. Tu pedido es un enlace propio, sin contraseña.",
+  },
+  { q: "¿El enlace vence?", r: "No vence y no cambia. Nunca." },
+  {
+    q: "¿Lo puede ver cualquiera?",
+    r: "No sale en buscadores. Las fotos viven en un depósito privado y se sirven firmadas.",
+  },
+  {
+    q: "¿Y si me arrepiento de algo que escribí?",
+    r: "Lo cambiás las veces que quieras, sin costo, hasta que lo aprobés.",
+  },
+  { q: "¿Lo escribe una inteligencia artificial?", r: "No. Si vos no lo contás, no existe." },
+  {
+    q: "¿Cómo se paga?",
+    r: "Con el QR de tu banco. No pedimos ni guardamos datos de tarjeta.",
+  },
+  {
+    q: "¿Me lo mandan impreso?",
+    r: "No: te damos el archivo y lo imprimís donde quieras, en el papel que quieras.",
+  },
+];
 ---
 
 <VentaLayout titulo="Un regalo que se abre con un QR">
@@ -39,8 +91,8 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     <div class="vitrina" aria-hidden="true">
       <div class="sobre-mini">
         <span class="carta">
-          <em class="para">Ana</em>
-          <em class="dias"><b data-contador>1001</b> días juntos</em>
+          <em class="para">Teté</em>
+          <em class="dias"><b data-contador>1001</b> días</em>
         </span>
         <span class="cuerpo"></span>
         <span class="solapa"></span>
@@ -48,24 +100,10 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
       </div>
     </div>
 
-    <p class="rotulo">Un regalo que se abre con un QR</p>
-
     <h1>Una tarjeta con un QR. Detrás, todo lo que no cabe en una tarjeta.</h1>
 
     <p class="entradilla">
-      Quien lo recibe escanea el código y se abre un sobre. Adentro está su nombre, los
-      momentos que elegiste guardar, las fotos, la canción que elegiste, la carta que le
-      escribiste y las preguntas que le dejaste.
-    </p>
-
-    <p class="apoyo">
-      Se lee en el celular, sin instalar nada y sin crear ninguna cuenta.
-    </p>
-
-    <p class="destacado">
-      Una tarjeta se lee una vez y termina en un cajón. Esto se vuelve a abrir el mes que
-      viene, el aniversario que viene y dentro de diez años:{" "}
-      <strong>el enlace no vence nunca y no cambia nunca.</strong>
+      Lo escanea y se abre un sobre: su nombre, sus fotos, la canción y lo que le escribiste.
     </p>
 
     <p class="acciones">
@@ -86,177 +124,65 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
         )
       }
     </p>
-
-    {
-      slugEjemplo && (
-        <p class="apoyo">
-          Es un regalo publicado de verdad, servido por el mismo motor que va a servir el
-          tuyo. Abrilo desde el celular si podés: está hecho para una mano, no para un
-          escritorio.
-        </p>
-      )
-    }
   </header>
+
+  <section class="filete entra">
+    <p class="rotulo">Ocasiones</p>
+    <h2>Para la ocasión que sea</h2>
+    <p class="apoyo">Para tu pareja, una amiga, tu mamá o tu hijo.</p>
+
+    <ul class="ocasiones entra">
+      {
+        OCASIONES.map((ocasion) => {
+          const slug = slugPorOcasion.get(ocasion.clave);
+          return (
+            <li>
+              {slug ? (
+                <a class="ocasion" href={`/r/${slug}`}>
+                  {ocasion.etiqueta}
+                </a>
+              ) : (
+                <span class="ocasion">{ocasion.etiqueta}</span>
+              )}
+            </li>
+          );
+        })
+      }
+    </ul>
+  </section>
 
   {/* ── Banda oscura: el tema `nocturno` del producto, a sangre ──────────────────────── */}
   <section class="banda entra" data-tema="nocturno">
     <p class="rotulo">Del otro lado</p>
     <h2>Qué ve quien lo recibe</h2>
-    <p class="entradilla">
-      Un sobre cerrado. Nada más, hasta que lo toca. Y entonces, de a un bloque, aparece
-      todo esto:
-    </p>
+    <p class="entradilla">Un sobre cerrado. Lo toca y aparece todo esto.</p>
 
     <ol class="secuencia entra">
-      <li>
-        <strong>Su nombre</strong>
-        <span>La cuenta de los días desde la fecha que vos elegiste.</span>
-      </li>
-      <li>
-        <strong>Los momentos</strong>
-        <span>De a uno, como quien da vuelta una página.</span>
-      </li>
-      <li>
-        <strong>Las fotos</strong>
-        <span>Las que pusiste, hasta diez.</span>
-      </li>
-      <li>
-        <strong>La canción</strong>
-        <span>La que elegiste, para escuchar sin salir del regalo.</span>
-      </li>
-      <li>
-        <strong>Tu carta</strong>
-        <span>Entera y sin recortar.</span>
-      </li>
-      <li>
-        <strong>Las preguntas</strong>
-        <span>Las que le dejaste, de a una, con su respuesta.</span>
-      </li>
-      <li>
-        <strong>El cierre</strong>
-        <span>Las últimas palabras.</span>
-      </li>
+      {PIEZAS.map((pieza) => <li><strong>{pieza}</strong></li>)}
     </ol>
-
-    <p class="apoyo">
-      No le pedimos cuenta, contraseña ni una app. Y el regalo no está en buscadores ni en
-      ningún listado: lo abre quien tenga el enlace, y el enlace lo das vos.
-    </p>
   </section>
 
   <section class="filete entra">
     <p class="rotulo">Cómo se hace</p>
     <h2>Vos contás. No diseñás nada.</h2>
-    <p class="entradilla">
-      Son siete pasos, y cada paso es una pregunta.
-    </p>
-    <p class="apoyo">
-      Contestás con tus palabras —nadie las reescribe ni las corrige— y el resto lo ponemos
-      nosotros: el ritmo, la tipografía, el sobre que se abre.
-    </p>
+    <p class="apoyo">Nadie escribe tu historia por vos.</p>
 
-    <ol class="pasos entra">
-      <li>
-        <strong>Para quién es.</strong>
-        <span>
-          El nombre de quien lo recibe, cuál de los tres climas visuales querés —nocturno,
-          papel o luminoso— y desde qué fecha se cuentan los días.
-        </span>
-      </li>
-      <li>
-        <strong>Los momentos.</strong>
-        <span>Lo que pasó y vale la pena volver a contar.</span>
-      </li>
-      <li>
-        <strong>Las fotos.</strong>
-        <span>Hasta diez.</span>
-      </li>
-      <li>
-        <strong>La canción.</strong>
-        <span>Un enlace de Spotify o de YouTube, que se escucha adentro del regalo.</span>
-      </li>
-      <li>
-        <strong>La carta.</strong>
-        <span>Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del mundo.</span>
-      </li>
-      <li>
-        <strong>Las preguntas.</strong>
-        <span>Con su respuesta, para que aparezcan de a una.</span>
-      </li>
-      <li>
-        <strong>El cierre.</strong>
-        <span>Cómo lo terminás.</span>
-      </li>
-    </ol>
-
-    <p class="nota">
-      <strong>Se guarda a cada paso.</strong> Podés empezar en el colectivo, cerrar el
-      celular en el segundo paso y seguir tres días después desde otra computadora: tu
-      pedido es un enlace propio, no una cuenta que tengas que recordar. Guardalo apenas lo
-      tengas —marcalo, mandátelo por mensaje a vos mismo— porque es la única llave.
-    </p>
+    <div class="tarjetas entra">
+      {
+        PASOS.map((paso) => (
+          <article class="tarjeta">
+            <h3>{paso.titulo}</h3>
+            <p>{paso.texto}</p>
+          </article>
+        ))
+      }
+    </div>
   </section>
 
   <section class="marco entra">
-    <p class="rotulo">Antes de que exista</p>
-    <h2>Nada se publica hasta que vos lo apruebes</h2>
-    <p>
-      Cuando terminás, te damos un enlace de revisión donde ves tu regalo exactamente como
-      lo va a ver quien lo recibe, sobre incluido. Si algo no te gusta, volvés y lo cambiás.
-      Y otra vez. Y otra. Corregir no tiene límite ni cuesta nada: recién cuando vos
-      aprobás, queda.
-    </p>
-    <p class="apoyo">
-      Después de eso ya no se toca, y eso también es a propósito: un regalo entregado no se
-      edita a espaldas de quien lo recibió.
-    </p>
-  </section>
-
-  <section class="filete entra">
-    <p class="rotulo">Lo que queda en tus manos</p>
-    <h2>Qué recibís vos</h2>
-
-    <div class="tarjetas entra">
-      <article class="tarjeta">
-        <h3>La página</h3>
-        <p>De tu regalo, con su propio enlace, que no vence ni cambia nunca.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>La tarjeta con el QR</h3>
-        <p>
-          En un archivo listo para imprimir: 10 por 15 centímetros a 300 puntos, el tamaño
-          de una foto revelada.
-        </p>
-      </article>
-      <article class="tarjeta">
-        <h3>El código suelto</h3>
-        <p>
-          Aparte de la tarjeta, por si lo querés pegar en una caja, un ramo o un sobre de
-          verdad.
-        </p>
-      </article>
-    </div>
-
-    <p class="apoyo">
-      No te lo mandamos impreso a tu casa: el archivo es tuyo y lo llevás a imprimir donde
-      quieras. Por eso no hay envío que esperar, ni dirección que dejarnos, y elegís vos el
-      papel.
-    </p>
-  </section>
-
-  <section class="filete entra">
-    <p class="rotulo">Ocasiones</p>
-    <h2>Para cuándo sirve</h2>
-
-    <ul class="ocasiones entra">
-      <li>Un aniversario.</li>
-      <li>Un cumpleaños.</li>
-      <li>Una propuesta de matrimonio, con la pregunta escrita y guardada para siempre.</li>
-      <li class="ocasion-madre">
-        <span class="rotulo">El caso para el que esto existe</span>
-        Estar lejos y querer mandar algo que no sea plata.
-      </li>
-    </ul>
+    <p class="rotulo">Para siempre</p>
+    <h2>El enlace no vence ni cambia nunca</h2>
+    <p class="apoyo">El QR que imprimás hoy abre el mismo regalo dentro de diez años.</p>
   </section>
 
   <section class="panel entra">
@@ -266,10 +192,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
       precio ? (
         <p class="precio" data-precio>
           <strong>{formatearPrecio(precio)}</strong>
-          <span>
-            No hay suscripción, ni mensualidad, ni un plan que se vence y te apaga la
-            página: pagás una vez y queda publicada.
-          </span>
+          <span>Pago único. Sin suscripción ni mensualidad.</span>
         </p>
       ) : (
         <p class="aviso" data-precio-faltante>
@@ -282,51 +205,17 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   <section class="filete entra">
     <p class="rotulo">Dudas</p>
     <h2>Preguntas</h2>
-    <dl class="entra">
-      <dt>¿Tiene que instalar algo o abrirse una cuenta?</dt>
-      <dd>
-        No. Escanea, se abre en el navegador del celular y listo. Vos tampoco tenés cuenta
-        acá: tu pedido es un enlace propio, sin contraseña que recordar ni registro que
-        completar.
-      </dd>
 
-      <dt>¿El enlace vence?</dt>
-      <dd>
-        No vence y no cambia. El QR que imprimas hoy va a seguir abriendo el mismo regalo
-        dentro de años.
-      </dd>
-
-      <dt>¿Lo puede ver cualquiera?</dt>
-      <dd>
-        No sale en buscadores ni en ningún listado, y la dirección no se adivina. Las fotos
-        tampoco quedan en una carpeta pública: viven en un depósito privado y se sirven con
-        direcciones firmadas que se mueren al terminar la visita.
-      </dd>
-
-      <dt>¿Y si escribo algo y después me arrepiento?</dt>
-      <dd>
-        Mientras no lo apruebes, lo cambiás todas las veces que quieras, sin costo. Para eso
-        está el enlace de revisión.
-      </dd>
-
-      <dt>¿Lo escribe una inteligencia artificial?</dt>
-      <dd>
-        No. Nadie le pone palabras a tu historia. Si vos no lo contás, no existe: eso es,
-        exactamente, lo que hace que el regalo sea tuyo.
-      </dd>
-
-      <dt>¿Cuánto me va a llevar?</dt>
-      <dd>
-        Lo que quieras. No hay reloj ni fecha de entrega que corra: se guarda a cada paso y
-        volvés cuando puedas.
-      </dd>
-
-      <dt>¿Cómo se paga?</dt>
-      <dd>
-        Escaneando un QR interbancario desde la app de tu banco. No te pedimos ni guardamos
-        datos de tarjeta en ningún momento, porque nunca los tocamos.
-      </dd>
-    </dl>
+    <div class="preguntas entra">
+      {
+        PREGUNTAS.map((pregunta) => (
+          <details>
+            <summary>{pregunta.q}</summary>
+            <p>{pregunta.r}</p>
+          </details>
+        ))
+      }
+    </div>
   </section>
 
   {
@@ -334,16 +223,11 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
       <section class="panel panel-compra entra">
         <p class="rotulo">Último paso</p>
         <h2 id="comprar">Empezá</h2>
-        <p class="entradilla">Dejanos tu correo y te llevamos al QR para pagar.</p>
-        <p class="apoyo">
-          Apenas pagues te damos el enlace de tu pedido: <strong>guardalo</strong>, es tu
-          única llave. Confirmamos la transferencia a mano, así que puede tardar unas horas;
-          cuando esté, se abre el primer paso y ya estás contando.
-        </p>
+        <p class="apoyo">Dejanos tu correo y te llevamos al QR de tu banco.</p>
 
         <form method="POST" action="/comprar" data-form-comprar>
           <p>
-            <label for="email">Tu correo (para encontrarte si algo sale mal con el pago)</label>
+            <label for="email">Tu correo</label>
             <input type="email" id="email" name="email" required autocomplete="email" />
           </p>
 
@@ -364,7 +248,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
               />
               <label for="consentimiento_publicidad">
                 Quiero recibir novedades y promociones por mensaje a ese número. Lo usamos
-                solo para eso, y podés darte de baja cuando quieras: la baja borra el número.
+                solo para eso y podés darte de baja cuando quieras.
               </label>
             </p>
           </fieldset>
@@ -373,10 +257,6 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
             <button type="submit" class="boton">Comprar por {formatearPrecio(precio)}</button>
           </p>
         </form>
-
-        <p class="apoyo">
-          No guardamos datos de tu tarjeta: el pago ocurre dentro de la app de tu banco.
-        </p>
       </section>
     )
   }
@@ -414,10 +294,10 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
           { duration: 0.7, ease: SUAVE },
         );
 
-        // Las listas y las tarjetas entran de a un ítem: es lo que hace que se lea como algo
-        // que se está escribiendo y no como un bloque que aparece de golpe.
+        // Las listas, las tarjetas y las preguntas entran de a un ítem: es lo que hace que
+        // se lea como algo que se está escribiendo y no como un bloque que aparece de golpe.
         const hijos = elemento.querySelectorAll<HTMLElement>(
-          ":scope > li, :scope > dt, :scope > dd, :scope > article",
+          ":scope > li, :scope > article, :scope > details",
         );
         if (hijos.length > 0) {
           animate(
@@ -665,24 +545,9 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     font-weight: 500;
   }
 
-  /* El argumento del cajón, sacado del párrafo y puesto en un margen con filete. */
-  .destacado {
-    margin: var(--e-3) 0;
-    padding-left: var(--e-2);
-    max-width: 62ch;
-    border-left: 1px solid var(--realce);
-    color: var(--texto-suave);
-  }
-
-  .destacado strong {
-    color: var(--texto);
-    font-weight: 500;
-  }
-
   strong,
   li,
-  dt,
-  dd {
+  summary {
     overflow-wrap: anywhere;
   }
 
@@ -734,69 +599,47 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     clip-path: inset(0 -100vmax);
   }
 
-  /* ── Pasos numerados ───────────────────────────────────────────────────────────────── */
+  /* ── Lo que hay adentro del sobre ───────────────────────────────────────────────────
+     Siete nombres numerados. Antes cada uno arrastraba una línea de explicación; el
+     ejemplo real, que está a un toque, lo explica mejor que siete líneas. */
 
-  .pasos,
   .secuencia {
     list-style: none;
     counter-reset: paso;
-    margin: 0 0 var(--e-3);
+    margin: 0;
     padding: 0;
     max-width: 62ch;
     border-top: 1px solid var(--borde);
   }
 
-  .pasos li,
   .secuencia li {
     counter-increment: paso;
     position: relative;
     margin: 0;
-    padding: var(--e-2) 0 var(--e-2) var(--e-4);
+    padding: var(--e-1) 0 var(--e-1) var(--e-4);
     border-bottom: 1px solid var(--borde);
-    font-size: var(--t-pequeno);
-    color: var(--texto-suave);
-  }
-
-  .pasos li::before,
-  .secuencia li::before {
-    position: absolute;
-    left: 0;
-    top: var(--e-2);
-    font-family: var(--f-display);
-    font-variant-numeric: tabular-nums;
-    line-height: var(--i-titulo);
-  }
-
-  /* Dos dígitos en el instructivo: "01" lee a lista de pasos, "1" lee a viñeta. */
-  .pasos li::before {
-    content: counter(paso, decimal-leading-zero);
-    font-size: var(--t-subtitulo);
-    color: var(--acento);
-  }
-
-  .pasos strong,
-  .secuencia strong {
-    display: block;
-    color: var(--texto);
-  }
-
-  .pasos strong {
-    font-size: var(--t-cuerpo);
-    font-weight: 500;
   }
 
   /* En la banda oscura el número es oro y chico: el que manda es el nombre del bloque. */
   .secuencia li::before {
     content: counter(paso);
+    position: absolute;
+    left: 0;
+    top: var(--e-1);
+    font-family: var(--f-display);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--i-titulo);
     font-size: var(--t-subtitulo);
     color: var(--realce);
   }
 
   .secuencia strong {
+    display: block;
     font-family: var(--f-display);
     font-weight: 300;
     font-size: var(--t-subtitulo);
     line-height: var(--i-titulo);
+    color: var(--texto);
   }
 
   /* ── Tarjetas ──────────────────────────────────────────────────────────────────────── */
@@ -809,7 +652,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
       auto-fit,
       minmax(min(100%, calc(var(--ancho-pagina) / 3)), 1fr)
     );
-    margin: 0 0 var(--e-2);
+    margin: 0;
   }
 
   /* Tres tarjetas en una grilla de dos: la última ocupa el ancho en vez de quedar
@@ -851,40 +694,47 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     color: var(--texto-suave);
   }
 
-  /* ── Ocasiones ─────────────────────────────────────────────────────────────────────── */
+  /* ── Ocasiones ───────────────────────────────────────────────────────────────────────
+     Una fila de fichas que envuelve. Están las cuatro siempre: la que tiene un ejemplo
+     publicado es un enlace y lleva flecha; la que no, es texto. Nunca un enlace roto. */
 
   .ocasiones {
     list-style: none;
-    display: grid;
-    gap: var(--e-2);
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(min(100%, calc(var(--ancho-pagina) / 4)), 1fr)
-    );
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1);
     margin: 0;
     padding: 0;
   }
 
   .ocasiones li {
     margin: 0;
-    padding: var(--e-2);
+  }
+
+  .ocasion {
+    display: inline-block;
+    padding: var(--e-1) var(--e-2);
     background: var(--superficie);
-    border-top: 1px solid var(--realce);
+    border: 1px solid var(--borde);
     border-radius: var(--radio);
     font-size: var(--t-pequeno);
     color: var(--texto-suave);
   }
 
-  /* El caso que da origen al producto no es una ocasión más: ocupa el ancho y lleva acento. */
-  .ocasion-madre {
-    grid-column: 1 / -1;
-    background: var(--papel);
-    border-top-color: var(--acento);
-    color: var(--texto);
+  a.ocasion {
+    color: var(--acento);
+    border-color: color-mix(in srgb, var(--acento) 40%, transparent);
+    text-decoration: none;
+    transition: transform var(--rapido) var(--resorte);
   }
 
-  .ocasion-madre .rotulo {
-    margin-bottom: var(--e-1);
+  /* La flecha es decoración: dice "esta se abre" sin agregar una palabra al HTML. */
+  a.ocasion::after {
+    content: " ↗";
+  }
+
+  a.ocasion:hover {
+    transform: translateY(-2px);
   }
 
   /* ── Precio ────────────────────────────────────────────────────────────────────────── */
@@ -909,42 +759,47 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     color: var(--texto-suave);
   }
 
-  /* ── Notas al pie de una sección ───────────────────────────────────────────────────── */
+  /* ── Preguntas ───────────────────────────────────────────────────────────────────────
+     Plegadas y nativas: siete renglones en vez de dos pantallas. Sin una línea de
+     JavaScript, y el que quiere leer abre. */
 
-  .nota {
-    margin: 0;
-    padding: var(--e-2);
-    max-width: 62ch;
-    background: var(--superficie);
-    border-left: 1px solid var(--realce);
-    border-radius: var(--radio);
-    font-size: var(--t-pequeno);
-    color: var(--texto-suave);
-  }
-
-  .nota strong {
-    color: var(--texto);
-    font-weight: 500;
-  }
-
-  /* ── Preguntas ─────────────────────────────────────────────────────────────────────── */
-
-  dl {
-    margin: 0;
+  .preguntas {
     max-width: 62ch;
     border-top: 1px solid var(--borde);
   }
 
-  dt {
-    margin: 0;
-    padding: var(--e-2) 0 0;
-    font-weight: 500;
+  .preguntas details {
+    border-bottom: 1px solid var(--borde);
   }
 
-  dd {
+  .preguntas summary {
+    padding: var(--e-1) 0;
+    font-size: var(--t-pequeno);
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  /* El triángulo propio del navegador se reemplaza por un signo que gira: mismo gesto,
+     alineado al resto de la página. */
+  .preguntas summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .preguntas summary::after {
+    content: "+";
+    float: right;
+    margin-left: var(--e-1);
+    color: var(--realce);
+  }
+
+  .preguntas details[open] summary::after {
+    content: "–";
+  }
+
+  .preguntas details p {
     margin: 0;
-    padding: var(--e-1) 0 var(--e-2);
-    border-bottom: 1px solid var(--borde);
+    padding: 0 0 var(--e-2);
     font-size: var(--t-pequeno);
     color: var(--texto-suave);
   }
@@ -958,7 +813,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     flex-wrap: wrap;
     gap: var(--e-1) var(--e-2);
     align-items: center;
-    margin: 0 0 var(--e-2);
+    margin: 0;
   }
 
   .acciones .boton {
@@ -972,7 +827,7 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   }
 
   form {
-    margin: 0 0 var(--e-2);
+    margin: 0;
   }
 
   fieldset {
@@ -1058,14 +913,16 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     }
 
     .tarjeta,
-    .boton {
+    .boton,
+    a.ocasion {
       transition: none;
     }
 
     .tarjeta:hover,
     .tarjeta:focus-within,
     .boton:hover,
-    .boton:active {
+    .boton:active,
+    a.ocasion:hover {
       transform: none;
     }
   }

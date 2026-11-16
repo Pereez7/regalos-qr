@@ -5,7 +5,7 @@ import type { ContenidoV1 } from "../src/lib/contenido/tipos-bloque.ts";
 const contenido: ContenidoV1 = {
   v: 1,
   receta: [
-    { tipo: "portada", posicion: 0, nombreDestinatario: "Ana", subtitulo: "para vos" },
+    { tipo: "portada", posicion: 0, nombreDestinatario: "Teté", subtitulo: "para vos" },
     { tipo: "contador", posicion: 1, fechaInicio: "2024-02-14T00:00:00Z" },
     {
       tipo: "momento",
