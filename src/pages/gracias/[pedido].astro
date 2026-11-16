@@ -38,68 +38,212 @@ const enlaceCarga = `/contar/${pedido.id}/destinatario`;
 ---
 
 <VentaLayout titulo={pagado ? "Tu pedido está pagado" : "Tu pedido está pendiente de pago"}>
-  {
-    pagado ? (
-      <>
-        <h1>Listo, tu pedido está pagado</h1>
-        <p>
-          Guardá este enlace: es la única llave de tu pedido. No hace falta cuenta ni
-          contraseña, y es el mismo al que vas a volver cada vez que quieras seguir cargando
-          tu historia.
-        </p>
-        <p>
-          <a class="boton" href={enlaceCarga} data-enlace-carga>Empezar a contar la historia</a>
-        </p>
-      </>
-    ) : (
-      <>
-        <h1>Tu pedido está pendiente de pago</h1>
-        <p data-pendiente>
-          Todavía no recibimos la confirmación del pago. Si acabás de pagar, puede tardar
-          unos segundos: volvé a cargar esta página. Mientras el pago no esté confirmado, la
-          carga de la historia no se abre.
-        </p>
-        {pago?.proveedor === "simulado" && (
+  <div class="hoja">
+    <header class="cabecera">
+      <p class="rotulo">Tu compra</p>
+      <h1>{pagado ? "Listo, tu pedido está pagado" : "Tu pedido está pendiente de pago"}</h1>
+    </header>
+
+    {
+      pagado ? (
+        <section class="ficha ficha-clave">
           <p>
-            <a class="boton" href={`/cobro-simulado/${pedido.id}`}>Volver al cobro</a>
+            Guardá este enlace: es la única llave de tu pedido. No hace falta cuenta ni
+            contraseña, y es el mismo al que vas a volver cada vez que quieras seguir cargando
+            tu historia.
           </p>
-        )}
-      </>
-    )
-  }
+          <p class="accion">
+            <a class="boton" href={enlaceCarga} data-enlace-carga>
+              Empezar a contar la historia
+            </a>
+          </p>
+        </section>
+      ) : (
+        <section class="ficha ficha-clave">
+          <p data-pendiente>
+            Todavía no recibimos la confirmación del pago. Si acabás de pagar, puede tardar
+            unos segundos: volvé a cargar esta página. Mientras el pago no esté confirmado, la
+            carga de la historia no se abre.
+          </p>
+          {pago?.proveedor === "simulado" && (
+            <p class="accion">
+              <a class="boton" href={`/cobro-simulado/${pedido.id}`}>Volver al cobro</a>
+            </p>
+          )}
+        </section>
+      )
+    }
 
-  <h2>Tu pedido</h2>
-  <table>
-    <tbody>
-      <tr>
-        <th scope="row">Estado</th>
-        <td data-estado={pedido.estado}>{pagado ? "Pagado" : "Pendiente de pago"}</td>
-      </tr>
-      <tr>
-        <th scope="row">Correo</th>
-        <td>{pedido.email}</td>
-      </tr>
-      {
-        monto && (
-          <tr>
-            <th scope="row">Importe</th>
-            <td>{monto}</td>
-          </tr>
-        )
-      }
-      <tr>
-        <th scope="row">Fecha</th>
-        <td>{new Date(pedido.creadoEn).toLocaleDateString("es-AR")}</td>
-      </tr>
-    </tbody>
-  </table>
+    <section class="ficha">
+      <h2 class="rotulo">Tu pedido</h2>
+      <dl class="datos">
+        <div class="dato">
+          <dt class="rotulo">Estado</dt>
+          <dd data-estado={pedido.estado}>
+            <span class="pastilla">{pagado ? "Pagado" : "Pendiente de pago"}</span>
+          </dd>
+        </div>
+        <div class="dato">
+          <dt class="rotulo">Correo</dt>
+          <dd>{pedido.email}</dd>
+        </div>
+        {
+          monto && (
+            <div class="dato">
+              <dt class="rotulo">Importe</dt>
+              <dd>{monto}</dd>
+            </div>
+          )
+        }
+        <div class="dato">
+          <dt class="rotulo">Fecha</dt>
+          <dd>{new Date(pedido.creadoEn).toLocaleDateString("es-AR")}</dd>
+        </div>
+      </dl>
+    </section>
 
-  {
-    pedido.celular && (
-      <p class="opcional">
-        Guardamos tu celular para avisarte de novedades, con tu consentimiento.{" "}
-        <a href={`/baja/${pedido.tokenBaja}`}>Darme de baja de esos mensajes</a>.
-      </p>
-    )
-  }
+    {
+      pedido.celular && (
+        <p class="opcional">
+          Guardamos tu celular para avisarte de novedades, con tu consentimiento.{" "}
+          <a href={`/baja/${pedido.tokenBaja}`}>Darme de baja de esos mensajes</a>.
+        </p>
+      )
+    }
+  </div>
 </VentaLayout>
+
+<style>
+  /* ═══ Patrón del recorrido de compra ═══════════════════════════════════════════════════
+     Las cinco pantallas de la compra comparten tres primitivas y nada más: una FICHA que
+     contiene, un RÓTULO que nombra y un HILO que separa. La jerarquía de cada pantalla se
+     compone con esas tres —nunca con un espaciado inventado para el caso—, y es eso lo que
+     hace que /gracias, /pagar, /contar y /baja se lean como un solo recorrido en vez de
+     como cuatro formularios sueltos sobre un fondo.
+
+     El bloque se repite en cada archivo a propósito: base.css y VentaLayout son contrato
+     compartido con el motor del regalo, y una decisión de presentación de la venta no se
+     mete ahí.                                                                            */
+
+  .hoja {
+    display: grid;
+    gap: var(--e-3);
+    --suave: var(--texto-suave);
+  }
+
+  /* El aire entre secciones lo pone el gap, una sola vez, y no el margen de cada pieza. */
+  .hoja > * {
+    margin-block: 0;
+  }
+
+  .cabecera h1 {
+    margin: 0 0 var(--e-1);
+  }
+
+  .cabecera p {
+    margin: 0;
+  }
+
+  .rotulo {
+    display: block;
+    margin: 0 0 var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    line-height: var(--i-cuerpo);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--suave);
+  }
+
+
+  /* --texto-suave está documentado contra --fondo (4.79:1). Adentro de una ficha el fondo es
+     --superficie, un tono más abajo, y el mismo gris cae a 4.45:1: debajo de AA. Un paso
+     hacia --texto lo devuelve arriba de 5.5:1 sin inventar un color nuevo. */
+  .ficha {
+    --suave: color-mix(in srgb, var(--texto-suave) 70%, var(--texto));
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  /* A 320 px el aire se lo queda el contenido; en cuanto hay pantalla, la ficha respira. */
+  @media (min-width: 30rem) {
+    .ficha {
+      padding: var(--e-3);
+    }
+  }
+
+  .ficha > :first-child {
+    margin-top: 0;
+  }
+
+  .ficha > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* La ficha donde está la decisión de la pantalla. El papel más claro la levanta del
+     resto sin inventar un color: es el mismo token que usan los campos escribibles. */
+  .ficha-clave {
+    background: var(--papel);
+  }
+
+  .accion {
+    margin-top: var(--e-2);
+  }
+
+  /* `.opcional` nace en el layout como una fila flex (casilla + texto). Cuando es un
+     párrafo suelto, esa fila parte el texto de su enlace en dos columnas: acá vuelve a ser
+     un párrafo. */
+  p.opcional {
+    display: block;
+  }
+
+  /* ═══ Propio de esta pantalla ═════════════════════════════════════════════════════════ */
+
+  /* El estado del pedido es un recibo: rótulo arriba, dato abajo, y un hilo por fila.
+     Apilado y no en dos columnas porque un correo largo a 320 px no tiene dónde partirse. */
+  .datos {
+    display: grid;
+    gap: var(--e-2);
+    grid-template-columns: repeat(auto-fit, minmax(calc(var(--ancho-texto) / 2), 1fr));
+    margin: 0;
+  }
+
+  .dato {
+    min-width: 0;
+    padding-top: var(--e-1);
+    border-top: 1px solid var(--borde);
+  }
+
+  .dato dd {
+    margin: 0;
+    /* FR-032: un correo sin espacios no puede empujar el ancho de la página. */
+    overflow-wrap: anywhere;
+  }
+
+  .pastilla {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--e-1);
+    font-weight: 500;
+    color: var(--texto);
+  }
+
+  /* El punto es el único lugar donde el estado se dice con color, y nunca el único: al lado
+     está siempre la palabra. Pendiente en lacre porque pide algo; pagado en bronce. */
+  .pastilla::before {
+    content: "";
+    flex: none;
+    width: var(--e-1);
+    height: var(--e-1);
+    border-radius: 50%;
+    background: var(--acento);
+  }
+
+  [data-estado="pagado"] .pastilla::before {
+    background: var(--realce);
+  }
+</style>

@@ -48,29 +48,110 @@ const dadoDeBaja = pedido.celular === null && pedido.bajaPublicidadEn !== null;
 ---
 
 <VentaLayout titulo="Dejar de recibir mensajes">
-  {
-    dadoDeBaja ? (
-      <>
-        <h1>Listo, borramos tu número</h1>
-        <p data-confirmado>
-          No vas a recibir más mensajes nuestros. El número no quedó marcado como dado de
-          baja: lo borramos, que no es lo mismo.
-        </p>
-      </>
-    ) : (
-      <>
-        <h1>Dejar de recibir mensajes</h1>
-        <p>
-          Si confirmás, borramos el número de celular asociado a esta compra. No lo marcamos
-          como dado de baja: lo borramos, y no vas a recibir más mensajes nuestros.
-        </p>
-        <p>
-          Tu pedido y tu regalo no se tocan: esto es solo sobre los mensajes publicitarios.
-        </p>
-        <form method="POST" data-form-baja>
-          <button type="submit" class="boton">Borrar mi número</button>
-        </form>
-      </>
-    )
-  }
+  <div class="hoja">
+    <header class="cabecera">
+      <p class="rotulo">Mensajes publicitarios</p>
+      <h1>{dadoDeBaja ? "Listo, borramos tu número" : "Dejar de recibir mensajes"}</h1>
+    </header>
+
+    {
+      dadoDeBaja ? (
+        <section class="ficha ficha-clave">
+          <p data-confirmado>
+            No vas a recibir más mensajes nuestros. El número no quedó marcado como dado de
+            baja: lo borramos, que no es lo mismo.
+          </p>
+        </section>
+      ) : (
+        <section class="ficha ficha-clave">
+          <p>
+            Si confirmás, borramos el número de celular asociado a esta compra. No lo
+            marcamos como dado de baja: lo borramos, y no vas a recibir más mensajes
+            nuestros.
+          </p>
+          <p>
+            Tu pedido y tu regalo no se tocan: esto es solo sobre los mensajes publicitarios.
+          </p>
+          <form method="POST" data-form-baja class="accion">
+            <button type="submit" class="boton">Borrar mi número</button>
+          </form>
+        </section>
+      )
+    }
+  </div>
 </VentaLayout>
+
+<style>
+  /* ═══ Patrón del recorrido de compra ═══════════════════════════════════════════════════
+     Las cinco pantallas de la compra comparten tres primitivas y nada más: una FICHA que
+     contiene, un RÓTULO que nombra y un HILO que separa. Está documentado entero en
+     src/pages/gracias/[pedido].astro.
+
+     Esta pantalla no llega desde el recorrido —llega desde un mensaje publicitario—, y
+     justamente por eso usa el mismo patrón: tiene que verse parte de la misma casa.       */
+
+  .hoja {
+    display: grid;
+    gap: var(--e-3);
+    --suave: var(--texto-suave);
+  }
+
+  .hoja > * {
+    margin-block: 0;
+  }
+
+  .cabecera h1 {
+    margin: 0 0 var(--e-1);
+  }
+
+  .cabecera p {
+    margin: 0;
+  }
+
+  .rotulo {
+    display: block;
+    margin: 0 0 var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    line-height: var(--i-cuerpo);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--suave);
+  }
+
+
+  /* --texto-suave está documentado contra --fondo (4.79:1). Adentro de una ficha el fondo es
+     --superficie, un tono más abajo, y el mismo gris cae a 4.45:1: debajo de AA. Un paso
+     hacia --texto lo devuelve arriba de 5.5:1 sin inventar un color nuevo. */
+  .ficha {
+    --suave: color-mix(in srgb, var(--texto-suave) 70%, var(--texto));
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  @media (min-width: 30rem) {
+    .ficha {
+      padding: var(--e-3);
+    }
+  }
+
+  .ficha > :first-child {
+    margin-top: 0;
+  }
+
+  .ficha > :last-child {
+    margin-bottom: 0;
+  }
+
+  .ficha-clave {
+    background: var(--papel);
+  }
+
+  .accion {
+    margin-top: var(--e-2);
+  }
+</style>

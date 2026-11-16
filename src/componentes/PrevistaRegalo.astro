@@ -87,6 +87,7 @@ const tema = borrador.tema ?? "luminoso";
 const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
 ---
 
+
 <aside class="prevista" data-grande={grande ? "" : undefined} aria-label="Vista previa de tu regalo">
   {
     !grande && (
@@ -139,27 +140,52 @@ const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
 <style is:global set:html={luminosoCss + nocturnoCss + papelCss}></style>
 
 <style>
+  /* La vista previa es una FICHA más del recorrido —mismo fondo, mismo borde, mismo
+     rótulo en mayúsculas que /gracias y /pagar—, con el teléfono adentro. Antes el marco
+     flotaba sobre el fondo de la página y se leía como un objeto pegado al costado; ahora
+     es una pieza del mismo juego que el formulario que tiene al lado.
+
+     Nada de esto toca el render: los bloques, sus profundidades y el zoom de la pantalla
+     quedan exactamente como estaban. Es presentación del envase, no del contenido. */
   .prevista {
+    /* --texto-suave está documentado contra --fondo; sobre --superficie cae a 4.45:1, debajo
+       de AA. Un paso hacia --texto lo devuelve arriba de 5.5:1. */
+    --suave: color-mix(in srgb, var(--texto-suave) 70%, var(--texto));
     position: sticky;
     top: var(--e-2);
     display: flex;
     flex-direction: column;
-    gap: var(--e-1);
+    align-items: center;
+    gap: var(--e-2);
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
   }
 
   .titulo-prevista {
-    margin: 0;
+    align-self: stretch;
+    /* Tope de línea: sin él, un nombre larguísimo estiraba la columna de la vista previa y
+       dejaba al formulario en un cuarto de pantalla (FR-032). */
+    max-width: var(--ancho-texto);
+    margin: 0 auto;
+    font-family: var(--f-cuerpo);
     font-size: var(--t-etiqueta);
+    font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--texto-suave);
+    color: var(--suave);
   }
 
   .titulo-prevista span {
     display: block;
     text-transform: none;
     letter-spacing: 0;
+    font-weight: 400;
     font-size: var(--t-pequeno);
+    /* FR-032: un nombre sin espacios no puede empujar la columna. */
+    overflow-wrap: anywhere;
   }
 
   /* El marco de teléfono no es decoración: el regalo se lee en un celular, y verlo dentro
@@ -208,9 +234,17 @@ const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
     opacity: 0.45;
   }
 
+  /* Separada por un hilo, como el pie de una ficha: es una salida de la pantalla, no una
+     línea más del rótulo. */
   .en-grande {
+    align-self: stretch;
+    /* El tope de 62ch del layout es para prosa; este hilo cierra la ficha de lado a lado. */
+    max-width: none;
     margin: 0;
+    padding-top: var(--e-2);
     font-size: var(--t-pequeno);
+    text-align: center;
+    border-top: 1px solid var(--borde);
   }
 
   /* En el celular el formulario manda: la vista previa es del tamaño de un vistazo, y quien
@@ -219,7 +253,13 @@ const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
   @media (max-width: 60rem) {
     .prevista {
       position: static;
-      align-items: center;
+      /* Apilada arriba del formulario, la ficha de la vista previa se alinea con él en vez
+         de estirarse a lo ancho de la página. */
+      max-width: var(--ancho-pagina);
+      text-align: center;
+    }
+
+    .prevista:not([data-grande]) .titulo-prevista {
       text-align: center;
     }
 
@@ -237,7 +277,6 @@ const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
 
   .prevista[data-grande] {
     position: static;
-    align-items: center;
   }
 
   .prevista[data-grande] .telefono {

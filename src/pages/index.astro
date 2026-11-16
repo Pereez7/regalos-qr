@@ -1,5 +1,10 @@
 ---
 import VentaLayout from "../layouts/VentaLayout.astro";
+// La banda oscura de "Qué ve quien lo recibe" usa el tema `nocturno` DEL PRODUCTO, no un
+// gris inventado: el visitante ve, en la propia página de venta, uno de los tres climas que
+// puede elegir. El archivo solo define `[data-tema="nocturno"]`, así que no toca nada fuera
+// de la sección que lleva ese atributo.
+import "../temas/tokens-nocturno.css";
 import { formatearPrecio, precioVigente, type Precio } from "../lib/config.ts";
 import { obtenerSlugDeEjemplo } from "../lib/ejemplos.ts";
 
@@ -27,220 +32,315 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 ---
 
 <VentaLayout titulo="Un regalo que se abre con un QR">
-  {/* El sobre no es una ilustración: es el mismo gesto que va a hacer quien reciba el
-      regalo, en chico y en bucle. Es lo más característico del producto y lo primero que
-      se ve. CSS puro, sin una imagen que descargar ni un byte de JavaScript. */}
-  <div class="vitrina" aria-hidden="true">
-    <div class="sobre-mini">
-      <span class="carta">
-        <em class="para">Ana</em>
-        <em class="dias"><b data-contador>1001</b> días juntos</em>
-      </span>
-      <span class="cuerpo"></span>
-      <span class="solapa"></span>
-      <span class="sello">♥</span>
+  <header class="portada">
+    {/* El sobre no es una ilustración: es el mismo gesto que va a hacer quien reciba el
+        regalo, en chico y en bucle. Es lo más característico del producto y lo primero que
+        se ve. CSS puro, sin una imagen que descargar ni un byte de JavaScript. */}
+    <div class="vitrina" aria-hidden="true">
+      <div class="sobre-mini">
+        <span class="carta">
+          <em class="para">Ana</em>
+          <em class="dias"><b data-contador>1001</b> días juntos</em>
+        </span>
+        <span class="cuerpo"></span>
+        <span class="solapa"></span>
+        <span class="sello">♥</span>
+      </div>
     </div>
-  </div>
 
-  <h1>Una tarjeta con un QR. Detrás, todo lo que no cabe en una tarjeta.</h1>
+    <p class="rotulo">Un regalo que se abre con un QR</p>
 
-  <p>
-    Quien lo recibe escanea el código y se abre un sobre. Adentro está su nombre, los
-    momentos que elegiste guardar, las fotos, la canción que elegiste, la carta que le escribiste
-    y las preguntas que le dejaste. Se lee en el celular, sin instalar nada y sin crear
-    ninguna cuenta.
-  </p>
+    <h1>Una tarjeta con un QR. Detrás, todo lo que no cabe en una tarjeta.</h1>
 
-  <p>
-    Una tarjeta se lee una vez y termina en un cajón. Esto se vuelve a abrir el mes que
-    viene, el aniversario que viene y dentro de diez años: el enlace no vence nunca y no
-    cambia nunca.
-  </p>
+    <p class="entradilla">
+      Quien lo recibe escanea el código y se abre un sobre. Adentro está su nombre, los
+      momentos que elegiste guardar, las fotos, la canción que elegiste, la carta que le
+      escribiste y las preguntas que le dejaste.
+    </p>
 
-  <p class="acciones">
+    <p class="apoyo">
+      Se lee en el celular, sin instalar nada y sin crear ninguna cuenta.
+    </p>
+
+    <p class="destacado">
+      Una tarjeta se lee una vez y termina en un cajón. Esto se vuelve a abrir el mes que
+      viene, el aniversario que viene y dentro de diez años:{" "}
+      <strong>el enlace no vence nunca y no cambia nunca.</strong>
+    </p>
+
+    <p class="acciones">
+      {
+        precio && (
+          <a class="boton" href="#comprar">
+            Quiero el mío por {formatearPrecio(precio)}
+          </a>
+        )
+      }
+      {
+        slugEjemplo ? (
+          <a class="boton boton-secundario" href={`/r/${slugEjemplo}`} data-ejemplo>
+            Abrir un regalo de ejemplo
+          </a>
+        ) : (
+          <span data-sin-ejemplo>Todavía no hay un ejemplo publicado para mostrar acá.</span>
+        )
+      }
+    </p>
+
     {
-      precio && (
-        <a class="boton" href="#comprar">
-          Quiero el mío por {formatearPrecio(precio)}
-        </a>
+      slugEjemplo && (
+        <p class="apoyo">
+          Es un regalo publicado de verdad, servido por el mismo motor que va a servir el
+          tuyo. Abrilo desde el celular si podés: está hecho para una mano, no para un
+          escritorio.
+        </p>
       )
     }
+  </header>
+
+  {/* ── Banda oscura: el tema `nocturno` del producto, a sangre ──────────────────────── */}
+  <section class="banda entra" data-tema="nocturno">
+    <p class="rotulo">Del otro lado</p>
+    <h2>Qué ve quien lo recibe</h2>
+    <p class="entradilla">
+      Un sobre cerrado. Nada más, hasta que lo toca. Y entonces, de a un bloque, aparece
+      todo esto:
+    </p>
+
+    <ol class="secuencia entra">
+      <li>
+        <strong>Su nombre</strong>
+        <span>La cuenta de los días desde la fecha que vos elegiste.</span>
+      </li>
+      <li>
+        <strong>Los momentos</strong>
+        <span>De a uno, como quien da vuelta una página.</span>
+      </li>
+      <li>
+        <strong>Las fotos</strong>
+        <span>Las que pusiste, hasta diez.</span>
+      </li>
+      <li>
+        <strong>La canción</strong>
+        <span>La que elegiste, para escuchar sin salir del regalo.</span>
+      </li>
+      <li>
+        <strong>Tu carta</strong>
+        <span>Entera y sin recortar.</span>
+      </li>
+      <li>
+        <strong>Las preguntas</strong>
+        <span>Las que le dejaste, de a una, con su respuesta.</span>
+      </li>
+      <li>
+        <strong>El cierre</strong>
+        <span>Las últimas palabras.</span>
+      </li>
+    </ol>
+
+    <p class="apoyo">
+      No le pedimos cuenta, contraseña ni una app. Y el regalo no está en buscadores ni en
+      ningún listado: lo abre quien tenga el enlace, y el enlace lo das vos.
+    </p>
+  </section>
+
+  <section class="filete entra">
+    <p class="rotulo">Cómo se hace</p>
+    <h2>Vos contás. No diseñás nada.</h2>
+    <p class="entradilla">
+      Son siete pasos, y cada paso es una pregunta.
+    </p>
+    <p class="apoyo">
+      Contestás con tus palabras —nadie las reescribe ni las corrige— y el resto lo ponemos
+      nosotros: el ritmo, la tipografía, el sobre que se abre.
+    </p>
+
+    <ol class="pasos entra">
+      <li>
+        <strong>Para quién es.</strong>
+        <span>
+          El nombre de quien lo recibe, cuál de los tres climas visuales querés —nocturno,
+          papel o luminoso— y desde qué fecha se cuentan los días.
+        </span>
+      </li>
+      <li>
+        <strong>Los momentos.</strong>
+        <span>Lo que pasó y vale la pena volver a contar.</span>
+      </li>
+      <li>
+        <strong>Las fotos.</strong>
+        <span>Hasta diez.</span>
+      </li>
+      <li>
+        <strong>La canción.</strong>
+        <span>Un enlace de Spotify o de YouTube, que se escucha adentro del regalo.</span>
+      </li>
+      <li>
+        <strong>La carta.</strong>
+        <span>Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del mundo.</span>
+      </li>
+      <li>
+        <strong>Las preguntas.</strong>
+        <span>Con su respuesta, para que aparezcan de a una.</span>
+      </li>
+      <li>
+        <strong>El cierre.</strong>
+        <span>Cómo lo terminás.</span>
+      </li>
+    </ol>
+
+    <p class="nota">
+      <strong>Se guarda a cada paso.</strong> Podés empezar en el colectivo, cerrar el
+      celular en el segundo paso y seguir tres días después desde otra computadora: tu
+      pedido es un enlace propio, no una cuenta que tengas que recordar. Guardalo apenas lo
+      tengas —marcalo, mandátelo por mensaje a vos mismo— porque es la única llave.
+    </p>
+  </section>
+
+  <section class="marco entra">
+    <p class="rotulo">Antes de que exista</p>
+    <h2>Nada se publica hasta que vos lo apruebes</h2>
+    <p>
+      Cuando terminás, te damos un enlace de revisión donde ves tu regalo exactamente como
+      lo va a ver quien lo recibe, sobre incluido. Si algo no te gusta, volvés y lo cambiás.
+      Y otra vez. Y otra. Corregir no tiene límite ni cuesta nada: recién cuando vos
+      aprobás, queda.
+    </p>
+    <p class="apoyo">
+      Después de eso ya no se toca, y eso también es a propósito: un regalo entregado no se
+      edita a espaldas de quien lo recibió.
+    </p>
+  </section>
+
+  <section class="filete entra">
+    <p class="rotulo">Lo que queda en tus manos</p>
+    <h2>Qué recibís vos</h2>
+
+    <div class="tarjetas entra">
+      <article class="tarjeta">
+        <h3>La página</h3>
+        <p>De tu regalo, con su propio enlace, que no vence ni cambia nunca.</p>
+      </article>
+      <article class="tarjeta">
+        <h3>La tarjeta con el QR</h3>
+        <p>
+          En un archivo listo para imprimir: 10 por 15 centímetros a 300 puntos, el tamaño
+          de una foto revelada.
+        </p>
+      </article>
+      <article class="tarjeta">
+        <h3>El código suelto</h3>
+        <p>
+          Aparte de la tarjeta, por si lo querés pegar en una caja, un ramo o un sobre de
+          verdad.
+        </p>
+      </article>
+    </div>
+
+    <p class="apoyo">
+      No te lo mandamos impreso a tu casa: el archivo es tuyo y lo llevás a imprimir donde
+      quieras. Por eso no hay envío que esperar, ni dirección que dejarnos, y elegís vos el
+      papel.
+    </p>
+  </section>
+
+  <section class="filete entra">
+    <p class="rotulo">Ocasiones</p>
+    <h2>Para cuándo sirve</h2>
+
+    <ul class="ocasiones entra">
+      <li>Un aniversario.</li>
+      <li>Un cumpleaños.</li>
+      <li>Una propuesta de matrimonio, con la pregunta escrita y guardada para siempre.</li>
+      <li class="ocasion-madre">
+        <span class="rotulo">El caso para el que esto existe</span>
+        Estar lejos y querer mandar algo que no sea plata.
+      </li>
+    </ul>
+  </section>
+
+  <section class="panel entra">
+    <p class="rotulo">Una sola vez</p>
+    <h2>Cuánto cuesta</h2>
     {
-      slugEjemplo ? (
-        <a class="boton boton-secundario" href={`/r/${slugEjemplo}`} data-ejemplo>
-          Abrir un regalo de ejemplo
-        </a>
+      precio ? (
+        <p class="precio" data-precio>
+          <strong>{formatearPrecio(precio)}</strong>
+          <span>
+            No hay suscripción, ni mensualidad, ni un plan que se vence y te apaga la
+            página: pagás una vez y queda publicada.
+          </span>
+        </p>
       ) : (
-        <span data-sin-ejemplo>Todavía no hay un ejemplo publicado para mostrar acá.</span>
+        <p class="aviso" data-precio-faltante>
+          El precio no está configurado, así que la compra está cerrada. ({errorPrecio})
+        </p>
       )
     }
-  </p>
+  </section>
 
-  {
-    slugEjemplo && (
-      <p class="opcional">
-        Es un regalo publicado de verdad, servido por el mismo motor que va a servir el tuyo.
-        Abrilo desde el celular si podés: está hecho para una mano, no para un escritorio.
-      </p>
-    )
-  }
+  <section class="filete entra">
+    <p class="rotulo">Dudas</p>
+    <h2>Preguntas</h2>
+    <dl class="entra">
+      <dt>¿Tiene que instalar algo o abrirse una cuenta?</dt>
+      <dd>
+        No. Escanea, se abre en el navegador del celular y listo. Vos tampoco tenés cuenta
+        acá: tu pedido es un enlace propio, sin contraseña que recordar ni registro que
+        completar.
+      </dd>
 
-  <h2 class="entra">Qué ve quien lo recibe</h2>
-  <p>
-    Un sobre cerrado. Nada más, hasta que lo toca. Y entonces, de a un bloque, aparece todo
-    esto:
-  </p>
-  <ul class="entra">
-    <li>Su nombre, y la cuenta de los días desde la fecha que vos elegiste.</li>
-    <li>Los momentos, de a uno, como quien da vuelta una página.</li>
-    <li>Las fotos que pusiste, hasta diez.</li>
-    <li>La canción que elegiste, para escuchar sin salir del regalo.</li>
-    <li>Tu carta, entera y sin recortar.</li>
-    <li>Las preguntas que le dejaste, de a una, con su respuesta.</li>
-    <li>El cierre: las últimas palabras.</li>
-  </ul>
-  <p>
-    No le pedimos cuenta, contraseña ni una app. Y el regalo no está en buscadores ni en
-    ningún listado: lo abre quien tenga el enlace, y el enlace lo das vos.
-  </p>
+      <dt>¿El enlace vence?</dt>
+      <dd>
+        No vence y no cambia. El QR que imprimas hoy va a seguir abriendo el mismo regalo
+        dentro de años.
+      </dd>
 
-  <h2 class="entra">Vos contás. No diseñás nada.</h2>
-  <p>
-    Son siete pasos, y cada paso es una pregunta. Contestás con tus palabras —nadie las
-    reescribe ni las corrige— y el resto lo ponemos nosotros: el ritmo, la tipografía, el
-    sobre que se abre.
-  </p>
-  <ol class="pasos entra">
-    <li>
-      <strong>Para quién es.</strong> El nombre de quien lo recibe, cuál de los tres climas
-      visuales querés —nocturno, papel o luminoso— y desde qué fecha se cuentan los días.
-    </li>
-    <li><strong>Los momentos.</strong> Lo que pasó y vale la pena volver a contar.</li>
-    <li><strong>Las fotos.</strong> Hasta diez.</li>
-    <li><strong>La canción.</strong> Un enlace de Spotify o de YouTube, que se escucha adentro del regalo.</li>
-    <li>
-      <strong>La carta.</strong> Lo que le dirías si tuvieras una hoja en blanco y todo el
-      tiempo del mundo.
-    </li>
-    <li><strong>Las preguntas.</strong> Con su respuesta, para que aparezcan de a una.</li>
-    <li><strong>El cierre.</strong> Cómo lo terminás.</li>
-  </ol>
-  <p>
-    Se guarda a cada paso. Podés empezar en el colectivo, cerrar el celular en el segundo
-    paso y seguir tres días después desde otra computadora: tu pedido es un enlace propio,
-    no una cuenta que tengas que recordar. Guardalo apenas lo tengas —marcalo, mandátelo por
-    mensaje a vos mismo— porque es la única llave.
-  </p>
+      <dt>¿Lo puede ver cualquiera?</dt>
+      <dd>
+        No sale en buscadores ni en ningún listado, y la dirección no se adivina. Las fotos
+        tampoco quedan en una carpeta pública: viven en un depósito privado y se sirven con
+        direcciones firmadas que se mueren al terminar la visita.
+      </dd>
 
-  <h2 class="entra">Nada se publica hasta que vos lo apruebes</h2>
-  <p>
-    Cuando terminás, te damos un enlace de revisión donde ves tu regalo exactamente como lo
-    va a ver quien lo recibe, sobre incluido. Si algo no te gusta, volvés y lo cambiás. Y
-    otra vez. Y otra. Corregir no tiene límite ni cuesta nada: recién cuando vos aprobás,
-    queda.
-  </p>
-  <p>
-    Después de eso ya no se toca, y eso también es a propósito: un regalo entregado no se
-    edita a espaldas de quien lo recibió.
-  </p>
+      <dt>¿Y si escribo algo y después me arrepiento?</dt>
+      <dd>
+        Mientras no lo apruebes, lo cambiás todas las veces que quieras, sin costo. Para eso
+        está el enlace de revisión.
+      </dd>
 
-  <h2 class="entra">Qué recibís vos</h2>
-  <ul>
-    <li>La página de tu regalo, con su propio enlace, que no vence ni cambia nunca.</li>
-    <li>
-      La tarjeta con el QR en un archivo listo para imprimir: 10 por 15 centímetros a 300
-      puntos, el tamaño de una foto revelada.
-    </li>
-    <li>
-      El código también suelto, aparte de la tarjeta, por si lo querés pegar en una caja, un
-      ramo o un sobre de verdad.
-    </li>
-  </ul>
-  <p>
-    No te lo mandamos impreso a tu casa: el archivo es tuyo y lo llevás a imprimir donde
-    quieras. Por eso no hay envío que esperar, ni dirección que dejarnos, y elegís vos el
-    papel.
-  </p>
+      <dt>¿Lo escribe una inteligencia artificial?</dt>
+      <dd>
+        No. Nadie le pone palabras a tu historia. Si vos no lo contás, no existe: eso es,
+        exactamente, lo que hace que el regalo sea tuyo.
+      </dd>
 
-  <h2 class="entra">Para cuándo sirve</h2>
-  <p>
-    Un aniversario. Una propuesta de matrimonio, con la pregunta escrita y guardada para
-    siempre. Un cumpleaños. Y el caso para el que esto existe: estar lejos y querer mandar
-    algo que no sea plata.
-  </p>
+      <dt>¿Cuánto me va a llevar?</dt>
+      <dd>
+        Lo que quieras. No hay reloj ni fecha de entrega que corra: se guarda a cada paso y
+        volvés cuando puedas.
+      </dd>
 
-  <h2 class="entra">Cuánto cuesta</h2>
-  {
-    precio ? (
-      <p data-precio>
-        <strong>{formatearPrecio(precio)}</strong>, una sola vez. No hay suscripción, ni
-        mensualidad, ni un plan que se vence y te apaga la página: pagás una vez y queda
-        publicada.
-      </p>
-    ) : (
-      <p class="aviso" data-precio-faltante>
-        El precio no está configurado, así que la compra está cerrada. ({errorPrecio})
-      </p>
-    )
-  }
-
-  <h2 class="entra">Preguntas</h2>
-  <dl class="entra">
-    <dt>¿Tiene que instalar algo o abrirse una cuenta?</dt>
-    <dd>
-      No. Escanea, se abre en el navegador del celular y listo. Vos tampoco tenés cuenta
-      acá: tu pedido es un enlace propio, sin contraseña que recordar ni registro que
-      completar.
-    </dd>
-
-    <dt>¿El enlace vence?</dt>
-    <dd>
-      No vence y no cambia. El QR que imprimas hoy va a seguir abriendo el mismo regalo
-      dentro de años.
-    </dd>
-
-    <dt>¿Lo puede ver cualquiera?</dt>
-    <dd>
-      No sale en buscadores ni en ningún listado, y la dirección no se adivina. Las fotos
-      tampoco quedan en una carpeta pública: viven en un depósito privado y se sirven con
-      direcciones firmadas que se mueren al terminar la visita.
-    </dd>
-
-    <dt>¿Y si escribo algo y después me arrepiento?</dt>
-    <dd>
-      Mientras no lo apruebes, lo cambiás todas las veces que quieras, sin costo. Para eso
-      está el enlace de revisión.
-    </dd>
-
-    <dt>¿Lo escribe una inteligencia artificial?</dt>
-    <dd>
-      No. Nadie le pone palabras a tu historia. Si vos no lo contás, no existe: eso es,
-      exactamente, lo que hace que el regalo sea tuyo.
-    </dd>
-
-    <dt>¿Cuánto me va a llevar?</dt>
-    <dd>
-      Lo que quieras. No hay reloj ni fecha de entrega que corra: se guarda a cada paso y
-      volvés cuando puedas.
-    </dd>
-
-    <dt>¿Cómo se paga?</dt>
-    <dd>
-      Escaneando un QR interbancario desde la app de tu banco. No te pedimos ni guardamos
-      datos de tarjeta en ningún momento, porque nunca los tocamos.
-    </dd>
-  </dl>
+      <dt>¿Cómo se paga?</dt>
+      <dd>
+        Escaneando un QR interbancario desde la app de tu banco. No te pedimos ni guardamos
+        datos de tarjeta en ningún momento, porque nunca los tocamos.
+      </dd>
+    </dl>
+  </section>
 
   {
     precio && (
-      <>
-        <h2 id="comprar" class="entra">Empezá</h2>
-        <p>
-          Dejanos tu correo y te llevamos al QR para pagar. Apenas pagues te damos el enlace
-          de tu pedido: <strong>guardalo</strong>, es tu única llave. Confirmamos la
-          transferencia a mano, así que puede tardar unas horas; cuando esté, se abre el
-          primer paso y ya estás contando.
+      <section class="panel panel-compra entra">
+        <p class="rotulo">Último paso</p>
+        <h2 id="comprar">Empezá</h2>
+        <p class="entradilla">Dejanos tu correo y te llevamos al QR para pagar.</p>
+        <p class="apoyo">
+          Apenas pagues te damos el enlace de tu pedido: <strong>guardalo</strong>, es tu
+          única llave. Confirmamos la transferencia a mano, así que puede tardar unas horas;
+          cuando esté, se abre el primer paso y ya estás contando.
         </p>
+
         <form method="POST" action="/comprar" data-form-comprar>
           <p>
             <label for="email">Tu correo (para encontrarte si algo sale mal con el pago)</label>
@@ -269,15 +369,15 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
             </p>
           </fieldset>
 
-          <p>
+          <p class="enviar">
             <button type="submit" class="boton">Comprar por {formatearPrecio(precio)}</button>
           </p>
         </form>
 
-        <p class="opcional">
+        <p class="apoyo">
           No guardamos datos de tu tarjeta: el pago ocurre dentro de la app de tu banco.
         </p>
-      </>
+      </section>
     )
   }
 </VentaLayout>
@@ -314,9 +414,11 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
           { duration: 0.7, ease: SUAVE },
         );
 
-        // Las listas entran de a un ítem: es lo que hace que se lea como algo que se está
-        // escribiendo y no como un bloque que aparece.
-        const hijos = elemento.querySelectorAll<HTMLElement>(":scope > li, :scope > dt, :scope > dd");
+        // Las listas y las tarjetas entran de a un ítem: es lo que hace que se lea como algo
+        // que se está escribiendo y no como un bloque que aparece de golpe.
+        const hijos = elemento.querySelectorAll<HTMLElement>(
+          ":scope > li, :scope > dt, :scope > dd, :scope > article",
+        );
         if (hijos.length > 0) {
           animate(
             hijos,
@@ -353,6 +455,21 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 </script>
 
 <style>
+  /* ════════════════════════════════════════════════════════════════════════════════════
+     La landing no es un documento: es una vidriera. Cada sección tiene forma propia —banda
+     oscura, marco, panel, tarjetas, filete— y el texto tiene tres pesos (entradilla,
+     cuerpo, apoyo) en vez de uno.
+
+     Ni un color, tamaño, espacio ni radio suelto: todo sale de los tokens de base.css y de
+     los temas. Donde falta un valor intermedio se deriva con color-mix() de un token.
+     ════════════════════════════════════════════════════════════════════════════════════ */
+
+  /* ── Portada ───────────────────────────────────────────────────────────────────────── */
+
+  .portada {
+    margin: 0 0 var(--e-5);
+  }
+
   h1 {
     max-width: 24ch;
   }
@@ -376,6 +493,13 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     justify-content: center;
     /* El espacio de arriba es por dónde asoma la carta: sin él, saldría recortada. */
     padding: var(--e-5) 0 var(--e-3);
+    /* Un halo tibio detrás del sobre, para que no flote sobre la nada. Derivado de un
+       token: el único color nuevo de la página es un --realce muy diluido. */
+    background: radial-gradient(
+      ellipse at 50% 45%,
+      color-mix(in srgb, var(--realce) 16%, transparent),
+      transparent 68%
+    );
   }
 
   .sobre-mini {
@@ -486,6 +610,391 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     98%, 100% { opacity: 1; transform: translateZ(30px) translate(-50%, 50%) scale(1); }
   }
 
+  /* ── Ritmo tipográfico ───────────────────────────────────────────────────────────────
+     Tres pesos y un rótulo. Antes todos los párrafos pesaban igual y la página se leía
+     como un contrato. */
+
+  .rotulo {
+    display: flex;
+    align-items: center;
+    gap: var(--e-1);
+    margin: 0 0 var(--e-1);
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  /* El filete corto que abre cada rótulo: la única "decoración" de la página. */
+  .rotulo::before {
+    content: "";
+    flex: 0 0 auto;
+    width: var(--e-3);
+    height: 1px;
+    background: var(--realce);
+  }
+
+  .rotulo + h1,
+  .rotulo + h2 {
+    margin-top: 0;
+  }
+
+  h2 {
+    margin-bottom: var(--e-2);
+  }
+
+  /* La entradilla es grande pero NO es un título: va en la de cuerpo, para que el <h2>
+     —que mide lo mismo— siga siendo el que manda por ser el único en serif. */
+  .entradilla {
+    margin: 0 0 var(--e-2);
+    max-width: 48ch;
+    font-size: var(--t-subtitulo);
+    line-height: var(--i-titulo);
+    color: var(--texto);
+  }
+
+  .apoyo {
+    margin: 0 0 var(--e-2);
+    max-width: 62ch;
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  .apoyo strong {
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  /* El argumento del cajón, sacado del párrafo y puesto en un margen con filete. */
+  .destacado {
+    margin: var(--e-3) 0;
+    padding-left: var(--e-2);
+    max-width: 62ch;
+    border-left: 1px solid var(--realce);
+    color: var(--texto-suave);
+  }
+
+  .destacado strong {
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  strong,
+  li,
+  dt,
+  dd {
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Formas de sección ─────────────────────────────────────────────────────────────── */
+
+  section {
+    margin: 0 0 var(--e-5);
+  }
+
+  section > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* Separador fino: lo mínimo para que dos bloques de texto no se lean como uno. */
+  .filete {
+    padding-top: var(--e-4);
+    border-top: 1px solid var(--borde);
+  }
+
+  /* Marco: fondo un tono más abajo y hairline alrededor. */
+  .marco {
+    padding: var(--e-3) var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  /* Panel: la pieza que vende —precio y formulario—, sobre papel y levantada del fondo. */
+  .panel {
+    padding: var(--e-3) var(--e-2);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  /* Banda a sangre con el tema `nocturno`.
+
+     El ancho se consigue con los márgenes negativos que anulan el padding de <main> (nunca
+     con 100vw, que incluye la barra de scroll y provocaría desborde horizontal) y con una
+     sombra de enorme expansión: una sombra no entra en el overflow del documento, así que
+     pinta de lado a lado sin agregar un píxel de layout. El clip la recorta en vertical. */
+  .banda {
+    margin: 0 calc(-1 * var(--e-2)) var(--e-4);
+    padding: var(--e-4) var(--e-2);
+    background: var(--fondo);
+    color: var(--texto);
+    box-shadow: 0 0 0 100vmax var(--fondo);
+    clip-path: inset(0 -100vmax);
+  }
+
+  /* ── Pasos numerados ───────────────────────────────────────────────────────────────── */
+
+  .pasos,
+  .secuencia {
+    list-style: none;
+    counter-reset: paso;
+    margin: 0 0 var(--e-3);
+    padding: 0;
+    max-width: 62ch;
+    border-top: 1px solid var(--borde);
+  }
+
+  .pasos li,
+  .secuencia li {
+    counter-increment: paso;
+    position: relative;
+    margin: 0;
+    padding: var(--e-2) 0 var(--e-2) var(--e-4);
+    border-bottom: 1px solid var(--borde);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  .pasos li::before,
+  .secuencia li::before {
+    position: absolute;
+    left: 0;
+    top: var(--e-2);
+    font-family: var(--f-display);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--i-titulo);
+  }
+
+  /* Dos dígitos en el instructivo: "01" lee a lista de pasos, "1" lee a viñeta. */
+  .pasos li::before {
+    content: counter(paso, decimal-leading-zero);
+    font-size: var(--t-subtitulo);
+    color: var(--acento);
+  }
+
+  .pasos strong,
+  .secuencia strong {
+    display: block;
+    color: var(--texto);
+  }
+
+  .pasos strong {
+    font-size: var(--t-cuerpo);
+    font-weight: 500;
+  }
+
+  /* En la banda oscura el número es oro y chico: el que manda es el nombre del bloque. */
+  .secuencia li::before {
+    content: counter(paso);
+    font-size: var(--t-subtitulo);
+    color: var(--realce);
+  }
+
+  .secuencia strong {
+    font-family: var(--f-display);
+    font-weight: 300;
+    font-size: var(--t-subtitulo);
+    line-height: var(--i-titulo);
+  }
+
+  /* ── Tarjetas ──────────────────────────────────────────────────────────────────────── */
+
+  .tarjetas {
+    display: grid;
+    gap: var(--e-2);
+    /* `min(100%, …)` es lo que garantiza una sola columna a 320 px sin desbordar. */
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, calc(var(--ancho-pagina) / 3)), 1fr)
+    );
+    margin: 0 0 var(--e-2);
+  }
+
+  /* Tres tarjetas en una grilla de dos: la última ocupa el ancho en vez de quedar
+     colgando sola. A una columna no cambia nada. */
+  .tarjetas article:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .tarjeta {
+    margin: 0;
+    padding: var(--e-2);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+    transition:
+      transform var(--rapido) var(--resorte),
+      box-shadow var(--rapido) ease;
+  }
+
+  .tarjeta:hover,
+  .tarjeta:focus-within {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra);
+  }
+
+  .tarjeta h3 {
+    margin: 0 0 var(--e-1);
+    font-family: var(--f-display);
+    font-weight: 300;
+    font-size: var(--t-subtitulo);
+    line-height: var(--i-titulo);
+    color: var(--texto);
+  }
+
+  .tarjeta p {
+    margin: 0;
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  /* ── Ocasiones ─────────────────────────────────────────────────────────────────────── */
+
+  .ocasiones {
+    list-style: none;
+    display: grid;
+    gap: var(--e-2);
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, calc(var(--ancho-pagina) / 4)), 1fr)
+    );
+    margin: 0;
+    padding: 0;
+  }
+
+  .ocasiones li {
+    margin: 0;
+    padding: var(--e-2);
+    background: var(--superficie);
+    border-top: 1px solid var(--realce);
+    border-radius: var(--radio);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  /* El caso que da origen al producto no es una ocasión más: ocupa el ancho y lleva acento. */
+  .ocasion-madre {
+    grid-column: 1 / -1;
+    background: var(--papel);
+    border-top-color: var(--acento);
+    color: var(--texto);
+  }
+
+  .ocasion-madre .rotulo {
+    margin-bottom: var(--e-1);
+  }
+
+  /* ── Precio ────────────────────────────────────────────────────────────────────────── */
+
+  .precio {
+    display: grid;
+    gap: var(--e-1);
+    margin: 0;
+    max-width: 62ch;
+  }
+
+  .precio strong {
+    font-family: var(--f-display);
+    font-weight: 300;
+    font-size: var(--t-titulo);
+    line-height: var(--i-apretado);
+    color: var(--acento);
+  }
+
+  .precio span {
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  /* ── Notas al pie de una sección ───────────────────────────────────────────────────── */
+
+  .nota {
+    margin: 0;
+    padding: var(--e-2);
+    max-width: 62ch;
+    background: var(--superficie);
+    border-left: 1px solid var(--realce);
+    border-radius: var(--radio);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  .nota strong {
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  /* ── Preguntas ─────────────────────────────────────────────────────────────────────── */
+
+  dl {
+    margin: 0;
+    max-width: 62ch;
+    border-top: 1px solid var(--borde);
+  }
+
+  dt {
+    margin: 0;
+    padding: var(--e-2) 0 0;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    padding: var(--e-1) 0 var(--e-2);
+    border-bottom: 1px solid var(--borde);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+  }
+
+  /* ── Compra ────────────────────────────────────────────────────────────────────────── */
+
+  /* Las dos acciones de la cabecera son la MISMA compra (el ancla al formulario) y el
+     ejemplo. Envuelven en vez de desbordar a 320 px (FR-032). */
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1) var(--e-2);
+    align-items: center;
+    margin: 0 0 var(--e-2);
+  }
+
+  .acciones .boton {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  /* El ancla cae sobre el panel entero, no sobre el título pegado al borde de la pantalla. */
+  #comprar {
+    scroll-margin-top: var(--e-5);
+  }
+
+  form {
+    margin: 0 0 var(--e-2);
+  }
+
+  fieldset {
+    margin: 0 0 var(--e-2);
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  legend {
+    padding: 0 var(--e-1);
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  .enviar {
+    margin: 0;
+  }
+
   /* ── Secciones que entran al llegar a la pantalla ────────────────────────────────────
      `animation-timeline: view()` ata la animación al scroll, sin JavaScript y sin medir
      posiciones a mano. Donde no está soportado, el `@supports` no aplica y el contenido se
@@ -547,67 +1056,17 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
     .sobre-mini .sello {
       opacity: 0;
     }
-  }
 
-  ul,
-  .pasos {
-    margin: 0 0 var(--e-2);
-    padding-left: var(--e-3);
-    max-width: 62ch;
-  }
+    .tarjeta,
+    .boton {
+      transition: none;
+    }
 
-  li {
-    margin-bottom: var(--e-1);
-    overflow-wrap: anywhere;
-  }
-
-  /* Las dos acciones de la cabecera son la MISMA compra (el ancla al formulario) y el
-     ejemplo. Envuelven en vez de desbordar a 320 px (FR-032). */
-  .acciones {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--e-1) var(--e-2);
-    align-items: center;
-  }
-
-  .acciones .boton {
-    max-width: 100%;
-    text-align: center;
-  }
-
-  dl {
-    margin: 0 0 var(--e-2);
-    max-width: 62ch;
-  }
-
-  dt {
-    margin-top: var(--e-2);
-    font-weight: 500;
-    overflow-wrap: anywhere;
-  }
-
-  dt:first-child {
-    margin-top: 0;
-  }
-
-  dd {
-    margin: var(--e-1) 0 0;
-    color: var(--texto-suave);
-    overflow-wrap: anywhere;
-  }
-
-  fieldset {
-    margin: 0 0 var(--e-2);
-    padding: var(--e-2);
-    border: 1px solid var(--borde);
-    border-radius: var(--radio);
-  }
-
-  legend {
-    padding: 0 var(--e-1);
-    font-size: var(--t-etiqueta);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--texto-suave);
+    .tarjeta:hover,
+    .tarjeta:focus-within,
+    .boton:hover,
+    .boton:active {
+      transform: none;
+    }
   }
 </style>

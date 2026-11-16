@@ -62,131 +62,314 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
 ---
 
 <VentaLayout titulo="Pagar con QR">
-  {
-    yaDeclarado ? (
-      <>
-        <h1>Recibimos tu aviso</h1>
-        <p data-declarado>
-          Estamos confirmando el pago con el banco. En cuanto aparezca, te llega el correo con
-          el enlace para empezar a contar tu historia. Suele tardar unas horas; si pagaste
-          fuera del horario bancario, puede ser al día siguiente.
-        </p>
-        <p>Guardá este enlace: es el de tu pedido. Podés volver cuando quieras para ver cómo va.</p>
-        <p>
-          <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
-        </p>
-        <p class="opcional">
-          Comprobante que nos pasaste: <strong>{yaDeclarado}</strong>. Si te equivocaste,
-          mandanos el correcto abajo.
-        </p>
-      </>
-    ) : (
-      <h1>Pagá escaneando el QR</h1>
-    )
-  }
+  <div class="hoja">
+    <header class="cabecera">
+      <p class="rotulo">{yaDeclarado ? "Pago declarado" : "Pago"}</p>
+      <h1>{yaDeclarado ? "Recibimos tu aviso" : "Pagá escaneando el QR"}</h1>
+    </header>
 
-  {
-    monto && (
+    {
+      yaDeclarado && (
+        <section class="ficha ficha-clave">
+          <p data-declarado>
+            Estamos confirmando el pago con el banco. En cuanto aparezca, te llega el correo
+            con el enlace para empezar a contar tu historia. Suele tardar unas horas; si
+            pagaste fuera del horario bancario, puede ser al día siguiente.
+          </p>
+          <p>
+            Guardá este enlace: es el de tu pedido. Podés volver cuando quieras para ver cómo
+            va.
+          </p>
+          <p class="accion">
+            <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
+          </p>
+          <div class="hilo" />
+          <p class="opcional">
+            Comprobante que nos pasaste: <strong>{yaDeclarado}</strong>. Si te equivocaste,
+            mandanos el correcto abajo.
+          </p>
+        </section>
+      )
+    }
+
+    {/* El bloque del cobro: el monto, los tres pasos y el código, en una sola ficha. Es la
+        pantalla donde el comprador decide, así que no hay nada entre el monto y el QR. */}
+    <section class="ficha cobro">
+      {
+        monto && (
+          <p class="total">
+            <span class="rotulo">Total a pagar</span>
+            <strong class="monto">{monto}</strong>
+          </p>
+        )
+      }
+
+      {
+        qr.imagen ? (
+          <>
+            {monto && <div class="hilo" />}
+
+            <ol class="pasos">
+              <li>Escaneá el código desde la app de tu banco.</li>
+              <li>
+                Escribí el monto: <strong>{monto ?? "el total de arriba"}</strong>. El código
+                no lo lleva adentro, así que lo ponés vos.
+              </li>
+              <li>Confirmá la transferencia y volvé acá con el número de comprobante.</li>
+            </ol>
+
+            <figure>
+              <div class="plato">
+                <img
+                  src={qr.imagen}
+                  alt="Código QR para pagar desde la app de tu banco"
+                  width="320"
+                />
+              </div>
+              <figcaption>
+                {qr.titular && (
+                  <>
+                    A nombre de <strong>{qr.titular}</strong>.{" "}
+                  </>
+                )}
+                {qr.banco && <>{qr.banco}. </>}
+                Funciona desde la app de cualquier banco de la red.
+              </figcaption>
+            </figure>
+          </>
+        ) : (
+          <p class="aviso" data-sin-qr>
+            El cobro por QR todavía no está configurado. Escribinos y lo resolvemos a mano.
+          </p>
+        )
+      }
+    </section>
+
+    <section class="ficha">
+      <h2 class="rotulo">Después de pagar, avisanos</h2>
       <p>
-        Total a pagar: <strong>{monto}</strong>
+        Pasanos el <strong>número de comprobante</strong> de la transferencia. Es lo que nos
+        permite encontrar tu pago entre los demás y confirmarlo.
       </p>
-    )
-  }
 
-  {
-    qr.imagen ? (
-      <>
-        <ol class="pasos">
-          <li>Escaneá el código desde la app de tu banco.</li>
-          <li>
-            Escribí el monto: <strong>{monto ?? "el total de arriba"}</strong>. El código no
-            lo lleva adentro, así que lo ponés vos.
-          </li>
-          <li>Confirmá la transferencia y volvé acá con el número de comprobante.</li>
-        </ol>
+      {error && <p class="aviso" data-error>{error}</p>}
 
-        <figure>
-          <img src={qr.imagen} alt="Código QR para pagar desde la app de tu banco" width="320" />
-          <figcaption>
-            {qr.titular && (
-              <>
-                A nombre de <strong>{qr.titular}</strong>.{" "}
-              </>
-            )}
-            {qr.banco && <>{qr.banco}. </>}
-            Funciona desde la app de cualquier banco de la red.
-          </figcaption>
-        </figure>
-      </>
-    ) : (
-      <p class="aviso" data-sin-qr>
-        El cobro por QR todavía no está configurado. Escribinos y lo resolvemos a mano.
-      </p>
-    )
-  }
+      <form method="POST" data-form-comprobante>
+        <p class="campo">
+          <label for="comprobante">Número de comprobante</label>
+          <input
+            type="text"
+            id="comprobante"
+            name="comprobante"
+            maxlength="64"
+            required
+            value={yaDeclarado ?? ""}
+          />
+        </p>
+        <button type="submit" class="boton">Ya pagué</button>
+      </form>
+    </section>
 
-  <h2>Después de pagar, avisanos</h2>
-  <p>
-    Pasanos el <strong>número de comprobante</strong> de la transferencia. Es lo que nos
-    permite encontrar tu pago entre los demás y confirmarlo.
-  </p>
-
-  {error && <p class="aviso" data-error>{error}</p>}
-
-  <form method="POST" data-form-comprobante>
-    <p>
-      <label for="comprobante">Número de comprobante</label>
-      <input
-        type="text"
-        id="comprobante"
-        name="comprobante"
-        maxlength="64"
-        required
-        value={yaDeclarado ?? ""}
-      />
+    <p class="opcional">
+      No te cobramos nada por adelantado ni guardamos datos de tu tarjeta: el pago ocurre
+      dentro de la app de tu banco.
     </p>
-    <button type="submit" class="boton">Ya pagué</button>
-  </form>
-
-  <p class="opcional">
-    No te cobramos nada por adelantado ni guardamos datos de tu tarjeta: el pago ocurre dentro
-    de la app de tu banco.
-  </p>
+  </div>
 </VentaLayout>
 
 <style>
-  .pasos {
-    margin: 0 0 var(--e-2);
-    padding-left: 1.2rem;
-    max-width: 62ch;
+  /* ═══ Patrón del recorrido de compra ═══════════════════════════════════════════════════
+     Las cinco pantallas de la compra comparten tres primitivas y nada más: una FICHA que
+     contiene, un RÓTULO que nombra y un HILO que separa. Está documentado entero en
+     src/pages/gracias/[pedido].astro.                                                    */
+
+  .hoja {
+    display: grid;
+    gap: var(--e-3);
+    --suave: var(--texto-suave);
   }
 
+  .hoja > * {
+    margin-block: 0;
+  }
+
+  .cabecera h1 {
+    margin: 0 0 var(--e-1);
+  }
+
+  .cabecera p {
+    margin: 0;
+  }
+
+  .rotulo {
+    display: block;
+    margin: 0 0 var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    line-height: var(--i-cuerpo);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--suave);
+  }
+
+
+  /* --texto-suave está documentado contra --fondo (4.79:1). Adentro de una ficha el fondo es
+     --superficie, un tono más abajo, y el mismo gris cae a 4.45:1: debajo de AA. Un paso
+     hacia --texto lo devuelve arriba de 5.5:1 sin inventar un color nuevo. */
+  .ficha {
+    --suave: color-mix(in srgb, var(--texto-suave) 70%, var(--texto));
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  @media (min-width: 30rem) {
+    .ficha {
+      padding: var(--e-3);
+    }
+  }
+
+  .ficha > :first-child {
+    margin-top: 0;
+  }
+
+  .ficha > :last-child {
+    margin-bottom: 0;
+  }
+
+  .ficha label {
+    color: var(--suave);
+  }
+
+  .ficha-clave {
+    background: var(--papel);
+  }
+
+  .hilo {
+    height: 1px;
+    margin: var(--e-2) 0;
+    background: var(--borde);
+  }
+
+  .accion {
+    margin-top: var(--e-2);
+  }
+
+  /* `.opcional` nace en el layout como una fila flex (casilla + texto). Cuando es un
+     párrafo suelto, esa fila parte el texto de su enlace en dos columnas: acá vuelve a ser
+     un párrafo. */
+  p.opcional {
+    display: block;
+  }
+
+  /* Un aviso dentro de una ficha necesita separarse de ella: la ficha ya es --superficie.
+     La barra toma el grosor de un paso de la escala, en vez de los tres píxeles sueltos que
+     hereda del layout. */
+  .ficha .aviso {
+    background: var(--papel);
+    border-left-width: var(--e-1);
+    border-radius: var(--radio);
+  }
+
+  .ficha .aviso[data-error] {
+    border-left-color: var(--acento);
+  }
+
+  /* ═══ Propio de esta pantalla ═════════════════════════════════════════════════════════ */
+
+  /* El monto se lee de un vistazo y desde lejos: es el dato por el que la persona entró. */
+  .total {
+    margin: 0;
+  }
+
+  .monto {
+    display: block;
+    font-family: var(--f-display);
+    font-size: var(--t-titulo);
+    font-weight: 300;
+    line-height: var(--i-titulo);
+    color: var(--texto);
+  }
+
+  /* Tres pasos numerados, cada número en su medalla. El número está en el ::before y no en
+     el marcador de la lista para poder alinearlo con el texto que lo acompaña. */
+  .pasos {
+    display: grid;
+    gap: var(--e-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: paso;
+  }
+
+  /* La medalla va posicionada y no en una columna de grid: el <strong> del monto sería un
+     ítem de grid más y partiría el paso 2 en tres renglones. */
   .pasos li {
-    margin-bottom: var(--e-1);
+    position: relative;
+    min-width: 0;
+    padding-left: calc(var(--e-3) + var(--e-2));
+    counter-increment: paso;
+  }
+
+  .pasos li::before {
+    content: counter(paso);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: var(--e-3);
+    height: var(--e-3);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--papel);
+    background: var(--acento);
+    border-radius: 50%;
   }
 
   figure {
-    margin: 0 0 var(--e-3);
-    max-width: 360px;
+    display: grid;
+    justify-items: center;
+    gap: var(--e-1);
+    margin: var(--e-3) 0 0;
   }
 
-  figure img {
+  /* El código va sobre el papel más claro que tiene el tema: un QR se escanea por
+     contraste, y el fondo de la ficha es un tono mate. */
+  .plato {
     width: 100%;
-    height: auto;
+    max-width: var(--ancho-texto);
     padding: var(--e-2);
     background: var(--papel);
     border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  .plato img {
+    width: 100%;
+    height: auto;
   }
 
   figcaption {
-    margin-top: var(--e-1);
+    max-width: var(--ancho-texto);
     font-size: var(--t-pequeno);
-    color: var(--texto-suave);
+    line-height: var(--i-cuerpo);
+    color: var(--suave);
+    text-align: center;
+  }
+
+  .campo {
+    max-width: none;
   }
 
   input[type="text"] {
     width: 100%;
-    padding: var(--e-1);
+    padding: var(--e-1) var(--e-2);
     font-family: var(--f-cuerpo);
     font-size: var(--t-cuerpo);
     color: var(--texto);

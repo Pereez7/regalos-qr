@@ -58,46 +58,101 @@ const TITULOS: Record<Pantalla, string> = {
 // huecos de más, y una fila enteramente vacía se descarta al guardar.
 const huecosMomentos = Math.min(2, Math.max(0, TOPES.momentos - momentos.length));
 const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.length));
+
+// ─── La barra de pasos ──────────────────────────────────────────────────────────────────
+// Qué pasos ya tienen algo cargado se DERIVA del borrador, que es el mismo documento que
+// dibuja la vista previa y el que decide los faltantes. No hay un campo de progreso que
+// mantener: vaciar un paso lo vuelve a mostrar pendiente, sin que nadie tenga que acordarse
+// de apagar una marca. `borrador.paso` dice dónde quedó la persona; esto dice qué tiene.
+const SECUENCIA = [...PASOS, "resumen"] as const;
+
+const conContenido = new Set<string>();
+if (borrador.destinatario?.nombre?.trim() && borrador.tema) conContenido.add("destinatario");
+if (momentos.some((m) => m.texto?.trim())) conContenido.add("momentos");
+if (fotos.length > 0) conContenido.add("fotos");
+if (borrador.cancion?.url?.trim()) conContenido.add("cancion");
+if (borrador.carta?.texto?.trim()) conContenido.add("carta");
+if (preguntas.some((p) => p.texto?.trim())) conContenido.add("preguntas");
+if (borrador.cierre?.texto?.trim()) conContenido.add("cierre");
+
+const indice = (SECUENCIA as readonly string[]).indexOf(pantalla);
+
+// Solo la posición, sin "faltan N". Contar lo que queda por delante suena a deuda, y acá
+// sería una deuda falsa: casi todos los pasos son opcionales —se puede enviar con el nombre,
+// el clima visual y un solo bloque— así que saltear cuatro no deja nada pendiente. Lo que de
+// verdad falta para poder enviar se dice en el resumen, con nombre y apellido.
+const progreso =
+  indice < 0
+    ? "Tu historia"
+    : indice === SECUENCIA.length - 1
+      ? `Último paso · ${SECUENCIA.length} de ${SECUENCIA.length}`
+      : `Paso ${indice + 1} de ${SECUENCIA.length}`;
+
+// Las pantallas que llevan la vista previa al costado necesitan el ancho amplio: con 640 px
+// el formulario quedaba en una columna de un cuarto de pantalla. Las que no la llevan siguen
+// siendo una columna de texto.
+const ancho: "texto" | "amplio" =
+  cerrada || pantalla === "enviado" || pantalla === "prevista" ? "texto" : "amplio";
 ---
 
-<VentaLayout titulo={`${TITULOS[pantalla]} · tu historia`}>
+<VentaLayout titulo={`${TITULOS[pantalla]} · tu historia`} ancho={ancho}>
   {
     cerrada === "no_pagado" ? (
-      <>
-        <h1>Tu pedido está pendiente de pago</h1>
-        <p>
-          La carga de la historia se abre cuando el pago queda confirmado. Nada de lo que
-          cargues se pierde: este enlace sigue siendo el tuyo.
-        </p>
-        <p>
-          <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
-        </p>
-      </>
-    ) : cerrada === "publicado" ? (
-      <>
-        <h1>Tu regalo ya está publicado</h1>
-        <p>
-          Lo aprobaste, así que ya es definitivo: una vez entregado, el regalo no se cambia.
-          El enlace y el QR que tengas impresos siguen siendo válidos para siempre.
-        </p>
-        {pedido.slugRegalo && (
+      <div class="hoja">
+        <header class="cabecera">
+          <p class="rotulo">Tu compra</p>
+          <h1>Tu pedido está pendiente de pago</h1>
+        </header>
+        <section class="ficha ficha-clave">
           <p>
-            <a class="boton" href={`/r/${pedido.slugRegalo}`}>Ver el regalo</a>
+            La carga de la historia se abre cuando el pago queda confirmado. Nada de lo que
+            cargues se pierde: este enlace sigue siendo el tuyo.
           </p>
-        )}
-      </>
+          <p class="accion">
+            <a class="boton" href={`/gracias/${pedido.id}`}>Ver el estado de mi pedido</a>
+          </p>
+        </section>
+      </div>
+    ) : cerrada === "publicado" ? (
+      <div class="hoja">
+        <header class="cabecera">
+          <p class="rotulo">Tu regalo</p>
+          <h1>Tu regalo ya está publicado</h1>
+        </header>
+        <section class="ficha ficha-clave">
+          <p>
+            Lo aprobaste, así que ya es definitivo: una vez entregado, el regalo no se cambia.
+            El enlace y el QR que tengas impresos siguen siendo válidos para siempre.
+          </p>
+          {pedido.slugRegalo && (
+            <p class="accion">
+              <a class="boton" href={`/r/${pedido.slugRegalo}`}>Ver el regalo</a>
+            </p>
+          )}
+        </section>
+      </div>
     ) : (
-      <>
-        <nav aria-label="Pasos de la carga">
+      <div class="hoja">
+        <nav class="recorrido" aria-label="Pasos de la carga">
+          <p class="rotulo">{progreso}</p>
           <ol>
-            {PASOS.map((p) => (
-              <li aria-current={p === pantalla ? "step" : undefined}>
-                <a href={`/contar/${pedido.id}/${p}`}>{TITULOS[p]}</a>
+            {SECUENCIA.map((p, i) => (
+              <li
+                class:list={[
+                  "paso",
+                  { actual: p === pantalla, hecho: conContenido.has(p) },
+                ]}
+                aria-current={p === pantalla ? "step" : undefined}
+              >
+                <a href={`/contar/${pedido.id}/${p}`}>
+                  <span class="marca" aria-hidden="true">
+                    {conContenido.has(p) ? "✓" : i + 1}
+                  </span>
+                  <span class="nombre">{TITULOS[p]}</span>
+                  {conContenido.has(p) && <span class="sr-only">— con contenido</span>}
+                </a>
               </li>
             ))}
-            <li aria-current={pantalla === "resumen" ? "step" : undefined}>
-              <a href={`/contar/${pedido.id}/resumen`}>{TITULOS.resumen}</a>
-            </li>
           </ol>
         </nav>
 
@@ -116,383 +171,457 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
           )
         }
 
-        <div class="con-prevista">
-          {pantalla !== "enviado" && pantalla !== "prevista" && (
-            <PrevistaRegalo borrador={borrador} pedidoId={pedido.id} pasoActivo={pantalla} />
-          )}
+        {
+          pantalla !== "enviado" && pantalla !== "prevista" && (
+            <div class="con-prevista">
+              <PrevistaRegalo borrador={borrador} pedidoId={pedido.id} pasoActivo={pantalla} />
 
-          <div class="formulario">
+              <div class="formulario">
+                {pantalla === "destinatario" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="destinatario">
+                    <input type="hidden" name="paso" value="destinatario" />
+                    <p class="guia">Lo único imprescindible es el nombre de quien lo recibe.</p>
 
-        {pantalla === "destinatario" && (
-          <form method="POST" action={accionBorrador} data-paso="destinatario">
-            <input type="hidden" name="paso" value="destinatario" />
-            <p>Lo único imprescindible es el nombre de quien lo recibe.</p>
-
-            <p>
-              <label for="nombre">Nombre de quien recibe el regalo</label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                maxlength={TOPES.nombre}
-                value={borrador.destinatario?.nombre ?? ""}
-              />
-            </p>
-
-            <p>
-              <label for="subtitulo">Una línea debajo del nombre (opcional)</label>
-              <input
-                type="text"
-                id="subtitulo"
-                name="subtitulo"
-                maxlength={TOPES.subtitulo}
-                value={borrador.destinatario?.subtitulo ?? ""}
-              />
-            </p>
-
-            <fieldset>
-              <legend>Clima visual</legend>
-              {TEMAS.map((tema) => (
-                <label class="opcion">
-                  <input type="radio" name="tema" value={tema} checked={borrador.tema === tema} />
-                  <span>{tema}</span>
-                </label>
-              ))}
-            </fieldset>
-
-            <p>
-              <label for="fecha_inicio">
-                Fecha desde la que quieren contar el tiempo (opcional)
-              </label>
-              <input
-                type="date"
-                id="fecha_inicio"
-                name="fecha_inicio"
-                value={borrador.fechaInicio ?? ""}
-              />
-            </p>
-
-            <button type="submit" class="boton">Guardar y seguir</button>
-          </form>
-        )}
-
-        {pantalla === "momentos" && (
-          <form method="POST" action={accionBorrador} data-paso="momentos">
-            <input type="hidden" name="paso" value="momentos" />
-            <p>
-              Cada momento es una tarjeta del regalo. Podés dejar los que no uses en blanco:
-              se descartan solos.
-            </p>
-
-            {[...momentos, ...Array(huecosMomentos).fill(null)].map((momento, i) => (
-              <fieldset>
-                <legend>Momento {i + 1}</legend>
-                <p>
-                  <label for={`momento_titulo_${i}`}>Título (opcional)</label>
-                  <input
-                    type="text"
-                    id={`momento_titulo_${i}`}
-                    name="momento_titulo"
-                    maxlength={TOPES.momentoTitulo}
-                    value={momento?.titulo ?? ""}
-                  />
-                </p>
-                <p>
-                  <label for={`momento_texto_${i}`}>Qué pasó</label>
-                  <textarea
-                    id={`momento_texto_${i}`}
-                    name="momento_texto"
-                    rows="3"
-                    maxlength={TOPES.momentoTexto}
-                  >{momento?.texto ?? ""}</textarea>
-                </p>
-                <p>
-                  <label for={`momento_fecha_${i}`}>Cuándo (opcional)</label>
-                  <input
-                    type="date"
-                    id={`momento_fecha_${i}`}
-                    name="momento_fecha"
-                    value={momento?.fecha ?? ""}
-                  />
-                </p>
-              </fieldset>
-            ))}
-
-            <button type="submit" class="boton">Guardar y seguir</button>
-          </form>
-        )}
-
-        {pantalla === "fotos" && (
-          <>
-            <p>
-              Hasta {MAX_FOTOS} fotos. Las guardamos reducidas y sin los datos que traen
-              adentro —incluida la ubicación—: el archivo original no se almacena.
-            </p>
-
-            <form
-              method="POST"
-              action={`/api/pedidos/${pedido.id}/fotos`}
-              enctype="multipart/form-data"
-              data-form-subir
-            >
-              <input type="hidden" name="accion" value="subir" />
-              <p>
-                <label for="foto">Elegí una foto</label>
-                <input type="file" id="foto" name="foto" accept="image/*" required />
-              </p>
-              <p>
-                <label for="alt">Qué muestra (para quien no puede verla)</label>
-                <input type="text" id="alt" name="alt" maxlength={TOPES.alt} />
-              </p>
-              <p class="opcional" data-tope>
-                Sin JavaScript, el máximo por archivo es de{" "}
-                {Math.round(MAX_BYTES_SUBIDA / (1024 * 1024))} MB. Con JavaScript la
-                reducimos en tu teléfono antes de subirla y podés usar fotos de hasta 10 MB.
-              </p>
-              <button type="submit" class="boton">Subir la foto</button>
-            </form>
-
-            {fotos.length > 0 && (
-              <form method="POST" action={accionBorrador} data-paso="fotos">
-                <input type="hidden" name="paso" value="fotos" />
-                <h2>Las fotos que subiste</h2>
-
-                {fotos.map((foto, i) => (
-                  <fieldset class="foto">
-                    <legend>Foto {i + 1}</legend>
-                    {firmadas.get(foto.ruta) && (
-                      <img src={firmadas.get(foto.ruta)} alt={foto.alt ?? ""} width="220" />
-                    )}
-                    <input type="hidden" name="foto_ruta" value={foto.ruta} />
-                    <p>
-                      <label for={`foto_alt_${i}`}>Qué muestra</label>
+                    <p class="campo">
+                      <label for="nombre">Nombre de quien recibe el regalo</label>
                       <input
                         type="text"
-                        id={`foto_alt_${i}`}
-                        name="foto_alt"
-                        maxlength={TOPES.alt}
-                        value={foto.alt ?? ""}
+                        id="nombre"
+                        name="nombre"
+                        maxlength={TOPES.nombre}
+                        value={borrador.destinatario?.nombre ?? ""}
                       />
                     </p>
-                  </fieldset>
-                ))}
 
-                {momentos.length > 0 && (
-                  <fieldset>
-                    <legend>Qué foto va con cada momento</legend>
-                    {momentos.map((momento, i) => (
-                      <p>
-                        <label for={`momento_foto_${i}`}>
-                          {momento.titulo || momento.texto?.slice(0, 40) || `Momento ${i + 1}`}
-                        </label>
-                        <select id={`momento_foto_${i}`} name="momento_foto">
-                          <option value="">— sin foto —</option>
-                          {fotos.map((foto, j) => (
-                            <option value={foto.ruta} selected={momento.fotoRuta === foto.ruta}>
-                              Foto {j + 1}
-                              {foto.alt ? ` · ${foto.alt}` : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </p>
-                    ))}
-                  </fieldset>
+                    <p class="campo">
+                      <label for="subtitulo">Una línea debajo del nombre (opcional)</label>
+                      <input
+                        type="text"
+                        id="subtitulo"
+                        name="subtitulo"
+                        maxlength={TOPES.subtitulo}
+                        value={borrador.destinatario?.subtitulo ?? ""}
+                      />
+                    </p>
+
+                    <fieldset>
+                      <legend>Clima visual</legend>
+                      <div class="opciones">
+                        {TEMAS.map((tema) => (
+                          <label class="opcion">
+                            <input
+                              type="radio"
+                              name="tema"
+                              value={tema}
+                              checked={borrador.tema === tema}
+                            />
+                            <span>{tema}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+
+                    <p class="campo">
+                      <label for="fecha_inicio">
+                        Fecha desde la que quieren contar el tiempo (opcional)
+                      </label>
+                      <input
+                        type="date"
+                        id="fecha_inicio"
+                        name="fecha_inicio"
+                        value={borrador.fechaInicio ?? ""}
+                      />
+                    </p>
+
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y seguir</button>
+                    </p>
+                  </form>
                 )}
 
-                <button type="submit" class="boton">Guardar y seguir</button>
-              </form>
-            )}
+                {pantalla === "momentos" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="momentos">
+                    <input type="hidden" name="paso" value="momentos" />
+                    <p class="guia">
+                      Cada momento es una tarjeta del regalo. Podés dejar los que no uses en
+                      blanco: se descartan solos.
+                    </p>
 
-            {fotos.length > 0 && (
-              <div class="quitar">
-                <h2>Quitar una foto</h2>
-                <p>Se borra en el momento, no al enviar.</p>
-                {fotos.map((foto, i) => (
-                  <form method="POST" action={`/api/pedidos/${pedido.id}/fotos`}>
-                    <input type="hidden" name="accion" value="quitar" />
-                    <input type="hidden" name="ruta" value={foto.ruta} />
-                    <button type="submit" class="boton boton-secundario">
-                      Quitar la foto {i + 1}
-                    </button>
+                    {[...momentos, ...Array(huecosMomentos).fill(null)].map((momento, i) => (
+                      <fieldset>
+                        <legend>Momento {i + 1}</legend>
+                        <p class="campo">
+                          <label for={`momento_titulo_${i}`}>Título (opcional)</label>
+                          <input
+                            type="text"
+                            id={`momento_titulo_${i}`}
+                            name="momento_titulo"
+                            maxlength={TOPES.momentoTitulo}
+                            value={momento?.titulo ?? ""}
+                          />
+                        </p>
+                        <p class="campo">
+                          <label for={`momento_texto_${i}`}>Qué pasó</label>
+                          <textarea
+                            id={`momento_texto_${i}`}
+                            name="momento_texto"
+                            rows="3"
+                            maxlength={TOPES.momentoTexto}
+                          >{momento?.texto ?? ""}</textarea>
+                        </p>
+                        <p class="campo">
+                          <label for={`momento_fecha_${i}`}>Cuándo (opcional)</label>
+                          <input
+                            type="date"
+                            id={`momento_fecha_${i}`}
+                            name="momento_fecha"
+                            value={momento?.fecha ?? ""}
+                          />
+                        </p>
+                      </fieldset>
+                    ))}
+
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y seguir</button>
+                    </p>
                   </form>
-                ))}
+                )}
+
+                {pantalla === "fotos" && (
+                  <>
+                    <form
+                      class="ficha"
+                      method="POST"
+                      action={`/api/pedidos/${pedido.id}/fotos`}
+                      enctype="multipart/form-data"
+                      data-form-subir
+                    >
+                      <h2 class="rotulo">Sumar una foto</h2>
+                      <input type="hidden" name="accion" value="subir" />
+                      <p class="guia">
+                        Hasta {MAX_FOTOS} fotos. Las guardamos reducidas y sin los datos que
+                        traen adentro —incluida la ubicación—: el archivo original no se
+                        almacena.
+                      </p>
+                      <p class="campo">
+                        <label for="foto">Elegí una foto</label>
+                        <input type="file" id="foto" name="foto" accept="image/*" required />
+                      </p>
+                      <p class="campo">
+                        <label for="alt">Qué muestra (para quien no puede verla)</label>
+                        <input type="text" id="alt" name="alt" maxlength={TOPES.alt} />
+                      </p>
+                      <p class="opcional" data-tope>
+                        Sin JavaScript, el máximo por archivo es de{" "}
+                        {Math.round(MAX_BYTES_SUBIDA / (1024 * 1024))} MB. Con JavaScript la
+                        reducimos en tu teléfono antes de subirla y podés usar fotos de hasta
+                        10 MB.
+                      </p>
+                      <p class="accion">
+                        <button type="submit" class="boton">Subir la foto</button>
+                      </p>
+                    </form>
+
+                    {fotos.length > 0 && (
+                      <form class="ficha" method="POST" action={accionBorrador} data-paso="fotos">
+                        <input type="hidden" name="paso" value="fotos" />
+                        <h2 class="rotulo">Las fotos que subiste</h2>
+
+                        {fotos.map((foto, i) => (
+                          <fieldset class="foto">
+                            <legend>Foto {i + 1}</legend>
+                            {firmadas.get(foto.ruta) && (
+                              <img src={firmadas.get(foto.ruta)} alt={foto.alt ?? ""} width="220" />
+                            )}
+                            <input type="hidden" name="foto_ruta" value={foto.ruta} />
+                            <p class="campo">
+                              <label for={`foto_alt_${i}`}>Qué muestra</label>
+                              <input
+                                type="text"
+                                id={`foto_alt_${i}`}
+                                name="foto_alt"
+                                maxlength={TOPES.alt}
+                                value={foto.alt ?? ""}
+                              />
+                            </p>
+                          </fieldset>
+                        ))}
+
+                        {momentos.length > 0 && (
+                          <fieldset>
+                            <legend>Qué foto va con cada momento</legend>
+                            {momentos.map((momento, i) => (
+                              <p class="campo">
+                                <label for={`momento_foto_${i}`}>
+                                  {momento.titulo ||
+                                    momento.texto?.slice(0, 40) ||
+                                    `Momento ${i + 1}`}
+                                </label>
+                                <select id={`momento_foto_${i}`} name="momento_foto">
+                                  <option value="">— sin foto —</option>
+                                  {fotos.map((foto, j) => (
+                                    <option
+                                      value={foto.ruta}
+                                      selected={momento.fotoRuta === foto.ruta}
+                                    >
+                                      Foto {j + 1}
+                                      {foto.alt ? ` · ${foto.alt}` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </p>
+                            ))}
+                          </fieldset>
+                        )}
+
+                        <p class="accion">
+                          <button type="submit" class="boton">Guardar y seguir</button>
+                        </p>
+                      </form>
+                    )}
+
+                    {fotos.length > 0 && (
+                      <div class="ficha quitar">
+                        <h2 class="rotulo">Quitar una foto</h2>
+                        <p class="guia">Se borra en el momento, no al enviar.</p>
+                        <div class="botonera">
+                          {fotos.map((foto, i) => (
+                            <form method="POST" action={`/api/pedidos/${pedido.id}/fotos`}>
+                              <input type="hidden" name="accion" value="quitar" />
+                              <input type="hidden" name="ruta" value={foto.ruta} />
+                              <button type="submit" class="boton boton-secundario">
+                                Quitar la foto {i + 1}
+                              </button>
+                            </form>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {fotos.length === 0 && (
+                      <p class="salida">
+                        <a href={`/contar/${pedido.id}/cancion`}>Seguir sin fotos</a>
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {pantalla === "cancion" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cancion">
+                    <input type="hidden" name="paso" value="cancion" />
+                    <p class="guia">Un enlace de Spotify o de YouTube. Suena dentro del regalo.</p>
+                    <p class="campo">
+                      <label for="cancion_url">Enlace</label>
+                      <input
+                        type="url"
+                        id="cancion_url"
+                        name="cancion_url"
+                        maxlength={TOPES.cancionUrl}
+                        value={borrador.cancion?.url ?? ""}
+                      />
+                    </p>
+                    <p class="campo">
+                      <label for="cancion_titulo">Título (opcional)</label>
+                      <input
+                        type="text"
+                        id="cancion_titulo"
+                        name="cancion_titulo"
+                        maxlength={TOPES.cancionTexto}
+                        value={borrador.cancion?.titulo ?? ""}
+                      />
+                    </p>
+                    <p class="campo">
+                      <label for="cancion_artista">Quién la canta (opcional)</label>
+                      <input
+                        type="text"
+                        id="cancion_artista"
+                        name="cancion_artista"
+                        maxlength={TOPES.cancionTexto}
+                        value={borrador.cancion?.artista ?? ""}
+                      />
+                    </p>
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y seguir</button>
+                    </p>
+                  </form>
+                )}
+
+                {pantalla === "carta" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="carta">
+                    <input type="hidden" name="paso" value="carta" />
+                    <p class="guia">
+                      Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del
+                      mundo.
+                    </p>
+                    <p class="campo">
+                      <label for="carta_texto">La carta</label>
+                      <textarea id="carta_texto" name="carta_texto" rows="12" maxlength={TOPES.carta}
+                      >{borrador.carta?.texto ?? ""}</textarea>
+                    </p>
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y seguir</button>
+                    </p>
+                  </form>
+                )}
+
+                {pantalla === "preguntas" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="preguntas">
+                    <input type="hidden" name="paso" value="preguntas" />
+                    <p class="guia">
+                      Preguntas con su respuesta, que aparecen de a una en el regalo.
+                    </p>
+                    {[...preguntas, ...Array(huecosPreguntas).fill(null)].map((pregunta, i) => (
+                      <fieldset>
+                        <legend>Pregunta {i + 1}</legend>
+                        <p class="campo">
+                          <label for={`pregunta_texto_${i}`}>La pregunta</label>
+                          <input
+                            type="text"
+                            id={`pregunta_texto_${i}`}
+                            name="pregunta_texto"
+                            maxlength={TOPES.preguntaTexto}
+                            value={pregunta?.texto ?? ""}
+                          />
+                        </p>
+                        <p class="campo">
+                          <label for={`pregunta_respuesta_${i}`}>La respuesta (opcional)</label>
+                          <input
+                            type="text"
+                            id={`pregunta_respuesta_${i}`}
+                            name="pregunta_respuesta"
+                            maxlength={TOPES.preguntaRespuesta}
+                            value={pregunta?.respuesta ?? ""}
+                          />
+                        </p>
+                      </fieldset>
+                    ))}
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y seguir</button>
+                    </p>
+                  </form>
+                )}
+
+                {pantalla === "cierre" && (
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cierre">
+                    <input type="hidden" name="paso" value="cierre" />
+                    <p class="guia">Las últimas palabras, al final de todo.</p>
+                    <p class="campo">
+                      <label for="cierre_texto">El cierre</label>
+                      <textarea id="cierre_texto" name="cierre_texto" rows="4" maxlength={TOPES.cierre}
+                      >{borrador.cierre?.texto ?? ""}</textarea>
+                    </p>
+                    <p class="accion">
+                      <button type="submit" class="boton">Guardar y revisar</button>
+                    </p>
+                  </form>
+                )}
+
+                {pantalla === "resumen" && (
+                  <>
+                    {falta.length > 0 ? (
+                      <section class="ficha">
+                        <h2 class="rotulo">Antes de enviar falta esto</h2>
+                        <ul class="faltantes" data-faltantes>
+                          {falta.map((texto) => (
+                            <li>{texto}</li>
+                          ))}
+                        </ul>
+                        <p>
+                          Volvé al paso que corresponda, completalo y volvé acá. Lo que ya
+                          cargaste está guardado.
+                        </p>
+                      </section>
+                    ) : (
+                      <section class="ficha ficha-clave">
+                        <h2 class="rotulo">Todo listo</h2>
+                        <p data-listo>
+                          Tu historia está completa. Al enviarla nace tu regalo con su enlace
+                          de revisión: lo vas a poder mirar entero antes de aprobarlo, y
+                          corregir todo lo que quieras hasta entonces.
+                        </p>
+                        <form
+                          class="accion"
+                          method="POST"
+                          action={`/api/pedidos/${pedido.id}/enviar`}
+                          data-form-enviar
+                        >
+                          <button type="submit" class="boton">
+                            {pedido.regaloId ? "Enviar las correcciones" : "Enviar mi historia"}
+                          </button>
+                        </form>
+                      </section>
+                    )}
+
+                    <section class="ficha">
+                      <h2 class="rotulo">Lo que cargaste</h2>
+                      <ul class="datos">
+                        <li class="dato">
+                          <span class="rotulo">Para</span>
+                          <span class="valor">{borrador.destinatario?.nombre || "—"}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Clima visual</span>
+                          <span class="valor">{borrador.tema ?? "—"}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Momentos</span>
+                          <span class="valor">{momentos.filter((m) => m.texto?.trim()).length}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Fotos</span>
+                          <span class="valor">{fotos.length}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Canción</span>
+                          <span class="valor">{borrador.cancion?.url ? "sí" : "no"}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Carta</span>
+                          <span class="valor">{borrador.carta?.texto?.trim() ? "sí" : "no"}</span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Preguntas</span>
+                          <span class="valor">
+                            {preguntas.filter((p) => p.texto?.trim()).length}
+                          </span>
+                        </li>
+                        <li class="dato">
+                          <span class="rotulo">Cierre</span>
+                          <span class="valor">{borrador.cierre?.texto?.trim() ? "sí" : "no"}</span>
+                        </li>
+                      </ul>
+                    </section>
+                  </>
+                )}
               </div>
-            )}
-
-            {fotos.length === 0 && (
-              <p>
-                <a href={`/contar/${pedido.id}/cancion`}>Seguir sin fotos</a>
-              </p>
-            )}
-          </>
-        )}
-
-        {pantalla === "cancion" && (
-          <form method="POST" action={accionBorrador} data-paso="cancion">
-            <input type="hidden" name="paso" value="cancion" />
-            <p>Un enlace de Spotify o de YouTube. Suena dentro del regalo.</p>
-            <p>
-              <label for="cancion_url">Enlace</label>
-              <input
-                type="url"
-                id="cancion_url"
-                name="cancion_url"
-                maxlength={TOPES.cancionUrl}
-                value={borrador.cancion?.url ?? ""}
-              />
-            </p>
-            <p>
-              <label for="cancion_titulo">Título (opcional)</label>
-              <input
-                type="text"
-                id="cancion_titulo"
-                name="cancion_titulo"
-                maxlength={TOPES.cancionTexto}
-                value={borrador.cancion?.titulo ?? ""}
-              />
-            </p>
-            <p>
-              <label for="cancion_artista">Quién la canta (opcional)</label>
-              <input
-                type="text"
-                id="cancion_artista"
-                name="cancion_artista"
-                maxlength={TOPES.cancionTexto}
-                value={borrador.cancion?.artista ?? ""}
-              />
-            </p>
-            <button type="submit" class="boton">Guardar y seguir</button>
-          </form>
-        )}
-
-        {pantalla === "carta" && (
-          <form method="POST" action={accionBorrador} data-paso="carta">
-            <input type="hidden" name="paso" value="carta" />
-            <p>Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del mundo.</p>
-            <p>
-              <label for="carta_texto">La carta</label>
-              <textarea id="carta_texto" name="carta_texto" rows="12" maxlength={TOPES.carta}
-              >{borrador.carta?.texto ?? ""}</textarea>
-            </p>
-            <button type="submit" class="boton">Guardar y seguir</button>
-          </form>
-        )}
-
-        {pantalla === "preguntas" && (
-          <form method="POST" action={accionBorrador} data-paso="preguntas">
-            <input type="hidden" name="paso" value="preguntas" />
-            <p>Preguntas con su respuesta, que aparecen de a una en el regalo.</p>
-            {[...preguntas, ...Array(huecosPreguntas).fill(null)].map((pregunta, i) => (
-              <fieldset>
-                <legend>Pregunta {i + 1}</legend>
-                <p>
-                  <label for={`pregunta_texto_${i}`}>La pregunta</label>
-                  <input
-                    type="text"
-                    id={`pregunta_texto_${i}`}
-                    name="pregunta_texto"
-                    maxlength={TOPES.preguntaTexto}
-                    value={pregunta?.texto ?? ""}
-                  />
-                </p>
-                <p>
-                  <label for={`pregunta_respuesta_${i}`}>La respuesta (opcional)</label>
-                  <input
-                    type="text"
-                    id={`pregunta_respuesta_${i}`}
-                    name="pregunta_respuesta"
-                    maxlength={TOPES.preguntaRespuesta}
-                    value={pregunta?.respuesta ?? ""}
-                  />
-                </p>
-              </fieldset>
-            ))}
-            <button type="submit" class="boton">Guardar y seguir</button>
-          </form>
-        )}
-
-        {pantalla === "cierre" && (
-          <form method="POST" action={accionBorrador} data-paso="cierre">
-            <input type="hidden" name="paso" value="cierre" />
-            <p>Las últimas palabras, al final de todo.</p>
-            <p>
-              <label for="cierre_texto">El cierre</label>
-              <textarea id="cierre_texto" name="cierre_texto" rows="4" maxlength={TOPES.cierre}
-              >{borrador.cierre?.texto ?? ""}</textarea>
-            </p>
-            <button type="submit" class="boton">Guardar y revisar</button>
-          </form>
-        )}
-
-        {pantalla === "resumen" && (
-          <>
-            {falta.length > 0 ? (
-              <>
-                <p>Antes de enviar falta esto:</p>
-                <ul class="faltantes" data-faltantes>
-                  {falta.map((texto) => (
-                    <li>{texto}</li>
-                  ))}
-                </ul>
-                <p>
-                  Volvé al paso que corresponda, completalo y volvé acá. Lo que ya cargaste
-                  está guardado.
-                </p>
-              </>
-            ) : (
-              <>
-                <p data-listo>
-                  Tu historia está completa. Al enviarla nace tu regalo con su enlace de
-                  revisión: lo vas a poder mirar entero antes de aprobarlo, y corregir todo lo
-                  que quieras hasta entonces.
-                </p>
-                <form method="POST" action={`/api/pedidos/${pedido.id}/enviar`} data-form-enviar>
-                  <button type="submit" class="boton">
-                    {pedido.regaloId ? "Enviar las correcciones" : "Enviar mi historia"}
-                  </button>
-                </form>
-              </>
-            )}
-
-            <h2>Lo que cargaste</h2>
-            <ul class="puntos">
-              <li>Para: {borrador.destinatario?.nombre || "—"}</li>
-              <li>Clima visual: {borrador.tema ?? "—"}</li>
-              <li>Momentos: {momentos.filter((m) => m.texto?.trim()).length}</li>
-              <li>Fotos: {fotos.length}</li>
-              <li>Canción: {borrador.cancion?.url ? "sí" : "no"}</li>
-              <li>Carta: {borrador.carta?.texto?.trim() ? "sí" : "no"}</li>
-              <li>Preguntas: {preguntas.filter((p) => p.texto?.trim()).length}</li>
-              <li>Cierre: {borrador.cierre?.texto?.trim() ? "sí" : "no"}</li>
-            </ul>
-          </>
-        )}
-
-          </div>
-        </div>
+            </div>
+          )
+        }
 
         {pantalla === "enviado" && (
-          <>
+          <section class="ficha ficha-clave">
+            <h2 class="rotulo">En revisión</h2>
             <p data-enviado>
               Tu regalo ya existe y está en revisión. Miralo completo en tu enlace de
               revisión: desde ahí lo aprobás cuando estés conforme, y recién entonces queda
               definitivo.
             </p>
             {pedido.regaloId && (
-              <p>
+              <p class="accion">
                 <a class="boton" href={`/revisar/${pedido.regaloId}`} data-enlace-revision>
                   Ver y aprobar mi regalo
                 </a>
               </p>
             )}
-            <p>
+            <div class="hilo" />
+            <p class="opcional">
               ¿Querés cambiar algo? Mientras no lo apruebes, podés{" "}
               <a href={`/contar/${pedido.id}/destinatario`}>volver a tu carga</a> y reenviar
               las veces que quieras. El enlace del regalo no cambia nunca.
             </p>
-          </>
+          </section>
         )}
-      </>
+      </div>
     )
   }
 </VentaLayout>
@@ -617,13 +746,214 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
 </script>
 
 <style>
-  /* Formulario y vista previa, lado a lado en pantallas anchas. En el celular la vista
-     previa va ARRIBA: ver qué se está construyendo es el punto entero de tenerla, y abajo
-     del formulario no la vería nadie. */
+  /* ═══ Patrón del recorrido de compra ═══════════════════════════════════════════════════
+     Las cinco pantallas de la compra comparten tres primitivas y nada más: una FICHA que
+     contiene, un RÓTULO que nombra y un HILO que separa. Está documentado entero en
+     src/pages/gracias/[pedido].astro.
+
+     Acá cada paso de la carga ES una ficha: el formulario tiene un borde, un fondo y su
+     propio aire, y deja de leerse como un puñado de campos tirados sobre la página.      */
+
+  .hoja {
+    display: grid;
+    gap: var(--e-3);
+    --suave: var(--texto-suave);
+  }
+
+  .hoja > * {
+    margin-block: 0;
+  }
+
+  .cabecera h1 {
+    margin: 0 0 var(--e-1);
+  }
+
+  .cabecera p {
+    margin: 0;
+  }
+
+  .rotulo {
+    display: block;
+    margin: 0 0 var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    line-height: var(--i-cuerpo);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--suave);
+  }
+
+
+  /* --texto-suave está documentado contra --fondo (4.79:1). Adentro de una ficha el fondo es
+     --superficie, un tono más abajo, y el mismo gris cae a 4.45:1: debajo de AA. Un paso
+     hacia --texto lo devuelve arriba de 5.5:1 sin inventar un color nuevo. */
+  .ficha {
+    --suave: color-mix(in srgb, var(--texto-suave) 70%, var(--texto));
+    padding: var(--e-2);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-card);
+  }
+
+  @media (min-width: 30rem) {
+    .ficha {
+      padding: var(--e-3);
+    }
+  }
+
+  .ficha > :first-child {
+    margin-top: 0;
+  }
+
+  .ficha > :last-child {
+    margin-bottom: 0;
+  }
+
+  .ficha label,
+  .ficha legend,
+  .ficha .opcional,
+  .guia {
+    color: var(--suave);
+  }
+
+  .ficha-clave {
+    background: var(--papel);
+  }
+
+  .hilo {
+    height: 1px;
+    margin: var(--e-2) 0;
+    background: var(--borde);
+  }
+
+  .accion {
+    margin-top: var(--e-3);
+  }
+
+  /* `.opcional` nace en el layout como una fila flex (casilla + texto). Cuando es un
+     párrafo suelto, esa fila parte el texto de su enlace en dos columnas: acá vuelve a ser
+     un párrafo. */
+  p.opcional {
+    display: block;
+  }
+
+  /* ═══ La barra de pasos ═══════════════════════════════════════════════════════════════
+     Antes era una fila de enlaces apretados donde el paso actual se distinguía por un
+     subrayado. Ahora cada paso trae su medalla: número si está pendiente, tilde si ya tiene
+     contenido, lacre si es el que se está editando. Y arriba, en una línea, cuántos van y
+     cuántos faltan — la pregunta que se hace cualquiera que está cargando algo largo.
+
+     En pantallas angostas quedan solo las medallas y el nombre pasa a ser texto para lector
+     de pantalla: ocho nombres completos se comían el alto de la pantalla antes del primer
+     campo. El nombre del paso donde se está está igual, en grande, en el <h1> de abajo.   */
+
+  .recorrido ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .paso a {
+    display: flex;
+    align-items: center;
+    gap: var(--e-1);
+    font-size: var(--t-pequeno);
+    color: var(--texto-suave);
+    text-decoration: none;
+  }
+
+  .marca {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: calc(var(--e-2) * 2);
+    height: calc(var(--e-2) * 2);
+    font-size: var(--t-etiqueta);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto-suave);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: 50%;
+    transition: background var(--rapido) var(--curva);
+  }
+
+  .paso.hecho .marca {
+    color: var(--papel);
+    background: var(--realce);
+    border-color: var(--realce);
+  }
+
+  .paso.actual .marca {
+    color: var(--papel);
+    background: var(--acento);
+    border-color: var(--acento);
+  }
+
+  .paso.actual a {
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  /* Mismo recorte que .sr-only de base.css: a este ancho el nombre lo lee el lector de
+     pantalla, no el ojo. */
+  .nombre {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (min-width: 34rem) {
+    .nombre {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+
+    .paso a {
+      padding-right: var(--e-1);
+      border: 1px solid transparent;
+      border-radius: var(--radio);
+    }
+
+    .paso.actual a {
+      border-color: var(--acento);
+    }
+  }
+
+  /* ═══ Formulario y vista previa ═══════════════════════════════════════════════════════
+     Lado a lado en pantallas anchas. En el celular la vista previa va ARRIBA: ver qué se
+     está construyendo es el punto entero de tenerla, y abajo del formulario no la vería
+     nadie.                                                                               */
+
   .con-prevista {
     display: grid;
     gap: var(--e-3);
     align-items: start;
+  }
+
+  .formulario {
+    display: grid;
+    gap: var(--e-3);
+    /* Una línea de formulario no se lee mejor por ser más ancha: el ancho de página es el
+       tope, aunque la columna disponible sea mayor. */
+    min-width: 0;
+    max-width: var(--ancho-pagina);
   }
 
   @media (min-width: 60rem) {
@@ -643,32 +973,31 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
     gap: var(--e-2);
   }
 
-  nav ol {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--e-1) var(--e-2);
-    margin: 0 0 var(--e-3);
-    padding: 0;
-    list-style: none;
-    font-size: var(--t-pequeno);
-  }
+  /* ═══ Campos ══════════════════════════════════════════════════════════════════════════ */
 
-  nav li[aria-current="step"] a {
-    color: var(--texto);
-    font-weight: 500;
-    text-decoration: none;
-    border-bottom: 2px solid var(--acento);
+  .campo {
+    margin: 0 0 var(--e-2);
+    /* Los campos ocupan la ficha entera; el tope de 62ch es para la prosa, no para un
+       <textarea>. */
+    max-width: none;
   }
 
   fieldset {
     margin: 0 0 var(--e-2);
     padding: var(--e-2);
+    background: color-mix(in srgb, var(--papel) 55%, transparent);
     border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+
+  fieldset > :last-child {
+    margin-bottom: 0;
   }
 
   legend {
     padding: 0 var(--e-1);
     font-size: var(--t-etiqueta);
+    font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--texto-suave);
@@ -681,7 +1010,7 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
   select,
   textarea {
     width: 100%;
-    padding: var(--e-1);
+    padding: var(--e-1) var(--e-2);
     font-family: var(--f-cuerpo);
     font-size: var(--t-cuerpo);
     color: var(--texto);
@@ -692,32 +1021,96 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
 
   textarea {
     resize: vertical;
+    line-height: var(--i-cuerpo);
   }
 
+  .opciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1);
+  }
+
+  /* El clima visual se elige entre tres: tres pastillas, no tres radios sueltos. El control
+     real sigue ahí y sigue siendo el que recibe el clic — nada se esconde. */
   .opcion {
     display: inline-flex;
     align-items: center;
     gap: var(--e-1);
-    margin-right: var(--e-2);
+    margin: 0;
+    padding: var(--e-1) var(--e-2);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    cursor: pointer;
+  }
+
+  .opcion:has(input:checked) {
+    border-color: var(--acento);
+    box-shadow: inset 0 0 0 1px var(--acento);
+  }
+
+  .opcion span {
+    text-transform: capitalize;
   }
 
   .foto img {
     margin-bottom: var(--e-1);
     border: 1px solid var(--borde);
+    border-radius: var(--radio);
   }
 
-  .quitar form {
-    display: inline-block;
-    margin: 0 var(--e-1) var(--e-1) 0;
+  .botonera {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e-1);
   }
 
+  .salida {
+    margin: 0;
+    font-size: var(--t-pequeno);
+  }
+
+  /* ═══ Resumen ═════════════════════════════════════════════════════════════════════════ */
+
+  /* Mismo gesto que un .aviso, con la barra del grosor de un paso de la escala en vez de
+     tres píxeles sueltos. */
   .faltantes {
-    padding: var(--e-2) var(--e-2) var(--e-2) var(--e-3);
-    background: var(--superficie);
-    border-left: 3px solid var(--acento);
+    margin: 0 0 var(--e-2);
+    /* El sangrado izquierdo es el que necesita la viñeta para caer dentro de la caja. */
+    padding: var(--e-2) var(--e-2) var(--e-2) var(--e-4);
+    background: var(--papel);
+    border-left: var(--e-1) solid var(--acento);
   }
 
   .faltantes li {
     margin-bottom: var(--e-1);
+  }
+
+  .faltantes li:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Mismo recibo que /gracias: rótulo arriba, dato abajo, un hilo por fila. */
+  .datos {
+    display: grid;
+    gap: var(--e-2);
+    grid-template-columns: repeat(auto-fit, minmax(calc(var(--ancho-texto) / 2), 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dato {
+    min-width: 0;
+    padding-top: var(--e-1);
+    border-top: 1px solid var(--borde);
+  }
+
+  .valor {
+    display: block;
+    /* FR-032: un nombre sin espacios no puede empujar la columna. */
+    overflow-wrap: anywhere;
   }
 </style>
