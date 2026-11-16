@@ -27,6 +27,7 @@ VARIABLES=(
   QR_PAGO_TITULAR
   QR_PAGO_BANCO
   EJEMPLO_SLUG
+  EJEMPLOS_POR_OCASION
 )
 
 [ -f "$ARCHIVO" ] || { echo "no encuentro $ARCHIVO"; exit 1; }

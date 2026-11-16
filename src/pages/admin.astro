@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+
+// Puerta memorable al panel de pedidos.
+//
+// Existe por un motivo de operación, no técnico: el dueño tiene que poder entrar desde
+// cualquier teléfono escribiendo algo que se acuerde. `/acceso-cola` describe bien lo que
+// hace, pero nadie recuerda esa palabra a los tres días; `/admin` sí.
+//
+// No afloja nada: la clave sigue siendo la misma y `/pedidos` sigue contestando 404 sin
+// credencial. Lo único que esto agrega es una dirección fácil de recordar hacia la puerta.
+return Astro.redirect("/acceso-cola", 307);
+---
