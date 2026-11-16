@@ -89,6 +89,17 @@ export function rutaEnRegalo(ruta: string, pedidoId: string, regaloId: string): 
   return ruta;
 }
 
+export interface OpcionesTraduccion {
+  /**
+   * Deja las rutas de las fotos como están, sin mudarlas al prefijo del regalo.
+   *
+   * Lo usa la vista previa de la carga: ahí el regalo todavía no nació, las fotos siguen
+   * viviendo bajo el prefijo del pedido, y reescribirlas apuntaría a objetos que no existen.
+   * En el envío —el único lugar donde esto se guarda— la mudanza sí ocurre.
+   */
+  conservarRutas?: boolean;
+}
+
 function fotoDeBloque(
   ruta: string,
   alt: string | undefined,
@@ -96,6 +107,7 @@ function fotoDeBloque(
   alto: number | undefined,
   pedidoId: string,
   regaloId: string,
+  conservarRutas = false,
 ): Foto {
   return {
     // `url` queda vacía a propósito: la dirección de acceso se firma en cada render y nunca
@@ -103,7 +115,7 @@ function fotoDeBloque(
     // eliminarlo, y conserva su significado para el contenido que sí lo usa.
     url: "",
     alt: alt?.trim() ?? "",
-    ruta: rutaEnRegalo(ruta, pedidoId, regaloId),
+    ruta: conservarRutas ? ruta : rutaEnRegalo(ruta, pedidoId, regaloId),
     ...(ancho ? { ancho } : {}),
     ...(alto ? { alto } : {}),
   };
@@ -117,7 +129,13 @@ function fotoDeBloque(
  * `tema` no viaja acá: va a la columna `regalos.tema`. El tema es del regalo, no de la
  * receta.
  */
-export function aContenido(borrador: Borrador, pedidoId: string, regaloId: string): Contenido {
+export function aContenido(
+  borrador: Borrador,
+  pedidoId: string,
+  regaloId: string,
+  opciones: OpcionesTraduccion = {},
+): Contenido {
+  const conservar = opciones.conservarRutas === true;
   const receta: Bloque[] = [];
   const posicion = () => receta.length;
 
@@ -151,7 +169,17 @@ export function aContenido(borrador: Borrador, pedidoId: string, regaloId: strin
       texto,
       ...(momento.fecha ? { fecha: momento.fecha } : {}),
       ...(foto
-        ? { foto: fotoDeBloque(foto.ruta, foto.alt, foto.ancho, foto.alto, pedidoId, regaloId) }
+        ? {
+            foto: fotoDeBloque(
+              foto.ruta,
+              foto.alt,
+              foto.ancho,
+              foto.alto,
+              pedidoId,
+              regaloId,
+              conservar,
+            ),
+          }
         : {}),
     });
   }
@@ -163,7 +191,7 @@ export function aContenido(borrador: Borrador, pedidoId: string, regaloId: strin
       tipo: "galeria",
       posicion: posicion(),
       fotos: deGaleria.map((foto) =>
-        fotoDeBloque(foto.ruta, foto.alt, foto.ancho, foto.alto, pedidoId, regaloId),
+        fotoDeBloque(foto.ruta, foto.alt, foto.ancho, foto.alto, pedidoId, regaloId, conservar),
       ),
     });
   }

@@ -293,10 +293,12 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
   import { animate } from "motion/mini";
   import { inView, stagger } from "motion";
 
+  const SUAVE = [0.2, 0.8, 0.3, 1] as [number, number, number, number];
+
   const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (!sinMovimiento) {
-    const entradas = document.querySelectorAll(".entra");
+    const entradas = document.querySelectorAll<HTMLElement>(".entra");
 
     for (const elemento of entradas) {
       elemento.style.opacity = "0";
@@ -309,17 +311,17 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
         animate(
           elemento,
           { opacity: 1, transform: "translateY(0px)" },
-          { duration: 0.7, easing: [0.2, 0.8, 0.3, 1] },
+          { duration: 0.7, ease: SUAVE },
         );
 
         // Las listas entran de a un ítem: es lo que hace que se lea como algo que se está
         // escribiendo y no como un bloque que aparece.
-        const hijos = elemento.querySelectorAll(":scope > li, :scope > dt, :scope > dd");
+        const hijos = elemento.querySelectorAll<HTMLElement>(":scope > li, :scope > dt, :scope > dd");
         if (hijos.length > 0) {
           animate(
             hijos,
             { opacity: [0, 1], transform: ["translateY(10px)", "translateY(0px)"] },
-            { duration: 0.5, delay: stagger(0.06), easing: [0.2, 0.8, 0.3, 1] },
+            { duration: 0.5, delay: stagger(0.06), ease: SUAVE },
           );
         }
       },
@@ -328,16 +330,24 @@ const slugEjemplo = await obtenerSlugDeEjemplo();
 
     // El contador del sobre cuenta hasta su número cuando la página abre: es el gesto que
     // mejor explica el producto —tiempo que se acumula— sin una línea de texto más.
-    const contador = document.querySelector("[data-contador]");
+    //
+    // A mano y no con la librería: `motion/mini` anima elementos, no números sueltos, y
+    // traer el `animate` completo solo para esto costaría más que estas ocho líneas.
+    const contador = document.querySelector<HTMLElement>("[data-contador]");
     if (contador) {
       const final = Number(contador.textContent) || 0;
-      animate(0, final, {
-        duration: 2.2,
-        easing: "ease-out",
-        onUpdate: (valor) => {
-          contador.textContent = Math.round(valor).toLocaleString("es-BO");
-        },
-      });
+      const empezo = performance.now();
+      const dura = 2200;
+
+      const paso = (ahora: number) => {
+        const t = Math.min(1, (ahora - empezo) / dura);
+        // Misma curva de salida que el resto: rápido al principio, se apoya al final.
+        const valor = Math.round(final * (1 - Math.pow(1 - t, 3)));
+        contador.textContent = valor.toLocaleString("es-BO");
+        if (t < 1) requestAnimationFrame(paso);
+      };
+
+      requestAnimationFrame(paso);
     }
   }
 </script>

@@ -1,0 +1,250 @@
+---
+import { registro } from "../bloques/registro.ts";
+import { aContenido } from "../lib/borrador/a-contenido.ts";
+import { firmarRutas } from "../lib/fotos.ts";
+import type { Borrador } from "../lib/borrador/esquema.ts";
+import type { Bloque, Foto } from "../lib/contenido/tipos-bloque.ts";
+import nocturnoCss from "../temas/tokens-nocturno.css?raw";
+import papelCss from "../temas/tokens-papel.css?raw";
+import luminosoCss from "../temas/tokens-luminoso.css?raw";
+
+// Vista previa del regalo mientras se carga la historia.
+//
+// La decisión de fondo: dibuja con LOS MISMOS OCHO COMPONENTES del motor, no con una copia.
+// Un render propio para la vista previa divergiría del real tarde o temprano, y el día que
+// divergiera el comprador aprobaría una cosa y recibiría otra —exactamente lo que el
+// Principio VI prohíbe—. Acá se traduce el borrador a contenido con la misma función que usa
+// el envío y se lo entrega al mismo registro de bloques.
+//
+// El motor no se toca: esto lo consume, no lo modifica (research.md #20).
+
+interface Props {
+  borrador: Borrador;
+  pedidoId: string;
+  /** Resalta el bloque del paso que se está editando. */
+  pasoActivo?: string;
+  /** Vista a tamaño completo, para mirarla sin el formulario al lado. */
+  grande?: boolean;
+}
+
+const { borrador, pedidoId, pasoActivo, grande = false } = Astro.props;
+
+// `conservarRutas`: el regalo todavía no nació, así que las fotos siguen bajo el prefijo del
+// pedido. Mudarlas acá apuntaría a objetos que no existen.
+const contenido = aContenido(borrador, pedidoId, "", { conservarRutas: true });
+
+// Las direcciones de las fotos se firman para este render y mueren con él (FR-020).
+const rutas: string[] = [];
+for (const bloque of contenido.receta) {
+  const foto = (bloque as { foto?: Foto }).foto;
+  if (foto?.ruta) rutas.push(foto.ruta);
+  for (const deGaleria of (bloque as { fotos?: Foto[] }).fotos ?? []) {
+    if (deGaleria.ruta) rutas.push(deGaleria.ruta);
+  }
+}
+const firmadas = rutas.length > 0 ? await firmarRutas(rutas) : new Map<string, string>();
+
+function resolver(foto: Foto): Foto | null {
+  if (!foto.ruta) return foto.url ? foto : null;
+  const url = firmadas.get(foto.ruta);
+  return url ? { ...foto, url } : null;
+}
+
+const receta: Bloque[] = contenido.receta.map((bloque) => {
+  const foto = (bloque as { foto?: Foto }).foto;
+  if (foto) {
+    const resuelta = resolver(foto);
+    const copia = { ...bloque } as Bloque & { foto?: Foto };
+    if (resuelta) copia.foto = resuelta;
+    else delete copia.foto;
+    return copia;
+  }
+
+  const fotos = (bloque as { fotos?: Foto[] }).fotos;
+  if (fotos) {
+    return {
+      ...bloque,
+      fotos: fotos.map(resolver).filter((f): f is Foto => f !== null),
+    } as Bloque;
+  }
+
+  return bloque;
+});
+
+// Qué bloque corresponde al paso que se está editando, para destacarlo.
+const BLOQUE_DEL_PASO: Record<string, string> = {
+  destinatario: "portada",
+  momentos: "momento",
+  fotos: "galeria",
+  cancion: "cancion",
+  carta: "carta",
+  preguntas: "pregunta",
+  cierre: "cierre",
+};
+const tipoActivo = pasoActivo ? BLOQUE_DEL_PASO[pasoActivo] : undefined;
+
+const tema = borrador.tema ?? "luminoso";
+const vacio = receta.length <= 1 && !borrador.destinatario?.nombre;
+---
+
+<aside class="prevista" data-grande={grande ? "" : undefined} aria-label="Vista previa de tu regalo">
+  {
+    !grande && (
+      <p class="titulo-prevista">
+        Así va quedando
+        <span data-nombre-prevista>
+          lo que va a ver {borrador.destinatario?.nombre?.trim() || "quien lo reciba"}
+        </span>
+      </p>
+    )
+  }
+
+  <div class="telefono">
+    <div class="pantalla" data-tema={tema} data-prevista>
+      {
+        vacio ? (
+          <p class="vacio">
+            Acá vas a ver tu regalo mientras lo armás. Empezá por el nombre de quien lo
+            recibe.
+          </p>
+        ) : (
+          receta.map((bloque) => {
+            const Componente = registro[bloque.tipo];
+            if (!Componente) return null;
+            return (
+              <div
+                class="bloque-prevista"
+                data-activo={bloque.tipo === tipoActivo ? "" : undefined}
+              >
+                <Componente {...bloque} />
+              </div>
+            );
+          })
+        )
+      }
+    </div>
+  </div>
+
+  {
+    !grande && (
+      <p class="en-grande">
+        <a href={`/contar/${pedidoId}/prevista`}>Verla en grande</a>
+      </p>
+    )
+  }
+</aside>
+
+{/* Los tres temas van completos, como en el regalo real: el atributo data-tema de la
+    pantalla decide cuál aplica, así cambiar de clima visual no recarga nada. */}
+<style is:global set:html={luminosoCss + nocturnoCss + papelCss}></style>
+
+<style>
+  .prevista {
+    position: sticky;
+    top: var(--e-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e-1);
+  }
+
+  .titulo-prevista {
+    margin: 0;
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  .titulo-prevista span {
+    display: block;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: var(--t-pequeno);
+  }
+
+  /* El marco de teléfono no es decoración: el regalo se lee en un celular, y verlo dentro
+     de uno es lo que hace que el comprador entienda qué está construyendo. */
+  .telefono {
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 9 / 19;
+    padding: 10px;
+    background: linear-gradient(160deg, #2a2a2e, #141416);
+    border-radius: 34px;
+    box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.35),
+      0 24px 48px -28px rgba(0, 0, 0, 0.6);
+  }
+
+  .pantalla {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 26px;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--f-cuerpo);
+    /* El regalo se dibuja a tamaño de página y acá entra en 300 px: se achica entero, con
+       su tipografía y sus proporciones, en vez de reflowear a un layout que no existe. */
+    zoom: 0.46;
+  }
+
+  .vacio {
+    padding: var(--e-4) var(--e-3);
+    color: var(--texto-suave);
+    font-size: var(--t-cuerpo);
+    text-align: center;
+  }
+
+  .bloque-prevista {
+    position: relative;
+    transition: opacity var(--normal) ease;
+  }
+
+  /* El bloque del paso que se está editando se ve entero; el resto se apaga un poco, para
+     que el ojo sepa dónde está parado sin que el resto desaparezca. */
+  [data-prevista]:has([data-activo]) .bloque-prevista:not([data-activo]) {
+    opacity: 0.45;
+  }
+
+  .en-grande {
+    margin: 0;
+    font-size: var(--t-pequeno);
+  }
+
+  /* En el celular el formulario manda: la vista previa es del tamaño de un vistazo, y quien
+     quiera mirarla de verdad entra a verla en grande. Ocupando media pantalla empujaría el
+     paso que la persona vino a completar. */
+  @media (max-width: 60rem) {
+    .prevista {
+      position: static;
+      align-items: center;
+      text-align: center;
+    }
+
+    .prevista:not([data-grande]) .telefono {
+      max-width: 160px;
+      padding: 6px;
+      border-radius: 22px;
+    }
+
+    .prevista:not([data-grande]) .pantalla {
+      border-radius: 17px;
+      zoom: 0.25;
+    }
+  }
+
+  .prevista[data-grande] {
+    position: static;
+    align-items: center;
+  }
+
+  .prevista[data-grande] .telefono {
+    max-width: 340px;
+  }
+
+  .prevista[data-grande] .pantalla {
+    zoom: 0.52;
+  }
+</style>

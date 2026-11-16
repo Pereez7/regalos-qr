@@ -1,5 +1,6 @@
 ---
 import VentaLayout from "../../../layouts/VentaLayout.astro";
+import PrevistaRegalo from "../../../componentes/PrevistaRegalo.astro";
 import { cargaCerrada, obtenerPedidoConRegalo } from "../../../lib/pedidos.ts";
 import { PASOS, TEMAS, TOPES, parsearBorrador } from "../../../lib/borrador/esquema.ts";
 import { faltantes } from "../../../lib/borrador/a-contenido.ts";
@@ -16,7 +17,7 @@ export const prerender = false;
 
 const { pedido: pedidoId, paso } = Astro.params;
 
-const PANTALLAS = [...PASOS, "resumen", "enviado"] as const;
+const PANTALLAS = [...PASOS, "resumen", "enviado", "prevista"] as const;
 type Pantalla = (typeof PANTALLAS)[number];
 
 if (!paso || !(PANTALLAS as readonly string[]).includes(paso)) {
@@ -50,6 +51,7 @@ const TITULOS: Record<Pantalla, string> = {
   cierre: "El cierre",
   resumen: "Revisar y enviar",
   enviado: "Enviado",
+  prevista: "Así va quedando",
 };
 
 // Filas en blanco para poder agregar sin JavaScript: el formulario trae siempre un par de
@@ -100,6 +102,26 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
         </nav>
 
         <h1>{TITULOS[pantalla]}</h1>
+
+        {
+          pantalla === "prevista" && (
+            <div class="prevista-grande">
+              <PrevistaRegalo borrador={borrador} pedidoId={pedido.id} grande />
+              <p>
+                <a class="boton" href={`/contar/${pedido.id}/${borrador.paso ?? "destinatario"}`}>
+                  Volver a editar
+                </a>
+              </p>
+            </div>
+          )
+        }
+
+        <div class="con-prevista">
+          {pantalla !== "enviado" && pantalla !== "prevista" && (
+            <PrevistaRegalo borrador={borrador} pedidoId={pedido.id} pasoActivo={pantalla} />
+          )}
+
+          <div class="formulario">
 
         {pantalla === "destinatario" && (
           <form method="POST" action={accionBorrador} data-paso="destinatario">
@@ -446,6 +468,9 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
           </>
         )}
 
+          </div>
+        </div>
+
         {pantalla === "enviado" && (
           <>
             <p data-enviado>
@@ -473,6 +498,65 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
 </VentaLayout>
 
 <script>
+  // La vista previa se dibuja en el servidor con los mismos componentes del motor, así que
+  // siempre dice la verdad. Esto solo adelanta lo que se va a ver al guardar: mientras
+  // escribís, el texto del campo se copia al bloque correspondiente de la vista previa.
+  //
+  // Es deliberadamente de una sola dirección y solo de texto. Lo estructural —una foto, un
+  // momento nuevo, cambiar de clima visual— se ve al guardar el paso, porque eso lo decide
+  // el servidor y copiarlo acá sería mantener dos motores que tarde o temprano divergen.
+  //
+  // Si el motor cambiara su marcado, esto deja de encontrar el nodo y simplemente no
+  // actualiza hasta guardar: se degrada, no se rompe.
+  const prevista = document.querySelector("[data-prevista]");
+
+  if (prevista) {
+    const espejo = (selectorCampo: string, selectorDestino: string) => {
+      const campo = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selectorCampo);
+      const destino = prevista.querySelector<HTMLElement>(selectorDestino);
+      if (!campo || !destino) return;
+
+      campo.addEventListener("input", () => {
+        destino.textContent = campo.value;
+      });
+    };
+
+    espejo("#nombre", '[data-bloque="portada"] h1');
+
+    // El encabezado de la vista previa nombra a quien recibe: si no lo actualizara, diría un
+    // nombre mientras la pantalla muestra otro.
+    const campoNombre = document.querySelector<HTMLInputElement>("#nombre");
+    const rotulo = document.querySelector<HTMLElement>("[data-nombre-prevista]");
+    if (campoNombre && rotulo) {
+      campoNombre.addEventListener("input", () => {
+        const nombre = campoNombre.value.trim();
+        rotulo.textContent = `lo que va a ver ${nombre || "quien lo reciba"}`;
+      });
+    }
+    espejo("#subtitulo", '[data-bloque="portada"] p');
+    espejo("#carta_texto", '[data-bloque="carta"] p');
+    espejo("#cierre_texto", '[data-bloque="cierre"] p');
+
+    // Los campos repetidos se emparejan por posición con sus bloques, igual que al guardar.
+    const textosMomento = document.querySelectorAll<HTMLTextAreaElement>(
+      'textarea[name="momento_texto"]',
+    );
+    const bloquesMomento = prevista.querySelectorAll<HTMLElement>('[data-bloque="momento"] p');
+    textosMomento.forEach((campo, i) => {
+      const destino = bloquesMomento[i];
+      if (destino) campo.addEventListener("input", () => (destino.textContent = campo.value));
+    });
+
+    const titulosMomento = document.querySelectorAll<HTMLInputElement>(
+      'input[name="momento_titulo"]',
+    );
+    const encabezados = prevista.querySelectorAll<HTMLElement>('[data-bloque="momento"] h2');
+    titulosMomento.forEach((campo, i) => {
+      const destino = encabezados[i];
+      if (destino) campo.addEventListener("input", () => (destino.textContent = campo.value));
+    });
+  }
+
   // T046 · Mejora opcional sobre un camino que ya funciona: si hay JavaScript, la foto se
   // reduce en el navegador ANTES de subirla. Sin esto el formulario anda igual, con el tope
   // de la plataforma (research.md #5).
@@ -533,6 +617,32 @@ const huecosPreguntas = Math.min(2, Math.max(0, TOPES.preguntas - preguntas.leng
 </script>
 
 <style>
+  /* Formulario y vista previa, lado a lado en pantallas anchas. En el celular la vista
+     previa va ARRIBA: ver qué se está construyendo es el punto entero de tenerla, y abajo
+     del formulario no la vería nadie. */
+  .con-prevista {
+    display: grid;
+    gap: var(--e-3);
+    align-items: start;
+  }
+
+  @media (min-width: 60rem) {
+    .con-prevista {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .formulario {
+      order: -1;
+    }
+  }
+
+  .prevista-grande {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--e-2);
+  }
+
   nav ol {
     display: flex;
     flex-wrap: wrap;
