@@ -2,11 +2,10 @@
 import VentaLayout from "../layouts/VentaLayout.astro";
 import {
   COOKIE_OPS,
-  DURACION_COOKIE_OPS,
   claveOpsValida,
-  cookieOpsValida,
-  secretoOps,
-  tokenOps,
+  emitirSesionOps,
+  opcionesCookieOps,
+  sesionOpsValida,
 } from "../lib/ops.ts";
 import {
   avisosPendientesOFallidos,
@@ -23,30 +22,36 @@ export const prerender = false;
 // FR-008 y research.md #14: la cola operativa. Visibilidad, no administración — el panel
 // completo está fuera de alcance.
 //
-// Compuerta PROPIA, derivada de OPS_SECRET e independiente de MODO_INTERNO: ese flag se
-// apaga el día que la landing se abre al público, y esta página muestra correos de
-// compradores (CONTRADICCIONES H9). Sin credencial responde 404 y no 401, igual que
-// /acceso: un 401 delataría que acá hay algo.
+// Compuerta PROPIA e independiente de MODO_INTERNO: ese flag se apaga el día que la landing
+// se abre al público, y esta página muestra correos de compradores (CONTRADICCIONES H9). Sin
+// credencial responde 404 y no 401, igual que /acceso: un 401 delataría que acá hay algo.
+//
+// Se entra de dos maneras. La normal es la sesión de `/admin`, abierta con usuario y
+// contraseña. La otra es `?clave=<OPS_SECRET>`, que no pasa por el formulario: es la vía de
+// emergencia —y la que usan los tests— para el día que la contraseña no esté a mano pero sí
+// el entorno del proyecto.
 
 const clave = Astro.url.searchParams.get("clave");
+const porClave = claveOpsValida(clave);
 const cookie = Astro.cookies.get(COOKIE_OPS)?.value;
-const autorizado = claveOpsValida(clave) || cookieOpsValida(cookie);
 
-if (!autorizado) {
+if (!porClave && !sesionOpsValida(cookie)) {
   return new Response(null, { status: 404 });
 }
 
-// La clave correcta deja la cookie, para no tener que llevar el secreto en la barra de
-// direcciones en cada recarga. Lo que se guarda es el token DERIVADO, no OPS_SECRET: una
-// cookie filtrada no puede borrar pedidos por API.
-if (claveOpsValida(clave) && secretoOps()) {
-  Astro.cookies.set(COOKIE_OPS, tokenOps()!, {
-    httpOnly: true,
-    secure: Astro.url.protocol === "https:",
-    sameSite: "lax",
-    path: "/",
-    maxAge: DURACION_COOKIE_OPS,
-  });
+// Sesión deslizante: cada visita vuelve a poner el reloj en 12 horas. Es lo que hace que una
+// jornada entera de trabajo no pida credenciales a mitad de camino, sin dejar la sesión
+// abierta para siempre — doce horas sin tocar la cola y hay que volver a entrar.
+//
+// Entrar por `?clave=` también deja la sesión puesta, para no tener que arrastrar el secreto
+// en la barra de direcciones en cada recarga.
+const sesionRenovada = emitirSesionOps();
+if (sesionRenovada) {
+  Astro.cookies.set(
+    COOKIE_OPS,
+    sesionRenovada,
+    opcionesCookieOps(Astro.url.protocol === "https:"),
+  );
 }
 
 const [porConfirmar, pagadosSinRegalo, abandonados, avisos, huerfanos, discrepancias] =

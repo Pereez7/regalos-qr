@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { getServiceClient } from "../../../../lib/supabase.ts";
-import { COOKIE_OPS, autorizadoPorCabecera, cookieOpsValida } from "../../../../lib/ops.ts";
+import { COOKIE_OPS, autorizadoPorCabecera, sesionOpsValida } from "../../../../lib/ops.ts";
 import { obtenerPedido } from "../../../../lib/pedidos.ts";
 import {
   CABECERA_FIRMA,
@@ -26,7 +26,7 @@ export const prerender = false;
 export const POST: APIRoute = async ({ params, request, cookies, redirect }) => {
   // Dos credenciales para el mismo permiso: la cookie de la cola, para el botón; el secreto
   // por cabecera, para una llamada desde fuera del navegador.
-  const desdeLaCola = cookieOpsValida(cookies.get(COOKIE_OPS)?.value);
+  const desdeLaCola = sesionOpsValida(cookies.get(COOKIE_OPS)?.value);
   if (!desdeLaCola && !autorizadoPorCabecera(request)) {
     return new Response(null, { status: 401 });
   }

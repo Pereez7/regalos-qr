@@ -9,20 +9,17 @@ acuerdes cómo entrar.
 https://regalos-qr-nine.vercel.app/admin
 ```
 
-Pegás la **clave de operación** y entrás. La clave es el valor de `OPS_SECRET`.
+Usuario y contraseña. Guardalos en el gestor de contraseñas del teléfono —ahí el formulario
+se autocompleta solo— y no en una nota.
 
-```bash
-# copiarla al portapapeles desde el proyecto
-grep ^OPS_SECRET= .env | cut -d= -f2- | tr -d '\n' | pbcopy
-```
+La sesión queda abierta **12 horas** en ese navegador y **se renueva sola cada vez que abrís
+la cola**: entrás a la mañana y no te vuelve a pedir nada en toda la jornada. Doce horas sin
+tocarla y hay que escribir las credenciales de nuevo. En el teléfono conviene **agregar la
+página a la pantalla de inicio**: queda como una app.
 
-Guardala en el gestor de contraseñas del teléfono. Es la única llave.
+Cuando terminás en un navegador que no es tuyo, apretá **Salir**.
 
-Una vez adentro, el navegador queda recordado **30 días** y entrás escribiendo `/pedidos` a
-secas. En el teléfono conviene **agregar la página a la pantalla de inicio**: queda como una
-app y abre sin pedir nada.
-
-## Por qué `/pedidos` contesta "no existe" si entrás sin la clave
+## Por qué `/pedidos` contesta "no existe" si entrás sin la sesión
 
 No es un error. Esa página lista correos de compradores y tiene el botón que confirma pagos,
 así que sin credencial responde **404** y no "no autorizado": un 401 le confirmaría a
@@ -48,11 +45,49 @@ Cinco listas, en el orden en que importan:
 correos, así que después de confirmar un pago hay que escribirle vos. El correo está en la
 misma fila de la cola.
 
-## Si perdés el teléfono
+## Cambiar la contraseña (o si perdés el teléfono)
 
-Cambiá `OPS_SECRET` en Vercel y volvé a desplegar. Eso **invalida todas las sesiones abiertas
-de golpe**, porque la cookie guarda un valor derivado de ese secreto y no el secreto mismo. No
-hay lista de sesiones que revisar.
+```bash
+npm run ops:clave -- charles
+```
+
+Te pide la contraseña nueva dos veces sin mostrarla e imprime las dos líneas para pegar. La
+contraseña en texto plano no queda guardada en ningún lado: ni en `.env`, ni en el historial
+del shell, ni en la salida del script. Lo que se guarda es `OPS_PASSWORD_HASH`, un hash
+scrypt con sal — con eso no se entra.
+
+Pegá las dos líneas en tu `.env` local y subí el hash a Vercel:
+
+```bash
+vercel env rm OPS_PASSWORD_HASH production --yes
+printf '%s' '<el hash que imprimió el script>' | vercel env add OPS_PASSWORD_HASH production
+vercel --prod
+```
+
+Eso **cierra todas las sesiones abiertas de golpe**, en todos los teléfonos, porque la cookie
+va firmada con una clave derivada del hash. No hay lista de sesiones que revisar.
+
+## La otra credencial: `OPS_SECRET`
+
+No se usa para entrar por el navegador. Es la credencial de las **máquinas**: las rutas de API
+(`Authorization: Bearer <OPS_SECRET>`) y los scripts de operación. También sirve de vía de
+emergencia para abrir la cola sin formulario, por si alguna vez tenés el entorno del proyecto
+a mano y la contraseña no:
+
+```
+/pedidos?clave=<OPS_SECRET>
+```
+
+Evitá ese camino salvo apuro real: el secreto queda en el historial del navegador, en las
+sugerencias de la barra de direcciones y en cualquier captura de pantalla. Para eso existe
+`/admin`.
+
+```bash
+# copiarlo al portapapeles desde el proyecto
+grep ^OPS_SECRET= .env | cut -d= -f2- | tr -d '\n' | pbcopy
+```
+
+Rotarlo también cierra todas las sesiones abiertas:
 
 ```bash
 vercel env rm OPS_SECRET production --yes

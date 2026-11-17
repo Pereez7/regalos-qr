@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { COOKIE_OPS, autorizadoPorCabecera, cookieOpsValida } from "../../../../lib/ops.ts";
+import { COOKIE_OPS, autorizadoPorCabecera, sesionOpsValida } from "../../../../lib/ops.ts";
 import { reintentarAviso } from "../../../../lib/avisos.ts";
 
 export const prerender = false;
@@ -11,7 +11,7 @@ export const prerender = false;
 // infraestructura que no se puede ejercitar a mano y que puede duplicar mensajes.
 
 export const POST: APIRoute = async ({ params, request, cookies, redirect }) => {
-  const desdeLaCola = cookieOpsValida(cookies.get(COOKIE_OPS)?.value);
+  const desdeLaCola = sesionOpsValida(cookies.get(COOKIE_OPS)?.value);
   if (!desdeLaCola && !autorizadoPorCabecera(request)) {
     return new Response(null, { status: 401 });
   }

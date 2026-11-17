@@ -3,8 +3,9 @@ import { COOKIE_OPS } from "../lib/ops.ts";
 
 export const prerender = false;
 
-// Cierra la sesión de la cola en este navegador. Con una cookie de 30 días, poder salir deja
-// de ser un adorno: es lo que hace segura una entrada desde un teléfono prestado.
+// Cierra la sesión de la cola en este navegador. Con una sesión que se renueva sola mientras
+// se la usa, poder salir deja de ser un adorno: es lo que hace segura una entrada desde un
+// teléfono prestado.
 //
 // Es POST y no GET a propósito: un GET lo dispara cualquier precargador de enlaces, y nadie
 // quiere que el navegador lo saque de la cola por adelantar una página.
@@ -15,7 +16,7 @@ if (Astro.request.method !== "POST") {
 
 Astro.cookies.delete(COOKIE_OPS, { path: "/" });
 
-return Astro.redirect("/acceso-cola", 303);
+return Astro.redirect("/admin", 303);
 ---
 
 <!-- Esta página nunca se renderiza: los dos caminos redirigen. -->

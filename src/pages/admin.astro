@@ -1,13 +1,109 @@
 ---
+import VentaLayout from "../layouts/VentaLayout.astro";
+import {
+  COOKIE_OPS,
+  credencialesOpsValidas,
+  emitirSesionOps,
+  hashPasswordOps,
+  opcionesCookieOps,
+  usuarioOps,
+} from "../lib/ops.ts";
+
 export const prerender = false;
 
-// Puerta memorable al panel de pedidos.
+// La puerta del panel de pedidos: usuario y contraseña.
 //
-// Existe por un motivo de operación, no técnico: el dueño tiene que poder entrar desde
-// cualquier teléfono escribiendo algo que se acuerde. `/acceso-cola` describe bien lo que
-// hace, pero nadie recuerda esa palabra a los tres días; `/admin` sí.
+// Vive en `/admin` por un motivo de operación, no técnico: el dueño tiene que poder entrar
+// desde cualquier teléfono escribiendo algo que se acuerde a los tres días. `/acceso-cola`
+// describía bien lo que hace y nadie lo recordaba; `/admin` sí, y además es lo que el gestor
+// de contraseñas del teléfono reconoce para autocompletar.
 //
-// No afloja nada: la clave sigue siendo la misma y `/pedidos` sigue contestando 404 sin
-// credencial. Lo único que esto agrega es una dirección fácil de recordar hacia la puerta.
-return Astro.redirect("/acceso-cola", 307);
+// Un formulario con dos campos y no un secreto pegado: el gestor de contraseñas guarda
+// usuario y contraseña, no una cadena hexadecimal suelta, y eso es lo que saca la credencial
+// de las notas del teléfono.
+//
+// A diferencia de `/pedidos`, esta página NO contesta 404 sin credencial: muestra su
+// formulario. Es una concesión consciente —revela que hay un área de operación detrás del
+// sitio— a cambio de que el operador no ande pegando el secreto en la barra de direcciones,
+// donde queda en el historial, en las sugerencias y en cualquier captura. Lo que protege los
+// datos de los compradores es la contraseña, no el desconocimiento de esta ruta.
+
+let error: string | null = null;
+let usuarioEscrito = "";
+
+const configurado = Boolean(usuarioOps() && hashPasswordOps());
+
+if (Astro.request.method === "POST") {
+  const formulario = await Astro.request.formData();
+  const usuario = (formulario.get("usuario") ?? "").toString().trim();
+  const password = (formulario.get("password") ?? "").toString();
+  usuarioEscrito = usuario;
+
+  const sesion = credencialesOpsValidas(usuario, password) ? emitirSesionOps() : undefined;
+
+  if (sesion) {
+    Astro.cookies.set(COOKIE_OPS, sesion, opcionesCookieOps(Astro.url.protocol === "https:"));
+    return Astro.redirect("/pedidos", 303);
+  }
+
+  // 401 y un mensaje. El mensaje es el mismo para usuario inexistente y contraseña
+  // equivocada a propósito: decir cuál de los dos falló le regala la mitad del trabajo a
+  // quien esté probando. Y acá el operador ya sabe que la página existe, así que contestar
+  // "no existe" ante un error de tipeo sería mentirle sin proteger nada.
+  Astro.response.status = 401;
+  error = configurado
+    ? "Usuario o contraseña incorrectos."
+    : "Este sitio todavía no tiene credenciales de operación configuradas.";
+}
 ---
+
+<VentaLayout titulo="Entrar">
+  <h1>Panel de pedidos</h1>
+  <p>
+    Entrá con tu usuario y contraseña. La sesión queda abierta 12 horas en este navegador y se
+    renueva sola mientras la uses; en uno prestado, salí al terminar.
+  </p>
+
+  {error && <p class="aviso" data-error>{error}</p>}
+
+  <form method="POST" data-form-acceso>
+    <p>
+      <label for="usuario">Usuario</label>
+      <input
+        type="text"
+        id="usuario"
+        name="usuario"
+        value={usuarioEscrito}
+        autocomplete="username"
+        autocapitalize="none"
+        spellcheck="false"
+        required
+        autofocus
+      />
+    </p>
+    <p>
+      <label for="password">Contraseña</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        required
+      />
+    </p>
+    <button type="submit" class="boton">Entrar</button>
+  </form>
+</VentaLayout>
+
+<style>
+  input {
+    width: 100%;
+    padding: var(--e-1);
+    font-family: var(--f-cuerpo);
+    font-size: var(--t-cuerpo);
+    color: var(--texto);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+  }
+</style>
