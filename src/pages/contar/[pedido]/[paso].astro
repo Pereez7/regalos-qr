@@ -2,7 +2,7 @@
 import VentaLayout from "../../../layouts/VentaLayout.astro";
 import PrevistaRegalo from "../../../componentes/PrevistaRegalo.astro";
 import { cargaCerrada, obtenerPedidoConRegalo } from "../../../lib/pedidos.ts";
-import { PASOS, TEMAS, TOPES, parsearBorrador } from "../../../lib/borrador/esquema.ts";
+import { PASOS, SIGUIENTE, TEMAS, TOPES, parsearBorrador } from "../../../lib/borrador/esquema.ts";
 import { faltantes } from "../../../lib/borrador/a-contenido.ts";
 import { MAX_BYTES_SUBIDA, MAX_FOTOS, firmarRutas } from "../../../lib/fotos.ts";
 import { hayDominioPropio } from "../../../lib/qr.ts";
@@ -216,8 +216,9 @@ const ancho: "texto" | "amplio" =
               <PrevistaRegalo borrador={borrador} pedidoId={pedido.id} pasoActivo={pantalla} />
 
               <div class="formulario">
+            <p class="guardado" data-estado-guardado aria-live="polite"></p>
                 {pantalla === "destinatario" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="destinatario">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="destinatario" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["destinatario"]}`}>
                     <input type="hidden" name="paso" value="destinatario" />
                     <p class="guia">Lo único imprescindible es el nombre de quien lo recibe.</p>
 
@@ -279,7 +280,7 @@ const ancho: "texto" | "amplio" =
                 )}
 
                 {pantalla === "momentos" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="momentos">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="momentos" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["momentos"]}`}>
                     <input type="hidden" name="paso" value="momentos" />
                     <p class="guia">
                       Cada momento es una tarjeta del regalo. Podés dejar los que no uses en
@@ -362,7 +363,7 @@ const ancho: "texto" | "amplio" =
                     </form>
 
                     {fotos.length > 0 && (
-                      <form class="ficha" method="POST" action={accionBorrador} data-paso="fotos">
+                      <form class="ficha" method="POST" action={accionBorrador} data-paso="fotos" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["fotos"]}`}>
                         <input type="hidden" name="paso" value="fotos" />
                         <h2 class="rotulo">Las fotos que subiste</h2>
 
@@ -446,7 +447,7 @@ const ancho: "texto" | "amplio" =
                 )}
 
                 {pantalla === "cancion" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cancion">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cancion" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["cancion"]}`}>
                     <input type="hidden" name="paso" value="cancion" />
                     <p class="guia">Un enlace de Spotify o de YouTube. Suena dentro del regalo.</p>
                     <p class="campo">
@@ -486,7 +487,7 @@ const ancho: "texto" | "amplio" =
                 )}
 
                 {pantalla === "carta" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="carta">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="carta" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["carta"]}`}>
                     <input type="hidden" name="paso" value="carta" />
                     <p class="guia">
                       Lo que le dirías si tuvieras una hoja en blanco y todo el tiempo del
@@ -504,7 +505,7 @@ const ancho: "texto" | "amplio" =
                 )}
 
                 {pantalla === "preguntas" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="preguntas">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="preguntas" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["preguntas"]}`}>
                     <input type="hidden" name="paso" value="preguntas" />
                     <p class="guia">
                       Preguntas con su respuesta, que aparecen de a una en el regalo.
@@ -541,7 +542,7 @@ const ancho: "texto" | "amplio" =
                 )}
 
                 {pantalla === "cierre" && (
-                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cierre">
+                  <form class="ficha" method="POST" action={accionBorrador} data-paso="cierre" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["cierre"]}`}>
                     <input type="hidden" name="paso" value="cierre" />
                     <p class="guia">Las últimas palabras, al final de todo.</p>
                     <p class="campo">
@@ -695,6 +696,122 @@ const ancho: "texto" | "amplio" =
 </VentaLayout>
 
 <script>
+  // ── Guardado en segundo plano ────────────────────────────────────────────────────────
+  //
+  // Cada paso costaba dos viajes al servidor: uno para guardar y otro para traer el paso
+  // siguiente. El segundo es inevitable —la página la arma el servidor—, pero el primero no
+  // tiene por qué ocurrir recién cuando la persona aprieta el botón: mientras escribe, no
+  // está esperando nada.
+  //
+  // Así que el formulario se guarda solo, 800 ms después de la última tecla, y el botón
+  // queda libre para hacer lo único que importa en ese momento: pasar al paso siguiente.
+  //
+  // Sin JavaScript esto no existe y el formulario funciona como siempre: postea, el servidor
+  // guarda y redirige. Es una mejora encima de un camino que ya andaba.
+  const formularioPaso = document.querySelector<HTMLFormElement>("[data-paso]");
+
+  if (formularioPaso) {
+    const boton = formularioPaso.querySelector<HTMLButtonElement>("button[type=submit]");
+    const estado = document.querySelector<HTMLElement>("[data-estado-guardado]");
+
+    const serializar = () =>
+      new URLSearchParams(
+        new FormData(formularioPaso) as unknown as Record<string, string>,
+      ).toString();
+
+    let enVuelo: Promise<unknown> | null = null;
+    let pendiente = false;
+    let temporizador: number | undefined;
+    // Lo último que ya está en el servidor. Sin esto, salir de un campo repetía el guardado
+    // que el temporizador acababa de hacer: dos viajes para un solo cambio.
+    let ultimoGuardado = serializar();
+
+    const avisar = (texto: string) => {
+      if (estado) estado.textContent = texto;
+    };
+
+    const guardar = () => {
+      const cuerpo = serializar();
+
+      // Nada cambió desde el último guardado: no se manda nada.
+      if (cuerpo === ultimoGuardado) {
+        pendiente = false;
+        return Promise.resolve();
+      }
+
+      pendiente = false;
+      avisar("Guardando…");
+
+      enVuelo = fetch(formularioPaso.action, {
+        method: "POST",
+        body: cuerpo,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        // `manual`: la respuesta es un 303 al paso siguiente y acá no queremos seguirlo,
+        // solo saber que el guardado terminó.
+        redirect: "manual",
+        // `keepalive`: el navegador termina de enviarlo aunque la pestaña se cierre en el
+        // medio. Sin esto, cerrar justo después de escribir perdería lo último —y el envío
+        // normal de un formulario, que es una navegación, nunca se cancelaba—. El comprador
+        // ya pagó: no puede perder lo que escribió por cerrar una pestaña.
+        keepalive: true,
+      })
+        .then(() => {
+          ultimoGuardado = cuerpo;
+          avisar("Guardado");
+        })
+        .catch(() => {
+          // Si falla, el botón vuelve a ser un envío normal del formulario y el servidor se
+          // encarga: no se pierde nada de lo escrito.
+          pendiente = true;
+          avisar("");
+        })
+        .finally(() => {
+          enVuelo = null;
+        });
+
+      return enVuelo;
+    };
+
+    const programar = () => {
+      pendiente = serializar() !== ultimoGuardado;
+      if (!pendiente) return;
+      avisar("");
+      window.clearTimeout(temporizador);
+      temporizador = window.setTimeout(guardar, 800);
+    };
+
+    formularioPaso.addEventListener("input", programar);
+    // Salir de un campo o elegir una opción guarda sin esperar al temporizador. Si no hay
+    // nada nuevo, `guardar` corta solo.
+    formularioPaso.addEventListener("change", () => {
+      window.clearTimeout(temporizador);
+      guardar();
+    });
+
+    formularioPaso.addEventListener("submit", (evento) => {
+      // Si hay algo sin guardar, NO se intercepta: el formulario viaja como siempre, con una
+      // navegación que el navegador ya no puede cancelar. Es el camino lento —guardar y
+      // traer el paso siguiente— pero es el indestructible, y el comprador ya pagó.
+      //
+      // Un `fetch`, en cambio, se corta si la pestaña se cierra en el medio. Por eso el
+      // atajo rápido existe SOLO cuando lo escrito ya está guardado: ahí no hay nada que
+      // perder, y pasar de paso es apenas cambiar de página.
+      if (pendiente || enVuelo) {
+        window.clearTimeout(temporizador);
+        return;
+      }
+
+      evento.preventDefault();
+
+      if (boton) {
+        boton.disabled = true;
+        boton.textContent = "Un segundo…";
+      }
+
+      window.location.assign(formularioPaso.dataset.siguiente ?? window.location.href);
+    });
+  }
+
   // La vista previa se dibuja en el servidor con los mismos componentes del motor, así que
   // siempre dice la verdad. Esto solo adelanta lo que se va a ver al guardar: mientras
   // escribís, el texto del campo se copia al bloque correspondiente de la vista previa.
@@ -1032,6 +1149,15 @@ const ancho: "texto" | "amplio" =
     .formulario {
       order: -1;
     }
+  }
+
+  .guardado {
+    min-height: 1.2em;
+    margin: 0 0 var(--e-1);
+    font-size: var(--t-etiqueta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
   }
 
   .prevista-grande {
