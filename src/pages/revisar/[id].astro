@@ -23,7 +23,8 @@ const regalo = id ? await obtenerRegaloParaRevision(id) : null;
           </form>
         ) : (
           <p data-estado-publicado>
-            Aprobado el {regalo.aprobadoEn}
+            Aprobado el {regalo.aprobadoEn}. Te preparamos la tarjeta con el QR y te la
+            mandamos al correo de tu pedido.
             {regalo.primeraAperturaEn && (
               <span data-primera-apertura>
                 {" "}
