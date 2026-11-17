@@ -29,6 +29,11 @@ export default defineConfig({
     // la señal de apagado que manda Playwright al terminar puede no llegarle al server
     // y el puerto 4321 queda ocupado entre corridas.
     command: "npm run build && exec node ./dist/server/entry.mjs",
+    // El servidor de pruebas cree vivir en un dominio propio. Sin esto, la compuerta del QR
+    // se niega a emitir —que es su trabajo— y el camino de descarga de la tarjeta no se
+    // podría probar de punta a punta. Que la compuerta SÍ se niegue ante un host de
+    // simulación lo cubre `qr-compuerta.spec.ts`, que la ejercita directamente.
+    env: { ...process.env, SITIO_URL: "https://regalos.bo" },
     // `port` (no `url`): solo espera a que el puerto acepte conexiones TCP, sin
     // exigir 2xx. La app no tiene página en `/` (devuelve 404 ahí), así que `url`
     // nunca se daba por lista.

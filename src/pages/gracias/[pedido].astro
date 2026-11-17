@@ -1,6 +1,7 @@
 ---
 import VentaLayout from "../../layouts/VentaLayout.astro";
-import { obtenerPedido } from "../../lib/pedidos.ts";
+import { obtenerPedidoConRegalo } from "../../lib/pedidos.ts";
+import { hayDominioPropio } from "../../lib/qr.ts";
 import { getServiceClient } from "../../lib/supabase.ts";
 import { formatearPrecio } from "../../lib/config.ts";
 
@@ -15,7 +16,7 @@ export const prerender = false;
 // que el enlace no sirva ni como oráculo de qué pedidos existen.
 
 const { pedido: pedidoId } = Astro.params;
-const pedido = pedidoId ? await obtenerPedido(pedidoId) : null;
+const pedido = pedidoId ? await obtenerPedidoConRegalo(pedidoId) : null;
 
 if (!pedido) {
   return new Response(null, { status: 404 });
@@ -35,6 +36,9 @@ const monto = pago
   ? formatearPrecio({ centavos: pago.monto_centavos as number, moneda: pago.moneda as string })
   : null;
 const enlaceCarga = `/contar/${pedido.id}/destinatario`;
+
+// Igual que en la pantalla de enviado: la tarjeta se ofrece solo si de verdad se puede bajar.
+const tarjetaDisponible = pedido.estadoRegalo === "publicado" && hayDominioPropio();
 ---
 
 <VentaLayout titulo={pagado ? "Tu pedido está pagado" : "Tu pedido está pendiente de pago"}>
@@ -54,9 +58,27 @@ const enlaceCarga = `/contar/${pedido.id}/destinatario`;
           </p>
           <p class="accion">
             <a class="boton" href={enlaceCarga} data-enlace-carga>
-              Empezar a contar la historia
+              {pedido.regaloId ? "Volver a mi historia" : "Empezar a contar la historia"}
             </a>
           </p>
+
+          {
+            tarjetaDisponible && (
+              <>
+                <div class="hilo" />
+                <p>Tu regalo ya está aprobado, así que la tarjeta está lista para imprimir.</p>
+                <p class="accion">
+                  <a
+                    class="boton boton-secundario"
+                    href={`/api/pedidos/${pedido.id}/tarjeta`}
+                    data-bajar-tarjeta
+                  >
+                    Descargar mi tarjeta
+                  </a>
+                </p>
+              </>
+            )
+          }
         </section>
       ) : (
         <section class="ficha ficha-clave">

@@ -5,6 +5,7 @@ import { cargaCerrada, obtenerPedidoConRegalo } from "../../../lib/pedidos.ts";
 import { PASOS, TEMAS, TOPES, parsearBorrador } from "../../../lib/borrador/esquema.ts";
 import { faltantes } from "../../../lib/borrador/a-contenido.ts";
 import { MAX_BYTES_SUBIDA, MAX_FOTOS, firmarRutas } from "../../../lib/fotos.ts";
+import { hayDominioPropio } from "../../../lib/qr.ts";
 
 export const prerender = false;
 
@@ -31,6 +32,10 @@ if (!pedido) return new Response(null, { status: 404 });
 const cerrada = cargaCerrada(pedido);
 const borrador = parsearBorrador(pedido.borrador);
 const falta = faltantes(borrador);
+
+// La tarjeta se ofrece solo cuando de verdad se puede bajar: regalo aprobado y dominio
+// propio. Un botón que siempre falla es peor que no tener botón.
+const tarjetaDisponible = pedido.estadoRegalo === "publicado" && hayDominioPropio();
 
 const accionBorrador = `/api/pedidos/${pedido.id}/borrador`;
 const momentos = borrador.momentos ?? [];
@@ -129,6 +134,40 @@ const ancho: "texto" | "amplio" =
               <a class="boton" href={`/r/${pedido.slugRegalo}`}>Ver el regalo</a>
             </p>
           )}
+        </section>
+
+        <section class="ficha">
+          <p class="rotulo">Tu tarjeta</p>
+          {
+            tarjetaDisponible ? (
+              <>
+                <p>
+                  Un archivo de 10 × 15 cm con el código adentro, listo para llevar a
+                  imprimir.
+                </p>
+                <p class="accion">
+                  <a
+                    class="boton"
+                    href={`/api/pedidos/${pedido.id}/tarjeta`}
+                    data-bajar-tarjeta
+                  >
+                    Descargar mi tarjeta
+                  </a>
+                </p>
+                <p class="opcional">
+                  <a href={`/api/pedidos/${pedido.id}/tarjeta?formato=qr`}>
+                    Bajar solo el código
+                  </a>
+                  , por si lo querés pegar en una caja o un ramo.
+                </p>
+              </>
+            ) : (
+              <p class="opcional">
+                Te preparamos la tarjeta con el código QR y te la mandamos al correo de tu
+                pedido.
+              </p>
+            )
+          }
         </section>
       </div>
     ) : (
@@ -619,11 +658,35 @@ const ancho: "texto" | "amplio" =
               <a href={`/contar/${pedido.id}/destinatario`}>volver a tu carga</a> y reenviar
               las veces que quieras. El enlace del regalo no cambia nunca.
             </p>
-            <p class="opcional">
-              Cuando lo apruebes preparamos la tarjeta con el código QR —un archivo de
-              10 × 15 cm, listo para llevar a imprimir— y te la mandamos al correo de tu
-              pedido.
-            </p>
+            {
+              tarjetaDisponible ? (
+                <>
+                  <div class="hilo" />
+                  <p class="rotulo">Tu tarjeta</p>
+                  <p class="opcional">
+                    Ya está lista: un archivo de 10 × 15 cm para llevar a imprimir, con el
+                    código adentro.
+                  </p>
+                  <p class="accion">
+                    <a class="boton" href={`/api/pedidos/${pedido.id}/tarjeta`} data-bajar-tarjeta>
+                      Descargar mi tarjeta
+                    </a>
+                  </p>
+                  <p class="opcional">
+                    <a href={`/api/pedidos/${pedido.id}/tarjeta?formato=qr`}>
+                      Bajar solo el código
+                    </a>
+                    , por si lo querés pegar en una caja o un ramo.
+                  </p>
+                </>
+              ) : (
+                <p class="opcional">
+                  Cuando lo apruebes preparamos la tarjeta con el código QR —un archivo de
+                  10 × 15 cm, listo para llevar a imprimir— y te la mandamos al correo de tu
+                  pedido.
+                </p>
+              )
+            }
           </section>
         )}
       </div>

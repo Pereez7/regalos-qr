@@ -26,6 +26,23 @@ const CORRECCION = "Q" as const;
 /** Zona de silencio, en módulos. Sin ella, muchos lectores no enganchan. */
 const MARGEN_MODULOS = 4;
 
+/**
+ * `true` si la dirección pública del sitio ya es un dominio propio del negocio.
+ *
+ * Lo usan las páginas para ofrecer la descarga de la tarjeta solo cuando de verdad va a
+ * funcionar: un botón que siempre falla es peor que no tener botón.
+ */
+export function hayDominioPropio(): boolean {
+  const base = sitioUrl();
+  if (!base) return false;
+
+  try {
+    return hostDeSimulacion(new URL(base).toString()) === null;
+  } catch {
+    return false;
+  }
+}
+
 export class EmisionNegada extends Error {
   constructor(motivo: string) {
     super(motivo);
