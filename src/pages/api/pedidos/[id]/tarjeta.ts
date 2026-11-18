@@ -38,7 +38,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   if (pedido.estadoRegalo !== "publicado") {
     return explicar(
-      "Tu regalo todavía está en revisión. Aprobalo desde tu enlace de revisión y la tarjeta queda lista.",
+      "Tu regalo todavía está en revisión. Apruébalo desde tu enlace de revisión y la tarjeta queda lista.",
       409,
     );
   }
@@ -69,7 +69,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   } catch (error) {
     if (error instanceof EmisionNegada) {
       return explicar(
-        "Tu tarjeta todavía no se puede emitir. Escribinos y la resolvemos a mano.\n\n" +
+        "Tu tarjeta todavía no se puede emitir. Escríbenos y la resolvemos a mano.\n\n" +
           `Motivo técnico: ${error.message}`,
         409,
       );

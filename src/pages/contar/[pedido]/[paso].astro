@@ -158,7 +158,7 @@ const ancho: "texto" | "amplio" =
                   <a href={`/api/pedidos/${pedido.id}/tarjeta?formato=qr`}>
                     Bajar solo el código
                   </a>
-                  , por si lo querés pegar en una caja o un ramo.
+                  , por si lo quieres pegar en una caja o un ramo.
                 </p>
               </>
             ) : (
@@ -283,7 +283,7 @@ const ancho: "texto" | "amplio" =
                   <form class="ficha" method="POST" action={accionBorrador} data-paso="momentos" data-siguiente={`/contar/${pedido.id}/${SIGUIENTE["momentos"]}`}>
                     <input type="hidden" name="paso" value="momentos" />
                     <p class="guia">
-                      Cada momento es una tarjeta del regalo. Podés dejar los que no uses en
+                      Cada momento es una tarjeta del regalo. Puedes dejar los que no uses en
                       blanco: se descartan solos.
                     </p>
 
@@ -344,7 +344,7 @@ const ancho: "texto" | "amplio" =
                         almacena.
                       </p>
                       <p class="campo">
-                        <label for="foto">Elegí una foto</label>
+                        <label for="foto">Elige una foto</label>
                         <input type="file" id="foto" name="foto" accept="image/*" required />
                       </p>
                       <p class="campo">
@@ -354,7 +354,7 @@ const ancho: "texto" | "amplio" =
                       <p class="opcional" data-tope>
                         Sin JavaScript, el máximo por archivo es de{" "}
                         {Math.round(MAX_BYTES_SUBIDA / (1024 * 1024))} MB. Con JavaScript la
-                        reducimos en tu teléfono antes de subirla y podés usar fotos de hasta
+                        reducimos en tu teléfono antes de subirla y puedes usar fotos de hasta
                         10 MB.
                       </p>
                       <p class="accion">
@@ -567,7 +567,7 @@ const ancho: "texto" | "amplio" =
                           ))}
                         </ul>
                         <p>
-                          Volvé al paso que corresponda, completalo y volvé acá. Lo que ya
+                          Vuelve al paso que corresponda, complétalo y vuelve aquí. Lo que ya
                           cargaste está guardado.
                         </p>
                       </section>
@@ -642,8 +642,8 @@ const ancho: "texto" | "amplio" =
           <section class="ficha ficha-clave">
             <h2 class="rotulo">En revisión</h2>
             <p data-enviado>
-              Tu regalo ya existe y está en revisión. Miralo completo en tu enlace de
-              revisión: desde ahí lo aprobás cuando estés conforme, y recién entonces queda
+              Tu regalo ya existe y está en revisión. Míralo completo en tu enlace de
+              revisión: desde ahí lo apruebas cuando estés conforme, y solo entonces queda
               definitivo.
             </p>
             {pedido.regaloId && (
@@ -655,7 +655,7 @@ const ancho: "texto" | "amplio" =
             )}
             <div class="hilo" />
             <p class="opcional">
-              ¿Querés cambiar algo? Mientras no lo apruebes, podés{" "}
+              ¿Quieres cambiar algo? Mientras no lo apruebes, puedes{" "}
               <a href={`/contar/${pedido.id}/destinatario`}>volver a tu carga</a> y reenviar
               las veces que quieras. El enlace del regalo no cambia nunca.
             </p>
@@ -677,7 +677,7 @@ const ancho: "texto" | "amplio" =
                     <a href={`/api/pedidos/${pedido.id}/tarjeta?formato=qr`}>
                       Bajar solo el código
                     </a>
-                    , por si lo querés pegar en una caja o un ramo.
+                    , por si lo quieres pegar en una caja o un ramo.
                   </p>
                 </>
               ) : (
@@ -884,7 +884,7 @@ const ancho: "texto" | "amplio" =
     const nota = form.querySelector("[data-tope]");
     if (nota) {
       nota.textContent =
-        "Reducimos la foto en tu teléfono antes de subirla, así que podés usar fotos de hasta 10 MB.";
+        "Reducimos la foto en tu teléfono antes de subirla, así que puedes usar fotos de hasta 10 MB.";
     }
 
     const LADO = 1600;

@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     // se queda: es preferible una foto que sigue estando a una referencia huérfana que el
     // comprador ya no puede volver a quitar.
     if (!(await borrarFoto(ruta))) {
-      return conTexto("No se pudo borrar la foto. Probá de nuevo.", 500);
+      return conTexto("No se pudo borrar la foto. Prueba de nuevo.", 500);
     }
 
     if (!(await quitarFoto(id, ruta))) return new Response(null, { status: 500 });
@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
 
   if (fotos.length >= MAX_FOTOS) {
     return conTexto(
-      `Ya hay ${MAX_FOTOS} fotos en este regalo, que es el máximo. Quitá una para subir otra.`,
+      `Ya hay ${MAX_FOTOS} fotos en este regalo, que es el máximo. Quita una para subir otra.`,
       409,
     );
   }
@@ -91,7 +91,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     return conTexto(
       `Esa foto pesa más de lo que se puede subir desde este formulario (${Math.round(
         MAX_BYTES_SUBIDA / (1024 * 1024),
-      )} MB). Si tu navegador tiene JavaScript, la reducimos antes de subirla y podés usar fotos de hasta 10 MB.`,
+      )} MB). Si tu navegador tiene JavaScript, la reducimos antes de subirla y puedes usar fotos de hasta 10 MB.`,
       413,
     );
   }
@@ -102,7 +102,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const procesada = await procesarFoto(Buffer.from(await archivo.arrayBuffer()));
   if (!procesada) {
     return conTexto(
-      "Ese archivo no es una imagen que podamos usar. Probá con un JPG, un PNG o un HEIC. " +
+      "Ese archivo no es una imagen que podamos usar. Prueba con un JPG, un PNG o un HEIC. " +
         "El resto de tu historia quedó como estaba.",
       415,
     );
@@ -113,7 +113,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const prefijo = pedido.regaloId ? prefijoDeRegalo(pedido.regaloId) : prefijoDePedido(id);
 
   const ruta = await guardarFoto(prefijo, procesada);
-  if (!ruta) return conTexto("No se pudo guardar la foto. Probá de nuevo.", 500);
+  if (!ruta) return conTexto("No se pudo guardar la foto. Prueba de nuevo.", 500);
 
   const alt = (formulario.get("alt") ?? "").toString().trim();
   const agregada = await agregarFoto(id, {

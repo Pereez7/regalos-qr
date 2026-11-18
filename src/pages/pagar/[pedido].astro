@@ -38,7 +38,7 @@ if (Astro.request.method === "POST") {
   const comprobante = (formulario.get("comprobante") ?? "").toString().trim();
 
   if (comprobante.length === 0) {
-    error = "Escribí el número de comprobante de tu transferencia.";
+    error = "Escribe el número de comprobante de tu transferencia.";
   } else if (comprobante.length > 64) {
     error = "Ese número es más largo de lo que puede ser un comprobante.";
   } else if (!pago) {
@@ -49,7 +49,7 @@ if (Astro.request.method === "POST") {
       .update({ referencia_comprador: comprobante, actualizado_en: new Date().toISOString() })
       .eq("id", pago.id);
 
-    if (errorGuardado) error = "No pudimos guardar el comprobante. Probá de nuevo.";
+    if (errorGuardado) error = "No pudimos guardar el comprobante. Prueba de nuevo.";
     else return Astro.redirect(`/pagar/${pedido.id}`, 303);
   }
 }
@@ -65,7 +65,7 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
   <div class="hoja">
     <header class="cabecera">
       <p class="rotulo">{yaDeclarado ? "Pago declarado" : "Pago"}</p>
-      <h1>{yaDeclarado ? "Recibimos tu aviso" : "Pagá escaneando el QR"}</h1>
+      <h1>{yaDeclarado ? "Recibimos tu aviso" : "Paga escaneando el QR"}</h1>
     </header>
 
     {
@@ -77,7 +77,7 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
             pagaste fuera del horario bancario, puede ser al día siguiente.
           </p>
           <p>
-            Guardá este enlace: es el de tu pedido. Podés volver cuando quieras para ver cómo
+            Guarda este enlace: es el de tu pedido. Puedes volver cuando quieras para ver cómo
             va.
           </p>
           <p class="accion">
@@ -86,7 +86,7 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
           <div class="hilo" />
           <p class="opcional">
             Comprobante que nos pasaste: <strong>{yaDeclarado}</strong>. Si te equivocaste,
-            mandanos el correcto abajo.
+            mándanos el correcto abajo.
           </p>
         </section>
       )
@@ -110,12 +110,12 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
             {monto && <div class="hilo" />}
 
             <ol class="pasos">
-              <li>Escaneá el código desde la app de tu banco.</li>
+              <li>Escanea el código desde la app de tu banco.</li>
               <li>
-                Escribí el monto: <strong>{monto ?? "el total de arriba"}</strong>. El código
-                no lo lleva adentro, así que lo ponés vos.
+                Escribe el monto: <strong>{monto ?? "el total de arriba"}</strong>. El código
+                no lo lleva adentro, así que lo pones tú.
               </li>
-              <li>Confirmá la transferencia y volvé acá con el número de comprobante.</li>
+              <li>Confirma la transferencia y vuelve aquí con el número de comprobante.</li>
             </ol>
 
             <figure>
@@ -139,16 +139,16 @@ const yaDeclarado = (pago?.referencia_comprador ?? null) as string | null;
           </>
         ) : (
           <p class="aviso" data-sin-qr>
-            El cobro por QR todavía no está configurado. Escribinos y lo resolvemos a mano.
+            El cobro por QR todavía no está configurado. Escríbenos y lo resolvemos a mano.
           </p>
         )
       }
     </section>
 
     <section class="ficha">
-      <h2 class="rotulo">Después de pagar, avisanos</h2>
+      <h2 class="rotulo">Después de pagar, avísanos</h2>
       <p>
-        Pasanos el <strong>número de comprobante</strong> de la transferencia. Es lo que nos
+        Pásanos el <strong>número de comprobante</strong> de la transferencia. Es lo que nos
         permite encontrar tu pago entre los demás y confirmarlo.
       </p>
 

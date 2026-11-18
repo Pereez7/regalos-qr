@@ -35,7 +35,7 @@ export function faltantes(borrador: Borrador): string[] {
   // Principio I lo declara defecto bloqueante.
   if (bloquesDeContenido(borrador) === 0) {
     faltan.push(
-      "Falta la historia: cargá al menos un momento, una carta, una foto, la canción, " +
+      "Falta la historia: carga al menos un momento, una carta, una foto, la canción, " +
         "una pregunta o unas palabras de cierre.",
     );
   }

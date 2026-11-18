@@ -51,16 +51,16 @@ const PIEZAS = [
 ];
 
 const PASOS = [
-  { titulo: "Contás", texto: "Siete preguntas, con tus palabras. Se guarda a cada paso." },
-  { titulo: "Revisás", texto: "Nada se publica hasta que vos lo aprobés. Corregís sin límite." },
-  { titulo: "Imprimís", texto: "Un archivo de 10 × 15 cm, listo. No hay envío que esperar." },
+  { titulo: "Cuentas", texto: "Siete preguntas, con tus palabras. Se guarda a cada paso." },
+  { titulo: "Revisas", texto: "Nada se publica hasta que tú lo apruebes. Corriges sin límite." },
+  { titulo: "Imprimes", texto: "Un archivo de 10 × 15 cm, listo. No hay envío que esperar." },
 ];
 
 // Plegadas. No es contenido escondido: el <summary> se ve y se abre sin JavaScript.
 const PREGUNTAS = [
   {
     q: "¿Hace falta una app o una cuenta?",
-    r: "No, ni para quien lo recibe ni para vos. Tu pedido es un enlace propio, sin contraseña.",
+    r: "No, ni para quien lo recibe ni para ti. Tu pedido es un enlace propio, sin contraseña.",
   },
   { q: "¿El enlace vence?", r: "No vence y no cambia. Nunca." },
   {
@@ -69,16 +69,16 @@ const PREGUNTAS = [
   },
   {
     q: "¿Y si me arrepiento de algo que escribí?",
-    r: "Lo cambiás las veces que quieras, sin costo, hasta que lo aprobés.",
+    r: "Lo cambias las veces que quieras, sin costo, hasta que lo apruebes.",
   },
-  { q: "¿Lo escribe una inteligencia artificial?", r: "No. Si vos no lo contás, no existe." },
+  { q: "¿Lo escribe una inteligencia artificial?", r: "No. Si tú no lo cuentas, no existe." },
   {
     q: "¿Cómo se paga?",
     r: "Con el QR de tu banco. No pedimos ni guardamos datos de tarjeta.",
   },
   {
     q: "¿Me lo mandan impreso?",
-    r: "No: te damos el archivo y lo imprimís donde quieras, en el papel que quieras.",
+    r: "No: te damos el archivo y lo imprimes donde quieras, en el papel que quieras.",
   },
 ];
 ---
@@ -164,8 +164,8 @@ const PREGUNTAS = [
 
   <section class="filete entra">
     <p class="rotulo">Cómo se hace</p>
-    <h2>Vos contás. No diseñás nada.</h2>
-    <p class="apoyo">Nadie escribe tu historia por vos.</p>
+    <h2>Tú cuentas. No diseñas nada.</h2>
+    <p class="apoyo">Nadie escribe tu historia por ti.</p>
 
     <div class="tarjetas entra">
       {
@@ -182,7 +182,7 @@ const PREGUNTAS = [
   <section class="marco entra">
     <p class="rotulo">Para siempre</p>
     <h2>El enlace no vence ni cambia nunca</h2>
-    <p class="apoyo">El QR que imprimás hoy abre el mismo regalo dentro de diez años.</p>
+    <p class="apoyo">El QR que imprimas hoy abre el mismo regalo dentro de diez años.</p>
   </section>
 
   <section class="panel entra">
@@ -222,8 +222,8 @@ const PREGUNTAS = [
     precio && (
       <section class="panel panel-compra entra">
         <p class="rotulo">Último paso</p>
-        <h2 id="comprar">Empezá</h2>
-        <p class="apoyo">Dejanos tu correo y te llevamos al QR de tu banco.</p>
+        <h2 id="comprar">Empieza</h2>
+        <p class="apoyo">Déjanos tu correo y te llevamos al QR de tu banco.</p>
 
         <form method="POST" action="/comprar" data-form-comprar>
           <p>
@@ -248,7 +248,7 @@ const PREGUNTAS = [
               />
               <label for="consentimiento_publicidad">
                 Quiero recibir novedades y promociones por mensaje a ese número. Lo usamos
-                solo para eso y podés darte de baja cuando quieras.
+                solo para eso y puedes darte de baja cuando quieras.
               </label>
             </p>
           </fieldset>

@@ -19,17 +19,17 @@ export function mensajeDe(tipo: TipoAviso, datos: DatosAviso): Mensaje {
   switch (tipo) {
     case "comprobante":
       return {
-        asunto: "Tu pedido está pagado — empezá a contar tu historia",
+        asunto: "Tu pedido está pagado — empieza a contar tu historia",
         cuerpo: [
           "Recibimos tu pago. Gracias.",
           "",
-          "Este es el enlace de tu pedido, y es la única llave que necesitás: no hay cuenta",
-          "ni contraseña. Guardalo, porque es al que vas a volver cada vez que quieras seguir",
+          "Este es el enlace de tu pedido, y es la única llave que necesitas: no hay cuenta",
+          "ni contraseña. Guárdalo, porque es al que vas a volver cada vez que quieras seguir",
           "cargando tu historia.",
           "",
           datos.enlace,
           "",
-          "Podés cargarla de a poco, cerrar la pestaña y volver cuando quieras: lo que",
+          "Puedes cargarla de a poco, cerrar la pestaña y volver cuando quieras: lo que",
           "escribiste queda guardado.",
         ].join("\n"),
       };
@@ -38,12 +38,12 @@ export function mensajeDe(tipo: TipoAviso, datos: DatosAviso): Mensaje {
       return {
         asunto: `Tu regalo${para} ya está listo para que lo revises`,
         cuerpo: [
-          "Tu historia ya es un regalo. Antes de que quede definitivo, miralo entero:",
+          "Tu historia ya es un regalo. Antes de que quede definitivo, míralo entero:",
           "",
           datos.enlace,
           "",
-          "Desde ahí lo aprobás cuando estés conforme. Mientras no lo apruebes podés volver a",
-          "tu carga y corregir todo lo que quieras, las veces que quieras: el enlace del",
+          "Desde ahí lo apruebas cuando estés conforme. Mientras no lo apruebes puedes volver",
+          "a tu carga y corregir todo lo que quieras, las veces que quieras: el enlace del",
           "regalo no cambia nunca.",
         ].join("\n"),
       };

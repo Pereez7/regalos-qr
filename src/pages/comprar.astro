@@ -64,7 +64,7 @@ const cobro = await adaptador
 // operativa como abandonado. No se borra: un intento de compra del que no queda rastro es
 // exactamente lo que el Principio VII prohíbe.
 if (!cobro) {
-  return new Response("El cobro no está disponible en este momento. Volvé a intentar.", {
+  return new Response("El cobro no está disponible en este momento. Vuelve a intentar.", {
     status: 502,
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
